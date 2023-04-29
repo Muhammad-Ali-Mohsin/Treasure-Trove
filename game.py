@@ -4,7 +4,7 @@ from maze import Maze
 from player import Player
 
 #Constants
-MAZE_RESOLUTION = (50, 50)
+MAZE_RESOLUTION = (10, 10)
 TILE_SIZE = 32
 PLAYER_SIZE = 16
 
@@ -14,8 +14,8 @@ clock = pygame.time.Clock()
 
 #Variables about the display
 monitor = pygame.display.Info()
-USER_RESOLUTION = [1000, 500]
-RESOLUTION = [1000, 500]
+USER_RESOLUTION = [monitor.current_w, monitor.current_h]
+RESOLUTION = [1920, 1080]
 WINDOW = pygame.display.set_mode(USER_RESOLUTION)
 SCREEN = pygame.Surface(RESOLUTION)
 pygame.mouse.set_visible(False)
@@ -42,31 +42,6 @@ class Game:
                 if self.maze.get_cell(x, y) == 1:
                     pygame.draw.rect(SCREEN, (0, 0, 0), (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
-
-
-
-
-
-        cell = (self.player.rect.centerx // TILE_SIZE, self.player.rect.centery // TILE_SIZE)
-        pygame.draw.rect(SCREEN, (0, 255, 0), (cell[0] * TILE_SIZE, cell[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-        
-
-
-        neighbours = self.maze.get_neighbours(cell)
-        for neighbour in neighbours:
-            if self.maze.get_cell(neighbour[0], neighbour[1]) == 1:
-                neighbour_rect = pygame.Rect(neighbour[0] * TILE_SIZE, neighbour[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                pygame.draw.rect(SCREEN, (0, 0, 255), neighbour_rect)
-                if self.player.rect.colliderect(neighbour_rect):
-                    pygame.draw.rect(SCREEN, (255, 0, 255), neighbour_rect)
-                    print(f"Display: {neighbour_rect.center}, {self.player.rect.center}")
-                    exit(0)
-
-
-
-
-
-
         # Draws the player
         self.player.draw(SCREEN)
                     
@@ -79,8 +54,6 @@ class Game:
         #Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
         pygame.display.update()
-
-
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -112,7 +85,6 @@ class Game:
                     self.movement['down'] = False
                 if event.key == pygame.K_UP:
                     self.movement['up'] = False
-
 
     def game_loop(self):
         dt = (time() - self.last_time)

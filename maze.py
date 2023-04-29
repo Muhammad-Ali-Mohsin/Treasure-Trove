@@ -18,7 +18,7 @@ class Maze:
         """
         return self._maze[y][x]
 
-    def get_neighbours(self, cell):
+    def get_neighbours(self, cell, with_diagonals=False):
         """
         Returns the neighbours for the cell
         """
@@ -32,6 +32,13 @@ class Maze:
         for i in [1, -1]:
             if cell[1] + i > -1 and cell[1] + i < self.resolution[1]:
                 neighbours.add((cell[0], cell[1] + i))
+
+        if with_diagonals:
+            # Adds the neighbours which diagonal to the cell
+            for i in [1, -1]:
+                for j in [1, -1]:
+                    if (cell[0] + i > -1 and cell[0] + i < self.resolution[0]) and (cell[1] + j > -1 and cell[1] + j < self.resolution[1]):
+                        neighbours.add((cell[0] + i, cell[1] + j))
 
         return neighbours
 
@@ -76,4 +83,4 @@ class Maze:
             explored_cells.add(current_cell)
             
     def __repr__(self):
-        return "\n".join([str(row) for row in self.maze])
+        return "\n".join([str(row) for row in self._maze])
