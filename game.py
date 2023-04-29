@@ -4,7 +4,7 @@ from maze import Maze
 from player import Player
 
 #Constants
-MAZE_RESOLUTION = (10, 10)
+MAZE_RESOLUTION = (50, 50)
 TILE_SIZE = 32
 PLAYER_SIZE = 16
 
@@ -29,7 +29,12 @@ class Game:
         self.maze = Maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1])
         self.maze.generate_maze()
         self.scroll = [0, 0]
-        self.player = Player(x=50, y=50, size=PLAYER_SIZE, speed=3)
+
+        cell = (0, 0)
+        while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
+            cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
+        
+        self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=3)
         self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
 
     def update_display(self):
