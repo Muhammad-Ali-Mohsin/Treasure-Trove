@@ -3,16 +3,16 @@ from time import time
 from maze import Maze
 from entities import Player
 
-#Constants
+# Constants
 MAZE_RESOLUTION = (31, 31)
 TILE_SIZE = 32
 PLAYER_SIZE = 16
 
-#Pygame stuff
+# Pygame stuff
 pygame.init()
 clock = pygame.time.Clock()
 
-#Variables about the display
+# Variables about the display
 monitor = pygame.display.Info()
 USER_RESOLUTION = [monitor.current_w, monitor.current_h]
 USER_RESOLUTION = [1000, 1000]
@@ -32,8 +32,9 @@ class Game:
         self.maze = Maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1])
         self.maze.generate_maze()
         self.generate_treasure()
+        self.gold = 0
 
-        cell = (0, 0)
+        cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
             cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         
@@ -50,16 +51,19 @@ class Game:
                 if self.maze.get_cell(x, y) == 1:
                     pygame.draw.rect(SCREEN, (0, 0, 0), (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
+        # Draws the treasure
+        pygame.draw.rect(SCREEN, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE, self.treasure['cell'][1] * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+
         # Draws the player
         self.player.draw(SCREEN)
                     
-        #Shows the FPS
+        # Shows the FPS
         font = pygame.font.SysFont("Impact", 25)
         fps_text = font.render(f"FPS: {round(self.fps)}", 1, pygame.Color("blue"))
         SCREEN.blit(fps_text, (10, 10))
         
 
-        #Ouputs the display in the user resolution
+        # Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
         pygame.display.update()
 
@@ -81,7 +85,9 @@ class Game:
                     self.movement['down'] = True
                 if event.key == pygame.K_UP:
                     self.movement['up'] = True
-                if event.key == pygame.K_TAB: #Checks to see if the key being pressed is escape
+                if event.key == pygame.K_e:
+                    self.dig()
+                if event.key == pygame.K_TAB:
                     self.paused = not self.paused
 
             if event.type == pygame.KEYUP:
@@ -95,10 +101,24 @@ class Game:
                     self.movement['up'] = False
 
     def generate_treasure(self):
-        cell = (0, 0)
+        cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
             cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         self.treasure = {'cell': cell, 'dig_counter': 0}
+
+    def dig(self):
+        success = self.player.dig(treasure=self.treasure, tile_size=TILE_SIZE)
+        if success:
+            self.treasure['dig_counter'] += 1
+            # If the player has dug 3 times to fully uncover the treasure
+            if self.treasure['dig_counter'] == 3:
+                # Generate new treausre
+                self.generate_treasure()
+                # Give the player 100 gold
+                self.gold += 100
+        else:
+            pass
+
 
     def game_loop(self):
         dt = (time() - self.last_time)

@@ -76,3 +76,12 @@ class Entity:
 class Player(Entity):
     def __init__(self, x, y, size, speed):
         super().__init__(x, y, size, speed)
+
+    def dig(self, treasure, tile_size):
+        cell = (self.rect.centerx // tile_size, self.rect.centery // tile_size)
+        if cell == treasure['cell']:
+            success = True
+        else:
+            success = False
+
+        return success
