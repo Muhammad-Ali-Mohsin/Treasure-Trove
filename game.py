@@ -3,6 +3,8 @@ from time import time
 from maze import Maze
 from entities import Player
 
+random.seed(10)
+
 # Constants
 MAZE_RESOLUTION = (31, 31)
 TILE_SIZE = 32
@@ -33,6 +35,7 @@ class Game:
         self.maze.generate_maze()
         self.generate_treasure()
         self.gold = 0
+        self.camera_displacement = [0, 0]
 
         cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
@@ -49,13 +52,13 @@ class Game:
         for y in range(len(maze)):
             for x in range(len(maze)):
                 if self.maze.get_cell(x, y) == 1:
-                    pygame.draw.rect(SCREEN, (0, 0, 0), (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                    pygame.draw.rect(SCREEN, (0, 0, 0), (x * TILE_SIZE - self.camera_displacement[0], y * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
 
         # Draws the treasure
-        pygame.draw.rect(SCREEN, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE, self.treasure['cell'][1] * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+        pygame.draw.rect(SCREEN, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
 
         # Draws the player
-        self.player.draw(SCREEN)
+        self.player.draw(SCREEN, self.camera_displacement)
                     
         # Shows the FPS
         font = pygame.font.SysFont("Impact", 25)
@@ -123,6 +126,9 @@ class Game:
     def game_loop(self):
         dt = (time() - self.last_time)
         self.last_time = time()
+
+        self.camera_displacement[0] = self.player.rect.centerx - SCREEN.get_width() // 2
+        self.camera_displacement[1] = self.player.rect.centery - SCREEN.get_height() // 2
 
 
         self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)

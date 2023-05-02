@@ -63,11 +63,11 @@ class Entity:
 
         return collision
         
-    def draw(self, screen):
+    def draw(self, screen, camera_displacement):
         """
         Draws the entity onto the screen
         """
-        pygame.draw.rect(screen, (255, 0, 0), self.rect)
+        pygame.draw.rect(screen, (255, 0, 0), (self.rect.x - camera_displacement[0], self.rect.y - camera_displacement[1], self.rect.width, self.rect.height))
         
     def __repr__(self):
         return f"Entity(Location: {self.rect.center} )"
@@ -85,3 +85,5 @@ class Player(Entity):
             success = False
 
         return success
+    
+    
