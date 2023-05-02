@@ -1,12 +1,12 @@
 import pygame, sys, os, random
 from time import time
 from maze import Maze
-from player import Player
+from entities import Player
 
 #Constants
 MAZE_RESOLUTION = (50, 50)
-TILE_SIZE = 32
-PLAYER_SIZE = 16
+TILE_SIZE = 16
+PLAYER_SIZE = 8
 
 #Pygame stuff
 pygame.init()
@@ -19,6 +19,8 @@ RESOLUTION = [1920, 1080]
 WINDOW = pygame.display.set_mode(USER_RESOLUTION)
 SCREEN = pygame.Surface(RESOLUTION)
 pygame.mouse.set_visible(False)
+pygame.display.set_caption("Treasure Trove")
+pygame.display.set_icon(pygame.image.load("icon.png"))
 
 
 

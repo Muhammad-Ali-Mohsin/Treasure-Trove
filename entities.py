@@ -1,6 +1,6 @@
 import pygame
 
-class Player:
+class Entity:
     def __init__(self, x, y, size, speed):
         self.rect = pygame.Rect(x, y, size, size)
         self.rect.center = (x, y)
@@ -8,8 +8,8 @@ class Player:
 
     def move(self, movement, maze, tile_size):
         """
-        Moves the player based on the movement list
-        Returns True or False based on whether the player has collided
+        Moves the entity based on the movement list
+        Returns True or False based on whether the entity has collided
         """
         
         collision = False
@@ -23,10 +23,10 @@ class Player:
         if movement['down']:
             move_y += self.speed
 
-        # This is the cell in the maze where the player currently is
+        # This is the cell in the maze where the entity currently is
         cell = (self.rect.centerx // tile_size, self.rect.centery // tile_size)
         
-        # Gets the neighbouring cells of the cell the player is in
+        # Gets the neighbouring cells of the cell the entity is in
         neighbours = maze.get_neighbours(cell, with_diagonals=True)
 
         self.rect.x += move_x
@@ -65,9 +65,14 @@ class Player:
         
     def draw(self, screen):
         """
-        Draws the player onto the screen
+        Draws the entity onto the screen
         """
         pygame.draw.rect(screen, (255, 0, 0), self.rect)
         
     def __repr__(self):
-        return f"Player(Location: {self.rect.center} )"
+        return f"Entity(Location: {self.rect.center} )"
+    
+
+class Player(Entity):
+    def __init__(self, x, y, size, speed):
+        super().__init__(x, y, size, speed)
