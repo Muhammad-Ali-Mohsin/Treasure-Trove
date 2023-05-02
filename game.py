@@ -4,9 +4,9 @@ from maze import Maze
 from entities import Player
 
 #Constants
-MAZE_RESOLUTION = (50, 50)
-TILE_SIZE = 16
-PLAYER_SIZE = 8
+MAZE_RESOLUTION = (31, 31)
+TILE_SIZE = 32
+PLAYER_SIZE = 16
 
 #Pygame stuff
 pygame.init()
@@ -15,7 +15,8 @@ clock = pygame.time.Clock()
 #Variables about the display
 monitor = pygame.display.Info()
 USER_RESOLUTION = [monitor.current_w, monitor.current_h]
-RESOLUTION = [1920, 1080]
+USER_RESOLUTION = [1000, 1000]
+RESOLUTION = [1000, 1000]
 WINDOW = pygame.display.set_mode(USER_RESOLUTION)
 SCREEN = pygame.Surface(RESOLUTION)
 pygame.mouse.set_visible(False)
@@ -30,13 +31,13 @@ class Game:
         self.fps = 60
         self.maze = Maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1])
         self.maze.generate_maze()
-        self.scroll = [0, 0]
+        self.generate_treasure()
 
         cell = (0, 0)
         while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
             cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         
-        self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=3)
+        self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=150)
         self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
 
     def update_display(self):
@@ -93,17 +94,23 @@ class Game:
                 if event.key == pygame.K_UP:
                     self.movement['up'] = False
 
+    def generate_treasure(self):
+        cell = (0, 0)
+        while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
+            cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
+        self.treasure = {'cell': cell, 'dig_counter': 0}
+
     def game_loop(self):
         dt = (time() - self.last_time)
         self.last_time = time()
 
 
-        self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE)
+        self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
         
 
         self.handle_events()
         self.update_display()
-        clock.tick(60)
+        clock.tick()
         self.fps = clock.get_fps()
 
 

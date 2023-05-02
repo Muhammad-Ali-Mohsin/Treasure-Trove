@@ -6,7 +6,7 @@ class Entity:
         self.rect.center = (x, y)
         self.speed = speed
 
-    def move(self, movement, maze, tile_size):
+    def move(self, movement, maze, tile_size, dt):
         """
         Moves the entity based on the movement list
         Returns True or False based on whether the entity has collided
@@ -15,13 +15,13 @@ class Entity:
         collision = False
         move_x = move_y = 0
         if movement['left']:
-            move_x -= self.speed
+            move_x -= round(self.speed * dt)
         if movement['right']:
-            move_x += self.speed
+            move_x += round(self.speed * dt)
         if movement['up']:
-            move_y -= self.speed
+            move_y -= round(self.speed * dt)
         if movement['down']:
-            move_y += self.speed
+            move_y += round(self.speed * dt)
 
         # This is the cell in the maze where the entity currently is
         cell = (self.rect.centerx // tile_size, self.rect.centery // tile_size)
