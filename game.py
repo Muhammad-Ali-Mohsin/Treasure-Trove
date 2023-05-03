@@ -1,6 +1,6 @@
 import pygame, sys, os, random
 from time import time
-from maze import Maze
+from maze import generate_maze
 from entities import Player
 
 random.seed(10)
@@ -31,8 +31,7 @@ class Game:
     def __init__(self):
         self.last_time = time()
         self.fps = 60
-        self.maze = Maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1])
-        self.maze.generate_maze()
+        self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1])
         self.generate_treasure()
         self.gold = 0
         self.camera_displacement = [0, 0]
