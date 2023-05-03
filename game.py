@@ -31,7 +31,7 @@ class Game:
     def __init__(self):
         self.last_time = time()
         self.fps = 60
-        self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1])
+        self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1], tile_size=TILE_SIZE)
         self.generate_treasure()
         self.gold = 0
         self.camera_displacement = [0, 0]
@@ -44,17 +44,16 @@ class Game:
         self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
 
     def update_display(self):
+        """
+        Updates the screen
+        """
         SCREEN.fill((255, 255, 255))
 
-        # Draws the maze
-        maze = self.maze.get_maze()
-        for y in range(len(maze)):
-            for x in range(len(maze)):
-                if self.maze.get_cell(x, y) == 1:
-                    pygame.draw.rect(SCREEN, (0, 0, 0), (x * TILE_SIZE - self.camera_displacement[0], y * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
+        self.maze.draw(SCREEN, self.camera_displacement)
 
         # Draws the treasure
         pygame.draw.rect(SCREEN, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
+
 
         # Draws the player
         self.player.draw(SCREEN, self.camera_displacement)
@@ -67,9 +66,12 @@ class Game:
 
         # Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
-        pygame.display.update()
+        pygame.display.flip()
 
     def handle_events(self):
+        """
+        Handles all input events such as key presses
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -103,12 +105,18 @@ class Game:
                     self.movement['up'] = False
 
     def generate_treasure(self):
+        """
+        Generates treasure on a random cell in the maze
+        """
         cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
             cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
         self.treasure = {'cell': cell, 'dig_counter': 0}
 
     def dig(self):
+        """
+        Attempts to dig for treasure at the player's current cell
+        """
         success = self.player.dig(treasure=self.treasure, tile_size=TILE_SIZE)
         if success:
             self.treasure['dig_counter'] += 1
@@ -123,11 +131,14 @@ class Game:
 
 
     def game_loop(self):
+        """
+        The game loop
+        """
         dt = (time() - self.last_time)
         self.last_time = time()
 
-        self.camera_displacement[0] = self.player.rect.centerx - SCREEN.get_width() // 2
-        self.camera_displacement[1] = self.player.rect.centery - SCREEN.get_height() // 2
+        self.camera_displacement[0] = self.player.rect.centerx - RESOLUTION[0] // 2
+        self.camera_displacement[1] = self.player.rect.centery - RESOLUTION[1] // 2
 
 
         self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)

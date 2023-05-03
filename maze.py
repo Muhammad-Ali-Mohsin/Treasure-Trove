@@ -1,10 +1,29 @@
 # USAGE: maze = Maze(x, y)
 import random
+import pygame
 
 class Maze:
-    def __init__(self, x, y):
+    def __init__(self, x, y, tile_size):
         self.resolution = (x, y)
         self._maze = [[1 for i in range(x)] for i in range(y)]
+        self.surface = pygame.Surface((x * tile_size, y * tile_size))
+        self.tile_size = tile_size
+
+    def draw(self, surface, camera_displacement):
+        """
+        This draws the maze onto it's own surface and then blits that surface onto the screen based on the camera displacement
+        """
+        self.surface.fill((255, 255, 255))
+        # Draws the maze
+        for y in range(self.resolution[1]):
+            for x in range(self.resolution[0]):
+                if self.get_cell(x, y) == 1:
+                    pygame.draw.rect(self.surface, (0, 0, 0), (x * self.tile_size, y * self.tile_size, self.tile_size, self.tile_size))
+
+        # Draws the maze surface onto the screen based on the camera displacement
+        surface.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
+
+        
 
     def change_cell(self, x, y, data):
         """
@@ -53,11 +72,11 @@ class Maze:
     
 
 
-def generate_maze(x, y):
+def generate_maze(x, y, tile_size):
     """
     Uses a modified version of Prim's algorithm to generate a maze
     """
-    maze = Maze(x=x, y=y)
+    maze = Maze(x=x, y=y, tile_size=tile_size)
     # Random starting cell
     starting_cell = (random.randint(0, maze.resolution[0] - 1), random.randint(0, maze.resolution[1] - 1))
     # List of cells to be explored and list of the cells that have been explored
