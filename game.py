@@ -2,6 +2,7 @@ import pygame, sys, os, random
 from time import time
 from maze import generate_maze
 from entities import Player
+from compass import Compass
 
 random.seed(10)
 
@@ -21,9 +22,17 @@ USER_RESOLUTION = [1000, 1000]
 RESOLUTION = [1000, 1000]
 WINDOW = pygame.display.set_mode(USER_RESOLUTION)
 SCREEN = pygame.Surface(RESOLUTION)
-pygame.mouse.set_visible(False)
+#pygame.mouse.set_visible(False)
 pygame.display.set_caption("Treasure Trove")
-pygame.display.set_icon(pygame.image.load("icon.png"))
+pygame.display.set_icon(pygame.image.load("assets/images/icon.png"))
+
+#Image Loading
+COMPASS_BASE_IMG = pygame.image.load("assets/images/compass_base_img.png").convert_alpha()
+COMPASS_SPINNER_IMG = pygame.image.load("assets/images/compass_spinner_img.png").convert_alpha()
+
+#Image Rescaling
+COMPASS_BASE_IMG = pygame.transform.scale(COMPASS_BASE_IMG, (4 * COMPASS_BASE_IMG.get_width(), 4 * COMPASS_BASE_IMG.get_width()))
+COMPASS_SPINNER_IMG = pygame.transform.scale(COMPASS_SPINNER_IMG, (4 * COMPASS_SPINNER_IMG.get_width(), 4 * COMPASS_SPINNER_IMG.get_width()))
 
 
 
@@ -42,6 +51,7 @@ class Game:
         
         self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=150)
         self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
+        self.compass = Compass(base_img=COMPASS_BASE_IMG, spinner_img=COMPASS_SPINNER_IMG)
 
     def update_display(self):
         """
@@ -63,6 +73,8 @@ class Game:
         fps_text = font.render(f"FPS: {round(self.fps)}", 1, pygame.Color("blue"))
         SCREEN.blit(fps_text, (10, 10))
         
+        #Draws the Compass
+        self.compass.draw(surface=SCREEN, x=RESOLUTION[0] - COMPASS_BASE_IMG.get_width(), y=10)
 
         # Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
@@ -136,12 +148,15 @@ class Game:
         """
         dt = (time() - self.last_time)
         self.last_time = time()
+        player_cell = (self.player.rect.centerx // TILE_SIZE, self.player.rect.centery // TILE_SIZE)
 
         self.camera_displacement[0] = self.player.rect.centerx - RESOLUTION[0] // 2
         self.camera_displacement[1] = self.player.rect.centery - RESOLUTION[1] // 2
 
 
         self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
+
+        self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
         
 
         self.handle_events()
