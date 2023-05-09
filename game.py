@@ -3,38 +3,9 @@ from time import time
 from maze import generate_maze
 from entities import Player
 from compass import Compass
+from variables import *
 
 random.seed(10)
-
-# Constants
-MAZE_RESOLUTION = (31, 31)
-TILE_SIZE = 32
-PLAYER_SIZE = 16
-
-# Pygame stuff
-pygame.init()
-clock = pygame.time.Clock()
-
-# Variables about the display
-monitor = pygame.display.Info()
-USER_RESOLUTION = [monitor.current_w, monitor.current_h]
-USER_RESOLUTION = [1000, 1000]
-RESOLUTION = [1000, 1000]
-WINDOW = pygame.display.set_mode(USER_RESOLUTION)
-SCREEN = pygame.Surface(RESOLUTION)
-#pygame.mouse.set_visible(False)
-pygame.display.set_caption("Treasure Trove")
-pygame.display.set_icon(pygame.image.load("assets/images/icon.png"))
-
-#Image Loading
-COMPASS_BASE_IMG = pygame.image.load("assets/images/compass_base_img.png").convert_alpha()
-COMPASS_SPINNER_IMG = pygame.image.load("assets/images/compass_spinner_img.png").convert_alpha()
-
-#Image Rescaling
-COMPASS_BASE_IMG = pygame.transform.scale(COMPASS_BASE_IMG, (4 * COMPASS_BASE_IMG.get_width(), 4 * COMPASS_BASE_IMG.get_width()))
-COMPASS_SPINNER_IMG = pygame.transform.scale(COMPASS_SPINNER_IMG, (4 * COMPASS_SPINNER_IMG.get_width(), 4 * COMPASS_SPINNER_IMG.get_width()))
-
-
 
 class Game:
     def __init__(self):
@@ -78,7 +49,7 @@ class Game:
 
         # Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
-        pygame.display.flip()
+        pygame.display.update()
 
     def handle_events(self):
         """
@@ -164,8 +135,3 @@ class Game:
         clock.tick()
         self.fps = clock.get_fps()
 
-
-game = Game()
-
-while True:
-    game.game_loop()

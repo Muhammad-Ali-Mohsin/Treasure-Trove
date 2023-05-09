@@ -38,8 +38,6 @@ class Compass:
                     else: # This means the player is above the treasure
                         self.angle = 90 + self.angle
 
-
-
     def draw(self, surface, x, y):
         """
         Draws the compass on a surface at the given coordinates
