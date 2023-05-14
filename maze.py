@@ -13,7 +13,7 @@ class Maze:
         """
         This draws the maze onto it's own surface and then blits that surface onto the screen based on the camera displacement
         """
-        self.surface.fill((255, 255, 255))
+        self.surface.fill((110, 180, 50))
         # Draws the maze
         for y in range(self.resolution[1]):
             for x in range(self.resolution[0]):

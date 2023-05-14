@@ -1,4 +1,5 @@
 import pygame
+from animation import Animation
 
 class Entity:
     def __init__(self, x, y, size, speed):
@@ -74,10 +75,16 @@ class Entity:
     
 
 class Player(Entity):
-    def __init__(self, x, y, size, speed):
+    def __init__(self, x, y, size, speed, animations_path):
         super().__init__(x, y, size, speed)
+        # Loads the animations
+        self.animation = Animation()
+        self.animation.load_animations(animations_path)
 
     def dig(self, treasure, tile_size):
+        """
+        Checks whether there is treasure at the current location
+        """
         cell = (self.rect.centerx // tile_size, self.rect.centery // tile_size)
         if cell == treasure['cell']:
             success = True
@@ -85,5 +92,11 @@ class Player(Entity):
             success = False
 
         return success
+    
+    def draw(self, screen, camera_displacement):
+        """
+        Draws the player onto the screen
+        """
+        screen.blit(self.img, (self.rect.x - camera_displacement[0] - (self.img.get_width() // 2), self.rect.y - camera_displacement[1] - (self.img.get_height() // 2)))
     
     
