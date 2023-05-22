@@ -1,5 +1,5 @@
 import pygame, sys, os, random
-from time import time
+from time import time, sleep
 from maze import generate_maze
 from entities import Player
 from compass import Compass
@@ -41,22 +41,28 @@ class Game:
         SCREEN.fill((255, 255, 255))
 
         # Draws the maze
-        self.maze.draw(SCREEN, self.camera_displacement)
+        self.maze.draw(MAZE_SURFACE, self.camera_displacement)
 
         # Draws the treasure
-        pygame.draw.rect(SCREEN, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
+        pygame.draw.rect(MAZE_SURFACE, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
 
         # Draws the player
-        self.player.animation.draw(SCREEN, self.player.rect.center, self.camera_displacement)
+        self.player.animation.draw(MAZE_SURFACE, self.player.rect.center, self.camera_displacement)
+
+
+        SCREEN.blit(pygame.transform.scale(MAZE_SURFACE, GAME_RESOLUTION), (0, 0))
         
         #Draws the Compass
-        self.compass.draw(surface=SCREEN, x=RESOLUTION[0] - COMPASS_BASE_IMG.get_width(), y=10)
+        self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width(), y=10)
 
         # Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
         pygame.display.update()
 
+
     def handle_events(self):
+        global USER_RESOLUTION
+        global WINDOW
         """
         Handles all input events such as key presses
         """
@@ -82,6 +88,13 @@ class Game:
                     self.dig()
                 if event.key == pygame.K_TAB:
                     self.paused = not self.paused
+                if event.key == pygame.K_RALT:
+                    new_resolution = SUPPORTED_RESOLUTIONS[(SUPPORTED_RESOLUTIONS.index(USER_RESOLUTION) + 1) % len(SUPPORTED_RESOLUTIONS)]
+                    USER_RESOLUTION = new_resolution
+                    pygame.display.quit()
+                    pygame.display.init()
+                    WINDOW = pygame.display.set_mode(USER_RESOLUTION)
+
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
@@ -155,8 +168,8 @@ class Game:
         player_cell = (self.player.rect.centerx // TILE_SIZE, self.player.rect.centery // TILE_SIZE)
 
         # Calculates the camera displacement based on the player's location
-        self.camera_displacement[0] = self.player.rect.centerx - RESOLUTION[0] // 2
-        self.camera_displacement[1] = self.player.rect.centery - RESOLUTION[1] // 2
+        self.camera_displacement[0] = self.player.rect.centerx - MAZE_SURFACE_RESOLUTION[0] // 2
+        self.camera_displacement[1] = self.player.rect.centery - MAZE_SURFACE_RESOLUTION[1] // 2
 
         # Moves the player and changes their animation if necessary
         self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
