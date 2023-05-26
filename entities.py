@@ -224,8 +224,13 @@ class Enemy(Entity):
         """
         # Checks whether it's time to refresh the enemy's path and if not, increments the timer
         if self.path_refresh_timer >= self.path_refresh_interval:
-            self.calculate_path(tile_size=tile_size, player_location=player_location, maze=maze)
-            self.path_refresh_timer = 0
+            # Finds the rect of the cell the enemy is in and makes sure the enemy is fully within the cell before calculating new path
+            enemy_cell = (self.rect.centerx // tile_size, self.rect.centery // tile_size)
+            enemy_cell_rect = pygame.Rect(enemy_cell[0] * tile_size, enemy_cell[1] * tile_size, tile_size, tile_size)
+            if enemy_cell_rect.contains(self.rect):
+                # Calculates new path and resets the timer
+                self.calculate_path(tile_size=tile_size, player_location=player_location, maze=maze)
+                self.path_refresh_timer = 0
         else:
             self.path_refresh_timer += dt
 
@@ -234,11 +239,9 @@ class Enemy(Entity):
             cell_center, center_rect = self.get_cell_center(cell=self.path[0], tile_size=tile_size)
 
             # Checks whether the enemy rect is entirely within the center rect meaning the player must be in the center of the rect so it can be removed from the path
-            if center_rect.contains(self.rect):
-                self.path.remove(self.path[0])
+            if center_rect.contains(self.rect): self.path.remove(self.path[0])
 
-            if len(self.path) != 0:
-                cell_center, center_rect = self.get_cell_center(cell=self.path[0], tile_size=tile_size)
+            if len(self.path) != 0: cell_center, center_rect = self.get_cell_center(cell=self.path[0], tile_size=tile_size)
 
         else:
             cell_center = self.rect.center

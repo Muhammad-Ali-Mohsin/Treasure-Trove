@@ -57,6 +57,9 @@ class Game:
         self.enemy.animation.draw(MAZE_SURFACE, self.enemy.rect.center, self.camera_displacement)
 
         if DEBUG_MODE:
+            enemy_cell = (self.enemy.rect.centerx // TILE_SIZE, self.enemy.rect.centery // TILE_SIZE)
+            pygame.draw.rect(MAZE_SURFACE, (255, 0, 255), (enemy_cell[0] * TILE_SIZE - self.camera_displacement[0], enemy_cell[1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
+
             pygame.draw.rect(MAZE_SURFACE, (0, 0, 255), (self.enemy.rect.x - self.camera_displacement[0], self.enemy.rect.y - self.camera_displacement[1], PLAYER_SIZE, PLAYER_SIZE))
 
             pygame.draw.rect(MAZE_SURFACE, (0, 255, 0), (self.player.rect.x - self.camera_displacement[0], self.player.rect.y - self.camera_displacement[1], PLAYER_SIZE, PLAYER_SIZE))
