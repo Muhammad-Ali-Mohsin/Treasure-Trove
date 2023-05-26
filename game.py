@@ -1,7 +1,7 @@
 import pygame, sys, os, random
 from time import time, sleep
 from maze import generate_maze
-from entities import Player
+from entities import Player, Enemy
 from compass import Compass
 from variables import *
 
@@ -25,14 +25,18 @@ class Game:
         self.generate_treasure()
 
         # Finds Random Spawning Cell
-        cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
-        while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
-            cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
+        cell = self.maze.get_random_cell()
         
         # Creates a Player in that cell
         self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=PLAYER_SPEED, animations_path="assets/animations/player")
         self.player.animation.change_animation(animation="idle_forwards")
 
+        # Finds Random Spawning Cell
+        cell = self.maze.get_random_cell()
+        
+        # Creates an Enemy in that cell
+        self.enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/player", tile_center_size=TILE_CENTER_SIZE, refresh_interval=ENEMY_REFRESH_INTERVAL)
+        self.enemy.animation.change_animation(animation="idle_forwards")
 
     def update_display(self):
         """
@@ -49,20 +53,38 @@ class Game:
         # Draws the player
         self.player.animation.draw(MAZE_SURFACE, self.player.rect.center, self.camera_displacement)
 
+        # Draws the enemy
+        self.enemy.animation.draw(MAZE_SURFACE, self.enemy.rect.center, self.camera_displacement)
 
+        if DEBUG_MODE:
+            pygame.draw.rect(MAZE_SURFACE, (0, 0, 255), (self.enemy.rect.x - self.camera_displacement[0], self.enemy.rect.y - self.camera_displacement[1], PLAYER_SIZE, PLAYER_SIZE))
+
+            pygame.draw.rect(MAZE_SURFACE, (0, 255, 0), (self.player.rect.x - self.camera_displacement[0], self.player.rect.y - self.camera_displacement[1], PLAYER_SIZE, PLAYER_SIZE))
+
+            if len(self.enemy.path) != 0:
+                cell_center, center_rect = self.enemy.get_cell_center(cell=self.enemy.path[0], tile_size=TILE_SIZE)
+                pygame.draw.rect(MAZE_SURFACE, (255, 0, 0), (center_rect.x - self.camera_displacement[0], center_rect.y - self.camera_displacement[1], self.enemy.tile_center_size, self.enemy.tile_center_size))
+                
+
+        # Scales the maze surface and blits it onto the screen
         SCREEN.blit(pygame.transform.scale(MAZE_SURFACE, GAME_RESOLUTION), (0, 0))
         
         #Draws the Compass
-        self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width(), y=10)
+        self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, y=20)
+
+        #Shows the FPS
+        font = pygame.font.SysFont("Impact", 25)
+        fps_text = font.render(f"FPS: {round(clock.get_fps())}", 1, pygame.Color("white"))
+        SCREEN.blit(fps_text, (10, 10))
 
         # Ouputs the display in the user resolution
         WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
         pygame.display.update()
 
-
     def handle_events(self):
         global USER_RESOLUTION
         global WINDOW
+        global DEBUG_MODE
         """
         Handles all input events such as key presses
         """
@@ -95,6 +117,9 @@ class Game:
                     pygame.display.init()
                     WINDOW = pygame.display.set_mode(USER_RESOLUTION)
 
+                if event.key == pygame.K_1:
+                    DEBUG_MODE = not DEBUG_MODE
+
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
@@ -111,9 +136,7 @@ class Game:
         Generates treasure on a random cell in the maze
         """
         # Finds a random empty cell
-        cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
-        while self.maze.get_cell(x=cell[0], y=cell[1]) != 0:
-            cell = (random.randint(0, self.maze.resolution[0] - 1), random.randint(0, self.maze.resolution[0] - 1))
+        cell = self.maze.get_random_cell()
         # Places the treasure at that cell
         self.treasure = {'cell': cell, 'dig_counter': 0}
 
@@ -171,9 +194,11 @@ class Game:
         self.camera_displacement[0] = self.player.rect.centerx - MAZE_SURFACE_RESOLUTION[0] // 2
         self.camera_displacement[1] = self.player.rect.centery - MAZE_SURFACE_RESOLUTION[1] // 2
 
-        # Moves the player and changes their animation if necessary
+        # Moves the player
         self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
-        self.change_player_animation()
+
+        # Moves the Enemy
+        self.enemy.move_to_player(maze=self.maze, tile_size=TILE_SIZE, dt=dt, player_location=self.player.rect.center)
 
         # Finds the bearing between the player and the treasure for the compass
         self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
@@ -182,5 +207,6 @@ class Game:
         self.handle_events()
         self.update_display()
         self.player.animation.tick(dt=dt)
+        self.enemy.animation.tick(dt=dt)
         clock.tick(self.fps)
 

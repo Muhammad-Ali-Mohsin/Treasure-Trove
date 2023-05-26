@@ -3,11 +3,21 @@ import pygame
 clock = pygame.time.Clock()
 monitor = pygame.display.Info()
 
+DEBUG_MODE = False
+
 # Constants
-MAZE_RESOLUTION = (50, 50)
+MAZE_RESOLUTION = (20, 20)
 TILE_SIZE = 32
+
+# PLAYER CONSTANTS
 PLAYER_SIZE = 16
 PLAYER_SPEED = 100
+
+# ENEMY CONSTANTS
+ENEMY_SIZE = 16
+ENEMY_SPEED = 100
+TILE_CENTER_SIZE = 16
+ENEMY_REFRESH_INTERVAL = 1
 
 # Display Constants
 USER_RESOLUTION = (monitor.current_w, monitor.current_h)

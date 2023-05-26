@@ -58,6 +58,12 @@ class Maze:
                         neighbours.add((cell[0] + i, cell[1] + j))
 
         return neighbours
+    
+    def get_random_cell(self):
+        cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
+        while self.get_cell(x=cell[0], y=cell[1]) != 0:
+            cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
+        return cell
 
     def get_maze(self):
         """
@@ -104,13 +110,14 @@ def generate_maze(x, y, tile_size):
         cells_list.remove(current_cell)
         explored_cells.add(current_cell)
 
+    # Adds borders to the sides of the maze
     for i in range(maze.resolution[1]):
         maze._maze[i].insert(0, 1)
         maze._maze[i].append(1)
     
+    # Adds borders to the top and bottom of the maze
     maze._maze.insert(0, [1 for i in range(x)])
     maze._maze.append([1 for i in range(x)])
     
     maze.resolution = (x, y)
-
     return maze
