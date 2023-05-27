@@ -1,5 +1,6 @@
 import pygame
 from animation import Animation
+from misc import Node, QueueFrontier
 
 class Entity:
     def __init__(self, x, y, size, speed):
@@ -122,36 +123,7 @@ class Player(Entity):
         Draws the player onto the screen
         """
         screen.blit(self.img, (self.rect.x - camera_displacement[0] - (self.img.get_width() // 2), self.rect.y - camera_displacement[1] - (self.img.get_height() // 2)))
-
-
-class Node():
-    def __init__(self, cell, parent):
-        self.cell = cell
-        self.parent = parent
-
-
-class QueueFrontier():
-    def __init__(self):
-        self.frontier = []
-
-    def add(self, node):
-        self.frontier.append(node)
-
-    def contains_cell(self, cell):
-        return any(node.cell == cell for node in self.frontier)
-
-    def empty(self):
-        return len(self.frontier) == 0
-
-    def remove(self):
-        if self.empty():
-            raise Exception("Empty Frontier")
-        else:
-            node = self.frontier[0]
-            self.frontier = self.frontier[1:]
-            return node
         
-
 class Enemy(Entity):
     def __init__(self, x, y, size, speed, animations_path, tile_center_size, refresh_interval):
         super().__init__(x, y, size, speed)
