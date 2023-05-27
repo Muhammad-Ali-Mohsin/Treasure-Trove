@@ -1,24 +1,26 @@
-import pygame, sys, os, random
-from time import time, sleep
+import pygame, sys, random
+from time import time
 from maze import generate_maze
 from entities import Player, Enemy
 from compass import Compass
 from variables import *
+from misc import get_text_surf
 
-random.seed(10)
 
 class Game:
     def __init__(self):
         """
         Creates all the starting game variables
         """
+        random.seed(10)
         # Game Variables
         self.last_time = time()
-        self.fps = 60
+        self.fps = FPS
         self.camera_displacement = [0, 0]
         self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
         self.compass = Compass(base_img=COMPASS_BASE_IMG, spinner_img=COMPASS_SPINNER_IMG)
         self.gold = 0
+        self.game_over = False
 
         # Maze Variables
         self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1], tile_size=TILE_SIZE)
@@ -43,6 +45,7 @@ class Game:
         Updates the screen
         """
         SCREEN.fill((255, 255, 255))
+        MAZE_SURFACE.fill((0, 0, 0))
 
         # Draws the maze
         self.maze.draw(MAZE_SURFACE, self.camera_displacement)
@@ -76,8 +79,7 @@ class Game:
         self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, y=20)
 
         #Shows the FPS
-        font = pygame.font.SysFont("Impact", 25)
-        fps_text = font.render(f"FPS: {round(clock.get_fps())}", 1, pygame.Color("white"))
+        fps_text = get_text_surf(size=55, text=f"FPS: {round(clock.get_fps())}", colour=pygame.Color("white"))
         SCREEN.blit(fps_text, (10, 10))
 
         # Ouputs the display in the user resolution
@@ -99,8 +101,7 @@ class Game:
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                    self.game_over = True
                 if event.key == pygame.K_LEFT:
                     self.movement['left'] = True
                 if event.key == pygame.K_RIGHT:
@@ -182,7 +183,7 @@ class Game:
             else:
                 self.player.animation.change_animation(animation="idle_forwards")
             
-    def game_loop(self):
+    def loop(self):
         """
         The game loop
         """
