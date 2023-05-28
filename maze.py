@@ -77,38 +77,53 @@ class Maze:
 
 def generate_maze(x, y, tile_size):
     """
-    Uses a modified version of Prim's algorithm to generate a maze
+    Uses a Randomised depth first search algorithm to generate a maze
     """
+    # Creates the maze class with a slightly smaller resolution so the border walls can be added afterwards
     maze = Maze(x=x-2, y=y-2, tile_size=tile_size)
-    # Random starting cell
-    starting_cell = (random.randint(0, maze.resolution[0] - 1), random.randint(0, maze.resolution[1] - 1))
-    # List of cells to be explored and list of the cells that have been explored
-    cells_list = []
-    explored_cells = set()
-    explored_cells.add(starting_cell)
-    # Empty the starting cell (0 represents empty cell)
-    maze.change_cell(x=starting_cell[0], y=starting_cell[1], data=0)
-    # Adds all the initial neighbours to the cells list
-    neighbours = maze.get_neighbours(cell=starting_cell)
-    for neighbour in neighbours: cells_list.append(neighbour)
 
-    # Keeps running as long as there are cells to be explored
-    while len(cells_list) != 0:
-        # Picks a random cell from the list of cells to be explored
-        current_cell = random.choice(cells_list)
-        neighbours = maze.get_neighbours(cell=current_cell)
-        # Checks how many of the lists neighbours have been explored
-        explored_neighbours = 0
-        for neighbour in neighbours:
-            if neighbour in explored_cells:
-                explored_neighbours += 1
-        # If less than two neighbours have been explored, make the cell part of the maze and add the cell's neighbours to the cells to be explored
-        if explored_neighbours < 2:
-            maze.change_cell(x=current_cell[0], y=current_cell[1], data=0)
-            for neighbour in neighbours: cells_list.append(neighbour)
-        # Remove the cell from the list of cells to be explored as it has been explored
-        cells_list.remove(current_cell)
-        explored_cells.add(current_cell)
+    def get_neighbours(cell):
+        """
+        Returns the neighbours which are 2 steps in either direction as well as the cell 1 step in that direction
+        This represents the neighbouring cell and the wall to get to that cell
+        """
+        neighbours = set()
+        # Adds the neighbours which are to the right and left of the cell
+        for i in [2, -2]:
+            if cell[0] + i > -1 and cell[0] + i < maze.resolution[0]:
+                neighbours.add(((cell[0] + i, cell[1]), (cell[0] + (i // 2), cell[1])))
+
+        # Adds the neighbours which are to the bottom and top of the cell
+        for i in [2, -2]:
+            if cell[1] + i > -1 and cell[1] + i < maze.resolution[1]:
+                neighbours.add(((cell[0], cell[1] + i), (cell[0], cell[1] + (i // 2))))
+
+        return neighbours
+
+    # Picks a random starting cell and adds it to the stack
+    starting_cell = (random.randint(0, maze.resolution[0] - 1), random.randint(0, maze.resolution[1] - 1))
+    maze_stack = [starting_cell]
+
+    # Keeps looping as long as there are cells in the stack
+    while len(maze_stack) != 0:
+
+        # Pops a cell off the stack
+        current_cell = maze_stack.pop()
+
+        # Gets the neighbours of the current cell and filters out and cells which have been cleared out 
+        neighbours = list(get_neighbours(current_cell))
+        neighbours = list(filter(lambda neighbour: maze.get_cell(neighbour[0][0], neighbour[0][1]) != 0, neighbours))
+
+        if len(neighbours) != 0:
+            # Adds the current cell back to the stack so it can be backtracked along
+            maze_stack.append(current_cell)
+            # Picks a random neighbour to move along
+            neighbour = random.choice(neighbours)
+            # Clears out the neighbour as well as the cell required to get there
+            maze.change_cell(x=neighbour[0][0], y=neighbour[0][1], data=0)
+            maze.change_cell(x=neighbour[1][0], y=neighbour[1][1], data=0)
+            # Adds the neighbour to the stack
+            maze_stack.append(neighbour[0])
 
     # Adds borders to the sides of the maze
     for i in range(maze.resolution[1]):
