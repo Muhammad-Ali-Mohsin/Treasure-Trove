@@ -20,7 +20,7 @@ class MainMenu:
         self.mouse_pos = get_mouse_pos(self.user_resolution, GAME_RESOLUTION)
 
         # List of buttons [button label, selected screen]
-        self.buttons = [["Start Game", "game"], ["Options", "options menu"], ["Leaderboard", "main menu"], ["Credits", "main menu"], ["Exit to Desktop", "close"]]
+        self.buttons = [["Start Game", "game"], ["Options", "options menu"], ["Leaderboard", "main menu"], ["Credits", "credits menu"], ["Exit to Desktop", "close"]]
         self.selected = None
 
         # Creates a rect for each button and adds it to the button's 2d list

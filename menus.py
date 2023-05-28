@@ -7,11 +7,13 @@ class OptionsMenu:
         """
         Creates all the starting menu variables
         """
+        # Display variables
         self.screentype = "options menu"
         self.selected_screen = "options menu"
         self.window = window
         self.user_resolution = (window.get_width(), window.get_height())
-        # Game Variables
+
+        # Player Variables
         self.fps = fps
         self.clicked = False
         self.mouse_pos = get_mouse_pos(self.user_resolution, GAME_RESOLUTION)
@@ -93,7 +95,6 @@ class OptionsMenu:
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1: self.clicked = False
-                # Checks whether the mouse has clicked a button and if so, changes the selected screen
                 self.handle_buttons()
 
             if event.type == pygame.MOUSEMOTION:
@@ -137,12 +138,114 @@ class OptionsMenu:
         """
         Runs a frame of the menu
         """
-
         # Checks whether the mouse is hovering over a button and selects it if so
         self.selected = None
         for i, button in enumerate(self.buttons):
             if button[2].collidepoint(self.mouse_pos):
                 self.selected = i
+
+        # Calls functions
+        self.handle_events()
+        self.update_display()
+        clock.tick(self.fps)
+
+
+class CreditsMenu:
+    def __init__(self, window, fps):
+        """
+        Creates all the starting menu variables
+        """
+        # Display Variables
+        self.screentype = "credits menu"
+        self.selected_screen = "credits menu"
+        self.window = window
+        self.user_resolution = (window.get_width(), window.get_height())
+
+        # Player Variables
+        self.fps = fps
+        self.clicked = False
+        self.mouse_pos = get_mouse_pos(self.user_resolution, GAME_RESOLUTION)
+
+        # List of buttons [title, text on button, button rect]
+        self.menu_button = [
+            get_text_surf(size=60, text="Return to Main Menu", colour=pygame.Color("white")),
+            pygame.Rect(((GAME_RESOLUTION[0] // 2) - 300, 880, 600, 100))
+            ]
+        self.selected = False
+
+        self.credits = ["Developed by: Muhammad-Ali Mohsin", "Player Animation: https://game-endeavor.itch.io/mystic-woods", "Font: https://tinyworlds.itch.io/free-pixel-font-thaleah"]
+        for i in range(len(self.credits)):
+            self.credits[i] = get_text_surf(size=40, text=self.credits[i], colour=pygame.Color("white"))
+
+        self.title_text = get_text_surf(size=100, text="Credits Menu", colour=PRIMARY_COLOUR)
+
+    def update_display(self):
+        """
+        Updates the screen
+        """
+        # Clears the screen
+        SCREEN.fill((0, 0, 0))
+
+        SCREEN.blit(self.title_text, ((GAME_RESOLUTION[0] // 2) - (self.title_text.get_width() // 2), 100))
+
+        # Draws the buttons onto the screen
+        if self.selected:
+            pygame.draw.rect(SCREEN, PRIMARY_COLOUR, self.menu_button[1])
+        else:
+            pygame.draw.rect(SCREEN, (255, 0, 0), self.menu_button[1])
+
+        # Draws the text onto the button
+        SCREEN.blit(self.menu_button[0], (self.menu_button[1].centerx - (self.menu_button[0].get_width() // 2), self.menu_button[1].centery - (self.menu_button[0].get_height() // 2)))
+
+        for i in range(len(self.credits)):
+            SCREEN.blit(self.credits[i], (100, (i * 100) + 400))
+
+        # Draws the cursor on to the screen
+        SCREEN.blit(CURSOR_1, self.mouse_pos) if self.clicked else SCREEN.blit(CURSOR_2, self.mouse_pos)
+
+        #Shows the FPS
+        fps_text = get_text_surf(size=55, text=f"FPS: {round(clock.get_fps())}", colour=pygame.Color("white"))
+        SCREEN.blit(fps_text, (10, 10))
+
+        # Ouputs the display in the user resolution
+        self.window.blit(pygame.transform.scale(SCREEN, self.user_resolution), (0, 0))
+        pygame.display.update()
+
+    def handle_events(self):
+        """
+        Handles all input events such as key presses
+        """
+        for event in pygame.event.get():
+            # Checks whether the X button has been pressed
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: self.clicked = True
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: self.clicked = False
+                # Checks whether the mouse has clicked the return to menu and if so, changes the selected screen
+                if self.menu_button[1].collidepoint(self.mouse_pos):
+                    self.selected_screen = "main menu"
+
+            if event.type == pygame.MOUSEMOTION:
+                self.mouse_pos = get_mouse_pos(self.user_resolution, GAME_RESOLUTION)
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+
+    def run_frame(self):
+        """
+        Runs a frame of the menu
+        """
+        # Checks whether the mouse is hovering over a button and selects it if so
+        self.selected = False
+        if self.menu_button[1].collidepoint(self.mouse_pos):
+            self.selected = True
 
         # Calls functions
         self.handle_events()

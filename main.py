@@ -18,13 +18,13 @@ window = pygame.display.set_mode(user_resolution)
 from variables import ICON_IMG
 from game import Game
 from main_menu import MainMenu
-from menus import OptionsMenu
+from menus import OptionsMenu, CreditsMenu
 
 pygame.mouse.set_visible(False)
 pygame.display.set_caption("Treasure Trove")
 pygame.display.set_icon(ICON_IMG)
 
-screens = {'main menu': MainMenu, 'options menu': OptionsMenu, 'game': Game}
+screens = {'main menu': MainMenu, 'game': Game, 'options menu': OptionsMenu, 'credits menu': CreditsMenu}
 current_screen = MainMenu(window, fps)
 
 while True:
