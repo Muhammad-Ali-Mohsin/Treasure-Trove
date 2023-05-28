@@ -8,19 +8,26 @@ from misc import get_text_surf
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, window, fps):
         """
         Creates all the starting game variables
         """
+        # Display Variables
+        self.screentype = "game"
+        self.selected_screen = "game"
+        self.window = window
+        self.user_resolution = (window.get_width(), window.get_height())
+        self.fps = fps
         random.seed(10)
+        
         # Game Variables
         self.last_time = time()
-        self.fps = FPS
         self.camera_displacement = [0, 0]
         self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
         self.compass = Compass(base_img=COMPASS_BASE_IMG, spinner_img=COMPASS_SPINNER_IMG)
         self.gold = 0
         self.game_over = False
+        self.paused = False
 
         # Maze Variables
         self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1], tile_size=TILE_SIZE)
@@ -28,14 +35,12 @@ class Game:
 
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
-        
         # Creates a Player in that cell
         self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=PLAYER_SPEED, animations_path="assets/animations/player")
         self.player.animation.change_animation(animation="idle_forwards")
 
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
-        
         # Creates an Enemy in that cell
         self.enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/player", tile_center_size=TILE_CENTER_SIZE, refresh_interval=ENEMY_REFRESH_INTERVAL)
         self.enemy.animation.change_animation(animation="idle_forwards")
@@ -57,20 +62,7 @@ class Game:
         self.player.animation.draw(MAZE_SURFACE, self.player.rect.center, self.camera_displacement)
 
         # Draws the enemy
-        self.enemy.animation.draw(MAZE_SURFACE, self.enemy.rect.center, self.camera_displacement)
-
-        if DEBUG_MODE:
-            enemy_cell = (self.enemy.rect.centerx // TILE_SIZE, self.enemy.rect.centery // TILE_SIZE)
-            pygame.draw.rect(MAZE_SURFACE, (255, 0, 255), (enemy_cell[0] * TILE_SIZE - self.camera_displacement[0], enemy_cell[1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
-
-            pygame.draw.rect(MAZE_SURFACE, (0, 0, 255), (self.enemy.rect.x - self.camera_displacement[0], self.enemy.rect.y - self.camera_displacement[1], PLAYER_SIZE, PLAYER_SIZE))
-
-            pygame.draw.rect(MAZE_SURFACE, (0, 255, 0), (self.player.rect.x - self.camera_displacement[0], self.player.rect.y - self.camera_displacement[1], PLAYER_SIZE, PLAYER_SIZE))
-
-            if len(self.enemy.path) != 0:
-                cell_center, center_rect = self.enemy.get_cell_center(cell=self.enemy.path[0], tile_size=TILE_SIZE)
-                pygame.draw.rect(MAZE_SURFACE, (255, 0, 0), (center_rect.x - self.camera_displacement[0], center_rect.y - self.camera_displacement[1], self.enemy.tile_center_size, self.enemy.tile_center_size))
-                
+        self.enemy.animation.draw(MAZE_SURFACE, self.enemy.rect.center, self.camera_displacement)             
 
         # Scales the maze surface and blits it onto the screen
         SCREEN.blit(pygame.transform.scale(MAZE_SURFACE, GAME_RESOLUTION), (0, 0))
@@ -78,18 +70,31 @@ class Game:
         #Draws the Compass
         self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, y=20)
 
+        if self.paused:
+            # Draws the pause box and pause text
+            SCREEN.blit(PAUSE_SCREEN_BOX_IMG, ((GAME_RESOLUTION[0] // 2) - (PAUSE_SCREEN_BOX_IMG.get_width() // 2), (GAME_RESOLUTION[1] // 2) - (PAUSE_SCREEN_BOX_IMG.get_height() // 2)))
+            pause_text = get_text_surf(size=80, text="Paused", colour=PRIMARY_COLOUR)
+            SCREEN.blit(pause_text, ((GAME_RESOLUTION[0] // 2) - (pause_text.get_width() // 2), (GAME_RESOLUTION[1] // 2) - 170))
+
+             # Writes all the stats to the pause screen
+            for i, data in enumerate([["Gold", str(self.gold)], ["Lives", "69"], ["Name", "Bob"]]):
+                text_surf = get_text_surf(size=50, text=data[0], colour=PRIMARY_COLOUR)
+                SCREEN.blit(text_surf, ((GAME_RESOLUTION[0] // 2) - (PAUSE_SCREEN_BOX_IMG.get_width() // 2) + 50, (i * 50) + (GAME_RESOLUTION[1] // 2) - 75))
+                text_surf = get_text_surf(size=50, text=data[1], colour=PRIMARY_COLOUR)
+                SCREEN.blit(text_surf, ((GAME_RESOLUTION[0] // 2) + (PAUSE_SCREEN_BOX_IMG.get_width() // 2) - (text_surf.get_width()) - 50, (i * 50) + (GAME_RESOLUTION[1] // 2) - 75))
+
+            prompt_text = get_text_surf(size=30, text=f"Press Backspace to return to Main Menu", colour=pygame.Color("white"))
+            SCREEN.blit(prompt_text, ((GAME_RESOLUTION[0] // 2) - (prompt_text.get_width() // 2), (GAME_RESOLUTION[1] // 2) + 125))
+
         #Shows the FPS
         fps_text = get_text_surf(size=55, text=f"FPS: {round(clock.get_fps())}", colour=pygame.Color("white"))
         SCREEN.blit(fps_text, (10, 10))
 
         # Ouputs the display in the user resolution
-        WINDOW.blit(pygame.transform.scale(SCREEN, USER_RESOLUTION), (0, 0))
+        self.window.blit(pygame.transform.scale(SCREEN, self.user_resolution), (0, 0))
         pygame.display.update()
 
     def handle_events(self):
-        global USER_RESOLUTION
-        global WINDOW
-        global DEBUG_MODE
         """
         Handles all input events such as key presses
         """
@@ -101,7 +106,8 @@ class Game:
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.game_over = True
+                    pygame.quit()
+                    sys.exit()
                 if event.key == pygame.K_LEFT:
                     self.movement['left'] = True
                 if event.key == pygame.K_RIGHT:
@@ -114,16 +120,8 @@ class Game:
                     self.dig()
                 if event.key == pygame.K_TAB:
                     self.paused = not self.paused
-                if event.key == pygame.K_RALT:
-                    new_resolution = SUPPORTED_RESOLUTIONS[(SUPPORTED_RESOLUTIONS.index(USER_RESOLUTION) + 1) % len(SUPPORTED_RESOLUTIONS)]
-                    USER_RESOLUTION = new_resolution
-                    pygame.display.quit()
-                    pygame.display.init()
-                    WINDOW = pygame.display.set_mode(USER_RESOLUTION)
-
-                if event.key == pygame.K_1:
-                    DEBUG_MODE = not DEBUG_MODE
-
+                if event.key == pygame.K_BACKSPACE:
+                    self.selected_screen = "main menu"
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
@@ -183,34 +181,39 @@ class Game:
             else:
                 self.player.animation.change_animation(animation="idle_forwards")
             
-    def loop(self):
+    def run_frame(self):
         """
-        The game loop
+        Runs a frame of the game
         """
         # Calculates the change in time since the last frame
         dt = (time() - self.last_time)
         self.last_time = time()
 
-        # Finds the cell the player is in
-        player_cell = (self.player.rect.centerx // TILE_SIZE, self.player.rect.centery // TILE_SIZE)
+        if not self.paused:
 
-        # Calculates the camera displacement based on the player's location
-        self.camera_displacement[0] = self.player.rect.centerx - MAZE_SURFACE_RESOLUTION[0] // 2
-        self.camera_displacement[1] = self.player.rect.centery - MAZE_SURFACE_RESOLUTION[1] // 2
+            # Finds the cell the player is in
+            player_cell = (self.player.rect.centerx // TILE_SIZE, self.player.rect.centery // TILE_SIZE)
 
-        # Moves the player
-        self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
+            # Calculates the camera displacement based on the player's location
+            self.camera_displacement[0] = self.player.rect.centerx - (MAZE_SURFACE_RESOLUTION[0] // 2)
+            self.camera_displacement[1] = self.player.rect.centery - (MAZE_SURFACE_RESOLUTION[1] // 2)
 
-        # Moves the Enemy
-        self.enemy.move_to_player(maze=self.maze, tile_size=TILE_SIZE, dt=dt, player_location=self.player.rect.center)
+            # Moves the player
+            self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
 
-        # Finds the bearing between the player and the treasure for the compass
-        self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
+            # Moves the Enemy
+            self.enemy.move_to_player(maze=self.maze, tile_size=TILE_SIZE, dt=dt, player_location=self.player.rect.center)
+
+            # Finds the bearing between the player and the treasure for the compass
+            self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
+
+            # Updates animations
+            self.player.animation.tick(dt=dt)
+            self.enemy.animation.tick(dt=dt)
+
 
         # Calls functions
         self.handle_events()
         self.update_display()
-        self.player.animation.tick(dt=dt)
-        self.enemy.animation.tick(dt=dt)
         clock.tick(self.fps)
 
