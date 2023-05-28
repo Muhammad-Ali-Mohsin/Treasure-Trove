@@ -1,4 +1,5 @@
 import pygame
+import os
 
 class Node():
     """
@@ -54,3 +55,24 @@ def get_mouse_pos(user_resolution, new_resolution):
     x *= x_scale
     y *= y_scale
     return x, y
+
+def get_options():
+    if os.path.exists("assets/options.txt"):
+        # Loads the data from the options file
+        with open("assets/options.txt", "r") as file:
+            options = file.readlines()
+        for i in range(len(options)):
+            options[i] = options[i].split("=")[1].strip()
+
+        # Converts the resolution to a tuple
+        user_resolution = options[0].split("x")
+        user_resolution = (int(user_resolution[0]), int(user_resolution[1]))
+
+        fps = int(options[1])
+
+        return user_resolution, fps
+
+def update_options(user_resolution, fps):
+    options = f"USER_RESOLUTION={user_resolution[0]}x{user_resolution[1]}\nFPS={fps}"
+    with open("assets/options.txt", "w") as file:
+        file.write(options)
