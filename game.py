@@ -5,6 +5,7 @@ from entities import Player, Enemy
 from compass import Compass
 from variables import *
 from misc import get_text_surf
+from map import Map
 
 
 class Game:
@@ -28,6 +29,8 @@ class Game:
         self.gold = 0
         self.game_over = False
         self.paused = False
+        self.map_open = False
+        self.map = Map(resolution=MAP_RESOLUTION, maze_resolution=MAZE_RESOLUTION)
 
         # Maze Variables
         self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1], tile_size=TILE_SIZE)
@@ -69,6 +72,10 @@ class Game:
         
         #Draws the Compass
         self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, y=20)
+
+        # Draws the map if it's open
+        if self.map_open:
+            self.map.draw(surface=SCREEN, pos=((GAME_RESOLUTION[0] // 2) - (MAP_RESOLUTION[0] // 2), (GAME_RESOLUTION[1] // 2) - (MAP_RESOLUTION[1] // 2)), player_pos=self.player.rect.center)
 
         if self.paused:
             # Draws the pause box and pause text
@@ -120,6 +127,8 @@ class Game:
                     self.dig()
                 if event.key == pygame.K_TAB:
                     self.paused = not self.paused
+                if event.key == pygame.K_m:
+                    self.map_open = not self.map_open
                 if event.key == pygame.K_BACKSPACE:
                     self.selected_screen = "main menu"
 
@@ -206,6 +215,9 @@ class Game:
 
             # Finds the bearing between the player and the treasure for the compass
             self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
+
+            # Updates the Map
+            self.map.update_map(maze=self.maze, player_location=self.player.rect.center, tile_size=TILE_SIZE)
 
             # Updates animations
             self.player.animation.tick(dt=dt)
