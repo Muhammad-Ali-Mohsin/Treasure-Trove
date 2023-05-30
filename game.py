@@ -39,14 +39,17 @@ class Game:
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
         # Creates a Player in that cell
-        self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=PLAYER_SIZE, speed=PLAYER_SPEED, animations_path="assets/animations/player")
+        self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
+                             size=PLAYER_SIZE, speed=PLAYER_SPEED, animations_path="assets/animations/player")
         self.player.animation.change_animation(animation="idle_forwards")
 
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
         # Creates an Enemy in that cell
-        self.enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/player", tile_center_size=TILE_CENTER_SIZE, refresh_interval=ENEMY_REFRESH_INTERVAL)
-        self.enemy.animation.change_animation(animation="idle_forwards")
+        self.enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
+                           size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/slime", 
+                           tile_center_size=TILE_CENTER_SIZE, refresh_interval=ENEMY_REFRESH_INTERVAL)
+        self.enemy.animation.change_animation(animation="idle")
 
     def update_display(self):
         """

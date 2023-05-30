@@ -8,28 +8,6 @@ class Entity:
         self.rect.center = (x, y)
         self.speed = speed
 
-    def change_entity_animation(self, movement):
-        """
-        Changes the entity's animation based on their movements
-        """
-        if movement['left']:
-            self.animation.change_animation(animation="running_sideways") if self.animation.current_animation != "running_sideways" else None
-            self.animation.flipped = True
-        elif movement['right']:
-            self.animation.change_animation(animation="running_sideways") if self.animation.current_animation != "running_sideways" else None
-            self.animation.flipped = False
-        elif movement['up'] and self.animation.current_animation != "running_backwards":
-            self.animation.change_animation(animation="running_backwards")
-        elif movement['down'] and self.animation.current_animation != "running_forwards":
-            self.animation.change_animation(animation="running_forwards")
-        elif not movement['left'] and not movement['right'] and not movement['up'] and not movement['down'] and ("idle" not in self.animation.current_animation):
-            if self.animation.current_animation == "running_sideways":
-                self.animation.change_animation(animation="idle_sideways")
-            elif self.animation.current_animation == "running_backwards":
-                self.animation.change_animation(animation="idle_backwards")
-            else:
-                self.animation.change_animation(animation="idle_forwards")
-
     def move(self, movement, maze, tile_size, dt):
         """
         Moves the entity based on the movement list
@@ -118,6 +96,28 @@ class Player(Entity):
 
         return success
     
+    def change_entity_animation(self, movement):
+        """
+        Changes the entity's animation based on their movements
+        """
+        if movement['left']:
+            self.animation.change_animation(animation="running_sideways") if self.animation.current_animation != "running_sideways" else None
+            self.animation.flipped = True
+        elif movement['right']:
+            self.animation.change_animation(animation="running_sideways") if self.animation.current_animation != "running_sideways" else None
+            self.animation.flipped = False
+        elif movement['up'] and self.animation.current_animation != "running_backwards":
+            self.animation.change_animation(animation="running_backwards")
+        elif movement['down'] and self.animation.current_animation != "running_forwards":
+            self.animation.change_animation(animation="running_forwards")
+        elif not movement['left'] and not movement['right'] and not movement['up'] and not movement['down'] and ("idle" not in self.animation.current_animation):
+            if self.animation.current_animation == "running_sideways":
+                self.animation.change_animation(animation="idle_sideways")
+            elif self.animation.current_animation == "running_backwards":
+                self.animation.change_animation(animation="idle_backwards")
+            else:
+                self.animation.change_animation(animation="idle_forwards")
+    
     def draw(self, screen, camera_displacement):
         """
         Draws the player onto the screen
@@ -189,6 +189,21 @@ class Enemy(Entity):
         rect = pygame.Rect(0, 0, self.tile_center_size, self.tile_center_size)
         rect.center = cell_center
         return cell_center, rect
+    
+    def change_entity_animation(self, movement):
+        """
+        Changes the entity's animation based on their movements
+        """
+        if movement['left']:
+            self.animation.change_animation(animation="running") if self.animation.current_animation != "running" else None
+            self.animation.flipped = True
+        elif movement['right']:
+            self.animation.change_animation(animation="running") if self.animation.current_animation != "running" else None
+            self.animation.flipped = False
+        elif (movement['up'] or movement['down']) and self.animation.current_animation != "running":
+            self.animation.change_animation(animation="running")
+        elif not movement['left'] and not movement['right'] and not movement['up'] and not movement['down'] and self.animation.current_animation != "idle":
+            self.animation.change_animation(animation="idle")
     
     def move_to_player(self, maze, tile_size, dt, player_location):
         """
