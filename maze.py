@@ -1,67 +1,92 @@
 # USAGE: maze = Maze(x, y)
-import random
+import random, os
 import pygame
+from variables import MAZE_RESOLUTION, TILE_SIZE, GRASS_IMG
 
 class Maze:
-    def __init__(self, x, y, tile_size):
+    def __init__(self, x, y):
         self.resolution = (x, y)
         self._maze = [[1 for i in range(x)] for i in range(y)]
-        self.surface = pygame.Surface(((x + 2) * tile_size, (y + 2) * tile_size))
-        self.tile_size = tile_size
+        self.surface = pygame.Surface(((x + 2) * TILE_SIZE, (y + 2) * TILE_SIZE))
+        self.hedge_images = []
+
+        # Loads each hedge image and adds it to the list
+        for i in range(16):
+            img = pygame.image.load(f"assets/images/hedges/hedge_{i}.png").convert_alpha()
+            self.hedge_images.append(img)
 
     def draw(self, surface, camera_displacement):
         """
         This draws the maze onto it's own surface and then blits that surface onto the screen based on the camera displacement
         """
-        self.surface.fill((110, 180, 50))
+
+        self.surface.fill((35, 72, 39))
         # Draws the maze
         for y in range(self.resolution[1]):
             for x in range(self.resolution[0]):
-                if self.get_cell(x, y) == 1:
-                    pygame.draw.rect(self.surface, (0, 0, 0), (x * self.tile_size, y * self.tile_size, self.tile_size, self.tile_size))
+                if self.is_wall(cell=(x, y)):
+                    hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - 1]
+                    self.surface.blit(hedge_image, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                else:
+                    self.surface.blit(GRASS_IMG, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
         # Draws the maze surface onto the screen based on the camera displacement
         surface.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
 
-    def change_cell(self, x, y, data):
+    def change_cell(self, cell, data):
         """
-        Changes the cell at (x, y) to the value of data
+        Changes the given cell to a new value
         """
-        self._maze[y][x] = data
+        self._maze[cell[1]][cell[0]] = data
 
-    def get_cell(self, x, y):
+    def is_wall(self, cell):
         """
-        Returns the cell at (x, y)
+        Returns whether a wall is present at the given cell or not
         """
-        return self._maze[y][x]
+        return self._maze[cell[1]][cell[0]] != 0
+
+    def get_cell_value(self, cell):
+        """
+        Returns the value of the given cell
+        """
+        return self._maze[cell[1]][cell[0]]
+    
+    def get_cell(self, coord):
+        """
+        Returns the given cell at a set of coords
+        """
+        return (coord[0] // TILE_SIZE, coord[1] // TILE_SIZE)
 
     def get_neighbours(self, cell, with_diagonals=False):
         """
         Returns the neighbours for the cell
         """
-        neighbours = set()
+        neighbours = []
         # Adds the neighbours which are to the right and left of the cell
         for i in [1, -1]:
             if cell[0] + i > -1 and cell[0] + i < self.resolution[0]:
-                neighbours.add((cell[0] + i, cell[1]))
+                neighbours.append((cell[0] + i, cell[1]))
 
         # Adds the neighbours which are to the bottom and top of the cell
         for i in [1, -1]:
             if cell[1] + i > -1 and cell[1] + i < self.resolution[1]:
-                neighbours.add((cell[0], cell[1] + i))
+                neighbours.append((cell[0], cell[1] + i))
 
         if with_diagonals:
             # Adds the neighbours which diagonal to the cell
             for i in [1, -1]:
                 for j in [1, -1]:
                     if (cell[0] + i > -1 and cell[0] + i < self.resolution[0]) and (cell[1] + j > -1 and cell[1] + j < self.resolution[1]):
-                        neighbours.add((cell[0] + i, cell[1] + j))
+                        neighbours.append((cell[0] + i, cell[1] + j))
 
         return neighbours
     
     def get_random_cell(self):
+        """
+        Returns a random empty cell
+        """
         cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
-        while self.get_cell(x=cell[0], y=cell[1]) != 0:
+        while self.is_wall(cell=cell):
             cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
         return cell
 
@@ -70,17 +95,38 @@ class Maze:
         Returns the maze itself
         """
         return self._maze
+    
+    def get_wall_neighbours_list(self, cell):
+        """
+        Returns a list of the sides of a tile which have walls
+        """
+        sides = []
+        neighbours = self.get_neighbours(cell=cell)
+
+        # Checks each of the neighbours to see whether they are a wall and what side they are one
+        for neighbour in neighbours:
+            if self.is_wall(neighbour):
+                if neighbour[0] > cell[0]:
+                    sides.append('right')
+                elif neighbour[0] < cell[0]:
+                    sides.append('left')
+                elif neighbour[1] > cell[1]:
+                    sides.append('bottom')
+                else:
+                    sides.append('top')
+
+        return sides
             
     def __repr__(self):
         return "\n".join([str(row) for row in self._maze])
     
 
-def generate_maze(x, y, tile_size):
+def generate_maze():
     """
     Uses a Randomised depth first search algorithm to generate a maze
     """
     # Creates the maze class with a slightly smaller resolution so the border walls can be added afterwards
-    maze = Maze(x=x-2, y=y-2, tile_size=tile_size)
+    maze = Maze(x=MAZE_RESOLUTION[0] - 2, y=MAZE_RESOLUTION[1] - 2)
 
     def get_neighbours(cell):
         """
@@ -112,7 +158,7 @@ def generate_maze(x, y, tile_size):
 
         # Gets the neighbours of the current cell and filters out and cells which have been cleared out 
         neighbours = list(get_neighbours(current_cell))
-        neighbours = list(filter(lambda neighbour: maze.get_cell(neighbour[0][0], neighbour[0][1]) != 0, neighbours))
+        neighbours = list(filter(lambda neighbour: maze.is_wall(cell=neighbour[0]), neighbours))
 
         if len(neighbours) != 0:
             # Adds the current cell back to the stack so it can be backtracked along
@@ -120,8 +166,8 @@ def generate_maze(x, y, tile_size):
             # Picks a random neighbour to move along
             neighbour = random.choice(neighbours)
             # Clears out the neighbour as well as the cell required to get there
-            maze.change_cell(x=neighbour[0][0], y=neighbour[0][1], data=0)
-            maze.change_cell(x=neighbour[1][0], y=neighbour[1][1], data=0)
+            maze.change_cell(cell=neighbour[0], data=0)
+            maze.change_cell(cell=neighbour[1], data=0)
             # Adds the neighbour to the stack
             maze_stack.append(neighbour[0])
 
@@ -131,8 +177,39 @@ def generate_maze(x, y, tile_size):
         maze._maze[i].append(1)
     
     # Adds borders to the top and bottom of the maze
-    maze._maze.insert(0, [1 for i in range(x)])
-    maze._maze.append([1 for i in range(x)])
+    maze._maze.insert(0, [1 for i in range(MAZE_RESOLUTION[0])])
+    maze._maze.append([1 for i in range(MAZE_RESOLUTION[0])])
     
-    maze.resolution = (x, y)
+    maze.resolution = MAZE_RESOLUTION
+
+    # Changes each value in the maze based on the type of wall it is eg whether it has two open sides or only one open side
+    for x in range(MAZE_RESOLUTION[0]):
+        for y in range(MAZE_RESOLUTION[1]):
+            # Checks whether the cell is a wall and if so, checks what type of wall it is by matching it against it's neighbouring walls
+            if maze.is_wall((x, y)):
+                wall_neighbours_list = maze.get_wall_neighbours_list(cell=(x, y))
+                combinations = (
+                    ['right', 'left', 'bottom', 'top'],
+                    ['right', 'left', 'bottom'],
+                    ['left', 'bottom', 'top'],
+                    ['right', 'left', 'top'],
+                    ['right', 'bottom', 'top'],
+                    ['bottom', 'top'],
+                    ['right', 'left'],
+                    ['top'],
+                    ['right'],
+                    ['bottom'],
+                    ['left'],
+                    ['right', 'top'],
+                    ['left', 'top'],
+                    ['right', 'bottom'],
+                    ['left', 'bottom']
+                )
+                if wall_neighbours_list in combinations:
+                    value = combinations.index(wall_neighbours_list) + 1
+                else:
+                    value = 1
+
+                maze.change_cell(cell=(x, y), data=value)
+
     return maze
