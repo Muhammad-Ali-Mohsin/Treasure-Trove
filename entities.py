@@ -1,7 +1,7 @@
 import pygame
 from animation import Animation
 from misc import Node, QueueFrontier
-from variables import TILE_SIZE, TILE_CENTER_SIZE, ENEMY_REFRESH_INTERVAL
+from variables import TILE_SIZE, TILE_CENTER_SIZE, ENEMY_REFRESH_INTERVAL, ATTACK_COOLDOWN
 
 class Entity:
     def __init__(self, x, y, size, speed):
@@ -78,6 +78,9 @@ class Player(Entity):
         # Loads the animations
         self.animation = Animation()
         self.animation.load_animations(animations_path)
+        self.attacking = False
+        self.attack_timer = 0
+
 
     def dig(self, treasure):
         """
@@ -95,12 +98,12 @@ class Player(Entity):
         """
         Changes the entity's animation based on their movements
         """
-        if movement['left']:
-            self.animation.change_animation(animation="running_sideways") if self.animation.current_animation != "running_sideways" else None
-            self.animation.flipped = True
-        elif movement['right']:
-            self.animation.change_animation(animation="running_sideways") if self.animation.current_animation != "running_sideways" else None
-            self.animation.flipped = False
+        if self.attacking:
+            animation_name = f"attack_{self.animation.current_animation.split('_')[1]}"
+            if self.animation.current_animation != animation_name: self.animation.change_animation(animation=animation_name)
+        elif movement['left'] or movement['right']:
+            if self.animation.current_animation != "running_sideways": self.animation.change_animation(animation="running_sideways")
+            self.animation.flipped = True if movement['left'] else False
         elif movement['up'] and self.animation.current_animation != "running_backwards":
             self.animation.change_animation(animation="running_backwards")
         elif movement['down'] and self.animation.current_animation != "running_forwards":
@@ -112,6 +115,36 @@ class Player(Entity):
                 self.animation.change_animation(animation="idle_backwards")
             else:
                 self.animation.change_animation(animation="idle_forwards")
+
+    def attack(self):
+        """
+        This will start a player attack if the player is not currently attacking
+        """
+        if not self.attacking:
+            self.attack_timer = 0
+            self.attacking = True
+
+    def update_attack(self, dt, enemies):
+        """
+        This will update an ongoing attack by incrementing the timer, stopping the attack if the timer has completed and checking for collisions with enemys
+        """
+        # Increments the attack timer
+        self.attack_timer += dt
+        # Checks whether the attack is over and ends it if so
+        if self.attack_timer >= ATTACK_COOLDOWN:
+            self.attack_timer = 0
+            self.attacking = False
+
+        for enemy in enemies:
+            if self.rect.colliderect(enemy.rect):
+                enemies.remove(enemy)
+
+        return enemies
+
+        
+
+
+        
 
         
 class Enemy(Entity):
@@ -176,12 +209,9 @@ class Enemy(Entity):
         """
         Changes the entity's animation based on their movements
         """
-        if movement['left']:
-            self.animation.change_animation(animation="running") if self.animation.current_animation != "running" else None
-            self.animation.flipped = True
-        elif movement['right']:
-            self.animation.change_animation(animation="running") if self.animation.current_animation != "running" else None
-            self.animation.flipped = False
+        if movement['left'] or movement['right']:
+            if self.animation.current_animation != "running": self.animation.change_animation(animation="running")
+            self.animation.flipped = True if movement['left'] else False
         elif (movement['up'] or movement['down']) and self.animation.current_animation != "running":
             self.animation.change_animation(animation="running")
         elif not movement['left'] and not movement['right'] and not movement['up'] and not movement['down'] and self.animation.current_animation != "idle":

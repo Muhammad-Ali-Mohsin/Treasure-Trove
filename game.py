@@ -31,6 +31,7 @@ class Game:
         self.paused = False
         self.map_open = False
         self.map = Map(resolution=MAP_RESOLUTION, maze_resolution=MAZE_RESOLUTION)
+        self.enemies = []
 
         # Maze Variables
         self.maze = generate_maze()
@@ -42,13 +43,6 @@ class Game:
         self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
                              size=PLAYER_SIZE, speed=PLAYER_SPEED, animations_path="assets/animations/player")
         self.player.animation.change_animation(animation="idle_forwards")
-
-        # Finds Random Spawning Cell
-        cell = self.maze.get_random_cell()
-        # Creates an Enemy in that cell
-        self.enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
-                           size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/slime")
-        self.enemy.animation.change_animation(animation="idle")
 
     def update_display(self):
         """
@@ -66,8 +60,9 @@ class Game:
         # Draws the player
         self.player.animation.draw(MAZE_SURFACE, self.player.rect.center, self.camera_displacement)
 
-        # Draws the enemy
-        self.enemy.animation.draw(MAZE_SURFACE, self.enemy.rect.center, self.camera_displacement)             
+        # Draws the enemies
+        for enemy in self.enemies:
+            enemy.animation.draw(MAZE_SURFACE, enemy.rect.center, self.camera_displacement)             
 
         # Scales the maze surface and blits it onto the screen
         SCREEN.blit(pygame.transform.scale(MAZE_SURFACE, GAME_RESOLUTION), (0, 0))
@@ -125,12 +120,16 @@ class Game:
                     self.movement['down'] = True
                 if event.key == pygame.K_UP:
                     self.movement['up'] = True
-                if event.key == pygame.K_e:
+                if event.key == pygame.K_q:
                     self.dig()
+                if event.key == pygame.K_e:
+                    self.player.attack()
                 if event.key == pygame.K_TAB:
                     self.paused = not self.paused
                 if event.key == pygame.K_m:
                     self.map_open = not self.map_open
+                if event.key == pygame.K_1:
+                    self.spawn_enemy()
                 if event.key == pygame.K_BACKSPACE:
                     self.selected_screen = "main menu"
 
@@ -170,27 +169,15 @@ class Game:
         else:
             pass
 
-    def change_player_animation(self):
-        """
-        Changes the player's animation based on their movements
-        """
-        if self.movement['left']:
-            self.player.animation.change_animation(animation="running_sideways") if self.player.animation.current_animation != "running_sideways" else None
-            self.player.animation.flipped = True
-        elif self.movement['right']:
-            self.player.animation.change_animation(animation="running_sideways") if self.player.animation.current_animation != "running_sideways" else None
-            self.player.animation.flipped = False
-        elif self.movement['up'] and self.player.animation.current_animation != "running_backwards":
-            self.player.animation.change_animation(animation="running_backwards")
-        elif self.movement['down'] and self.player.animation.current_animation != "running_forwards":
-            self.player.animation.change_animation(animation="running_forwards")
-        elif not self.movement['left'] and not self.movement['right'] and not self.movement['up'] and not self.movement['down'] and ("idle" not in self.player.animation.current_animation):
-            if self.player.animation.current_animation == "running_sideways":
-                self.player.animation.change_animation(animation="idle_sideways")
-            elif self.player.animation.current_animation == "running_backwards":
-                self.player.animation.change_animation(animation="idle_backwards")
-            else:
-                self.player.animation.change_animation(animation="idle_forwards")
+    def spawn_enemy(self):
+        # Finds Random Spawning Cell
+        cell = self.maze.get_random_cell()
+        # Creates an Enemy in that cell
+        enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
+                           size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/slime")
+        enemy.animation.change_animation(animation="idle")
+        # Adds the enemy to the enemies list
+        self.enemies.append(enemy)
             
     def run_frame(self):
         """
@@ -210,20 +197,25 @@ class Game:
             self.camera_displacement[1] = self.player.rect.centery - (MAZE_SURFACE_RESOLUTION[1] // 2)
 
             # Moves the player
-            self.player.move(movement=self.movement, maze=self.maze, dt=dt)
+            movement = self.movement
+            if self.player.attacking:
+                movement = {'left': False, 'right': False, 'up': False, 'down': False}
+            self.player.move(movement=movement, maze=self.maze, dt=dt)
+            self.player.animation.tick(dt=dt)
 
-            # Moves the Enemy
-            self.enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
+            # Moves the enemies to the player
+            for enemy in self.enemies:
+                enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
+                enemy.animation.tick(dt=dt)
+
+            if self.player.attacking:
+                self.enemies = self.player.update_attack(dt=dt, enemies=self.enemies)
 
             # Finds the bearing between the player and the treasure for the compass
             self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
 
             # Updates the Map
             self.map.update_map(maze=self.maze, player_location=self.player.rect.center)
-
-            # Updates animations
-            self.player.animation.tick(dt=dt)
-            self.enemy.animation.tick(dt=dt)
 
         # Calls functions
         self.handle_events()
