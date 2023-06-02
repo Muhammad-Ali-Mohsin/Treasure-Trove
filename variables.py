@@ -20,7 +20,7 @@ ENEMY_REFRESH_INTERVAL = 1
 # Display Constants
 SUPPORTED_RESOLUTIONS = ((3840, 2160), (2560, 1440), (1920, 1080), (1280, 720), (854, 480), (640, 360), (426, 240))
 GAME_RESOLUTION = (1920, 1080)
-MAZE_SURFACE_RESOLUTION = (426, 240)
+MAZE_SURFACE_RESOLUTION = (426, 240)#(213, 120)
 MAP_RESOLUTION = (800, 800)
 COMPASS_SCALE = 5.5
 CURSOR_SCALE = 3
@@ -36,6 +36,7 @@ ICON_IMG = pygame.image.load("assets/images/icon.png").convert_alpha()
 CURSOR_1 = pygame.image.load("./assets/images/cursor_1.png").convert_alpha()
 CURSOR_2 = pygame.image.load("./assets/images/cursor_0.png").convert_alpha()
 PAUSE_SCREEN_BOX_IMG = pygame.image.load("assets/images/box.png").convert_alpha()
+GRASS_IMG = pygame.image.load("assets/images/grass.png").convert_alpha()
 
 # Image Rescaling
 COMPASS_BASE_IMG = pygame.transform.scale(COMPASS_BASE_IMG, (COMPASS_SCALE * COMPASS_BASE_IMG.get_width(), COMPASS_SCALE * COMPASS_BASE_IMG.get_width()))

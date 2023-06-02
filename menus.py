@@ -173,7 +173,7 @@ class CreditsMenu:
             ]
         self.selected = False
 
-        self.credits = ["Developed by: Muhammad-Ali Mohsin", "Player Animation: https://game-endeavor.itch.io/mystic-woods", "Font: https://tinyworlds.itch.io/free-pixel-font-thaleah"]
+        self.credits = ["Developed by: Muhammad-Ali Mohsin", "Player Animation: https://game-endeavor.itch.io/mystic-woods", "Slime animation: https://game-endeavor.itch.io/mystic-woods", "Font: https://tinyworlds.itch.io/free-pixel-font-thaleah"]
         for i in range(len(self.credits)):
             self.credits[i] = get_text_surf(size=40, text=self.credits[i], colour=pygame.Color("white"))
 

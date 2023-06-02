@@ -33,7 +33,7 @@ class Game:
         self.map = Map(resolution=MAP_RESOLUTION, maze_resolution=MAZE_RESOLUTION)
 
         # Maze Variables
-        self.maze = generate_maze(x=MAZE_RESOLUTION[0], y=MAZE_RESOLUTION[1], tile_size=TILE_SIZE)
+        self.maze = generate_maze()
         self.generate_treasure()
 
         # Finds Random Spawning Cell
@@ -47,8 +47,7 @@ class Game:
         cell = self.maze.get_random_cell()
         # Creates an Enemy in that cell
         self.enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
-                           size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/slime", 
-                           tile_center_size=TILE_CENTER_SIZE, refresh_interval=ENEMY_REFRESH_INTERVAL)
+                           size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/slime")
         self.enemy.animation.change_animation(animation="idle")
 
     def update_display(self):
@@ -159,7 +158,7 @@ class Game:
         Attempts to dig for treasure at the player's current cell
         """
         # Checks whether the dig is successfull (whether there is treasure there or not)
-        success = self.player.dig(treasure=self.treasure, tile_size=TILE_SIZE)
+        success = self.player.dig(treasure=self.treasure)
         if success:
             self.treasure['dig_counter'] += 1
             # If the player has dug 3 times to fully uncover the treasure
@@ -204,28 +203,27 @@ class Game:
         if not self.paused:
 
             # Finds the cell the player is in
-            player_cell = (self.player.rect.centerx // TILE_SIZE, self.player.rect.centery // TILE_SIZE)
+            player_cell = self.maze.get_cell(coord=self.player.rect.center)
 
             # Calculates the camera displacement based on the player's location
             self.camera_displacement[0] = self.player.rect.centerx - (MAZE_SURFACE_RESOLUTION[0] // 2)
             self.camera_displacement[1] = self.player.rect.centery - (MAZE_SURFACE_RESOLUTION[1] // 2)
 
             # Moves the player
-            self.player.move(movement=self.movement, maze=self.maze, tile_size=TILE_SIZE, dt=dt)
+            self.player.move(movement=self.movement, maze=self.maze, dt=dt)
 
             # Moves the Enemy
-            self.enemy.move_to_player(maze=self.maze, tile_size=TILE_SIZE, dt=dt, player_location=self.player.rect.center)
+            self.enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
 
             # Finds the bearing between the player and the treasure for the compass
             self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
 
             # Updates the Map
-            self.map.update_map(maze=self.maze, player_location=self.player.rect.center, tile_size=TILE_SIZE)
+            self.map.update_map(maze=self.maze, player_location=self.player.rect.center)
 
             # Updates animations
             self.player.animation.tick(dt=dt)
             self.enemy.animation.tick(dt=dt)
-
 
         # Calls functions
         self.handle_events()
