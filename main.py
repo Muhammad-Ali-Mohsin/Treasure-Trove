@@ -2,6 +2,12 @@ import pygame, os
 from misc import get_options, update_options
 pygame.init()
 
+# This changes the app id for the current process so it isn't grouped under python processes and shows the game on the taskbar by itself
+if os.name == "nt": # Checks if the os is windows
+    from ctypes import windll
+    appid = u"muhammadalimohsin.treasuretrove"
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+
 if os.path.exists("assets/options.txt"):
     # Loads the data from the options file
     user_resolution, fps = get_options()
