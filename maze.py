@@ -1,19 +1,23 @@
 # USAGE: maze = Maze(x, y)
-import random, os
+import random
 import pygame
-from variables import MAZE_RESOLUTION, TILE_SIZE, GRASS_IMG
+from variables import MAZE_RESOLUTION, TILE_SIZE
 
 class Maze:
     def __init__(self, x, y):
         self.resolution = (x, y)
-        self._maze = [[1 for i in range(x)] for i in range(y)]
         self.surface = pygame.Surface(((x + 2) * TILE_SIZE, (y + 2) * TILE_SIZE))
         self.hedge_images = []
+        self.path_images = []
 
-        # Loads each hedge image and adds it to the list
+        # Loads each hedge image and path image and adds it to their respective lists
         for i in range(16):
             img = pygame.image.load(f"assets/images/hedges/hedge_{i}.png").convert_alpha()
             self.hedge_images.append(img)
+            img = pygame.image.load(f"assets/images/paths/path_{i}.png").convert_alpha()
+            self.path_images.append(img)
+
+        self._maze = [[len(self.path_images) for i in range(x)] for i in range(y)]
 
     def draw(self, surface, camera_displacement):
         """
@@ -25,10 +29,11 @@ class Maze:
         for y in range(self.resolution[1]):
             for x in range(self.resolution[0]):
                 if self.is_wall(cell=(x, y)):
-                    hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - 1]
+                    hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - len(self.path_images)]
                     self.surface.blit(hedge_image, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
                 else:
-                    self.surface.blit(GRASS_IMG, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                    path_image = self.path_images[self.get_cell_value(cell=(x, y))]
+                    self.surface.blit(path_image, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
         # Draws the maze surface onto the screen based on the camera displacement
         surface.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
@@ -43,7 +48,7 @@ class Maze:
         """
         Returns whether a wall is present at the given cell or not
         """
-        return self._maze[cell[1]][cell[0]] != 0
+        return self.get_cell_value(cell=cell) >= len(self.path_images)
 
     def get_cell_value(self, cell):
         """
@@ -156,7 +161,7 @@ def generate_maze():
         # Pops a cell off the stack
         current_cell = maze_stack.pop()
 
-        # Gets the neighbours of the current cell and filters out and cells which have been cleared out 
+        # Gets the neighbours of the current cell and filters out any cells which have been cleared out 
         neighbours = list(get_neighbours(current_cell))
         neighbours = list(filter(lambda neighbour: maze.is_wall(cell=neighbour[0]), neighbours))
 
@@ -173,43 +178,39 @@ def generate_maze():
 
     # Adds borders to the sides of the maze
     for i in range(maze.resolution[1]):
-        maze._maze[i].insert(0, 1)
-        maze._maze[i].append(1)
+        maze._maze[i].insert(0, len(maze.path_images))
+        maze._maze[i].append(len(maze.path_images))
     
     # Adds borders to the top and bottom of the maze
-    maze._maze.insert(0, [1 for i in range(MAZE_RESOLUTION[0])])
-    maze._maze.append([1 for i in range(MAZE_RESOLUTION[0])])
+    maze._maze.insert(0, [len(maze.path_images) for i in range(MAZE_RESOLUTION[0])])
+    maze._maze.append([len(maze.path_images) for i in range(MAZE_RESOLUTION[0])])
     
     maze.resolution = MAZE_RESOLUTION
 
-    # Changes each value in the maze based on the type of wall it is eg whether it has two open sides or only one open side
+    # Changes each value in the maze based on the surrounding tiles
+    # This is a list of the possible combinations that can be had with surrounding walls
+    combinations = (
+        ['right', 'left', 'bottom', 'top'],
+        ['right', 'left', 'bottom'],
+        ['left', 'bottom', 'top'],
+        ['right', 'left', 'top'],
+        ['right', 'bottom', 'top'],
+        ['bottom', 'top'],
+        ['right', 'left'],
+        ['top'],
+        ['right'],
+        ['bottom'],
+        ['left'],
+        ['right', 'top'],
+        ['left', 'top'],
+        ['right', 'bottom'],
+        ['left', 'bottom']
+    )
     for x in range(MAZE_RESOLUTION[0]):
         for y in range(MAZE_RESOLUTION[1]):
-            # Checks whether the cell is a wall and if so, checks what type of wall it is by matching it against it's neighbouring walls
-            if maze.is_wall((x, y)):
-                wall_neighbours_list = maze.get_wall_neighbours_list(cell=(x, y))
-                combinations = (
-                    ['right', 'left', 'bottom', 'top'],
-                    ['right', 'left', 'bottom'],
-                    ['left', 'bottom', 'top'],
-                    ['right', 'left', 'top'],
-                    ['right', 'bottom', 'top'],
-                    ['bottom', 'top'],
-                    ['right', 'left'],
-                    ['top'],
-                    ['right'],
-                    ['bottom'],
-                    ['left'],
-                    ['right', 'top'],
-                    ['left', 'top'],
-                    ['right', 'bottom'],
-                    ['left', 'bottom']
-                )
-                if wall_neighbours_list in combinations:
-                    value = combinations.index(wall_neighbours_list) + 1
-                else:
-                    value = 1
-
-                maze.change_cell(cell=(x, y), data=value)
+            # Changes the value of the maze (0 to 15 for paths and 16 to 31 for hedges)
+            wall_neighbours_list = maze.get_wall_neighbours_list(cell=(x, y))
+            value = combinations.index(wall_neighbours_list) + (len(maze.path_images) if maze.is_wall((x, y)) else 0)
+            maze.change_cell(cell=(x, y), data=value)
 
     return maze
