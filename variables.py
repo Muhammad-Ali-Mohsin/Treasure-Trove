@@ -3,7 +3,8 @@ import pygame
 clock = pygame.time.Clock()
 
 # Constants
-MAZE_RESOLUTION = (25, 25)
+MAZE_RESOLUTION = (50, 50)
+REMOVED_TILES = 50
 TILE_SIZE = 32
 PRIMARY_COLOUR = (255, 202, 24)
 
@@ -30,6 +31,7 @@ CURSOR_SCALE = 3
 SCREEN = pygame.Surface(GAME_RESOLUTION)
 MAZE_SURFACE = pygame.Surface(MAZE_SURFACE_RESOLUTION)
 
+
 # Image Loading
 COMPASS_BASE_IMG = pygame.image.load("assets/images/compass_base_img.png").convert_alpha()
 COMPASS_SPINNER_IMG = pygame.image.load("assets/images/compass_spinner_img.png").convert_alpha()
@@ -37,7 +39,6 @@ ICON_IMG = pygame.image.load("assets/images/icon.png").convert_alpha()
 CURSOR_1 = pygame.image.load("./assets/images/cursor_1.png").convert_alpha()
 CURSOR_2 = pygame.image.load("./assets/images/cursor_0.png").convert_alpha()
 PAUSE_SCREEN_BOX_IMG = pygame.image.load("assets/images/box.png").convert_alpha()
-GRASS_IMG = pygame.image.load("assets/images/grass.png").convert_alpha()
 
 # Image Rescaling
 COMPASS_BASE_IMG = pygame.transform.scale(COMPASS_BASE_IMG, (COMPASS_SCALE * COMPASS_BASE_IMG.get_width(), COMPASS_SCALE * COMPASS_BASE_IMG.get_width()))

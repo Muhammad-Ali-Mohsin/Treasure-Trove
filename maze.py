@@ -1,7 +1,7 @@
 # USAGE: maze = Maze(x, y)
 import random
 import pygame
-from variables import MAZE_RESOLUTION, TILE_SIZE
+from variables import MAZE_RESOLUTION, TILE_SIZE, REMOVED_TILES
 
 class Maze:
     def __init__(self, x, y):
@@ -176,6 +176,14 @@ def generate_maze():
             # Adds the neighbour to the stack
             maze_stack.append(neighbour[0])
 
+    # This removes a bunch of walls to make the maze more open and have more paths through it
+    for i in range(REMOVED_TILES):
+        # This finds a random cell and checks whether it has 2 walls on opposite sides as those are the only type of walls that should be removed
+        cell = (random.randint(0, maze.resolution[0] - 1), random.randint(0, maze.resolution[0] - 1))
+        while not maze.is_wall(cell=cell) or maze.get_wall_neighbours_list(cell=cell) not in [['bottom', 'top'], ['right', 'left']]:
+            cell = (random.randint(0, maze.resolution[0] - 1), random.randint(0, maze.resolution[0] - 1))
+        maze.change_cell(cell=cell, data=0)
+
     # Adds borders to the sides of the maze
     for i in range(maze.resolution[1]):
         maze._maze[i].insert(0, len(maze.path_images))
@@ -204,7 +212,8 @@ def generate_maze():
         ['right', 'top'],
         ['left', 'top'],
         ['right', 'bottom'],
-        ['left', 'bottom']
+        ['left', 'bottom'],
+        []
     )
     for x in range(MAZE_RESOLUTION[0]):
         for y in range(MAZE_RESOLUTION[1]):
