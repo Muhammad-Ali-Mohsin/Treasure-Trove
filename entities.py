@@ -8,25 +8,17 @@ class Entity:
         self.rect = pygame.Rect(x, y, size, size)
         self.rect.center = (x, y)
         self.speed = speed
+        self.movement = [0, 0]
 
-    def move(self, movement, maze, dt):
+    def move(self, maze):
         """
         Moves the entity based on the movement list
         Returns True or False based on whether the entity has collided
         """
         
-        self.change_entity_animation(movement=movement)
+        self.change_entity_animation(movement=self.movement)
 
         collision = False
-        move_x = move_y = 0
-        if movement['left']:
-            move_x -= round(self.speed * dt)
-        if movement['right']:
-            move_x += round(self.speed * dt)
-        if movement['up']:
-            move_y -= round(self.speed * dt)
-        if movement['down']:
-            move_y += round(self.speed * dt)
 
         # This is the cell in the maze where the entity currently is
         cell = maze.get_cell(self.rect.center)
@@ -34,7 +26,7 @@ class Entity:
         # Gets the neighbouring cells of the cell the entity is in
         neighbours = maze.get_neighbours(cell, with_diagonals=True)
 
-        self.rect.x += move_x
+        self.rect.x += self.movement[0]
         for neighbour in neighbours:
             # Checks whether the neighbouring cell is filled
             if maze.is_wall(cell=neighbour):
@@ -44,13 +36,13 @@ class Entity:
                 if self.rect.colliderect(neighbour_rect):
                     collision = True
                     # This means that the neighbour must have been on the right
-                    if move_x > 0:
+                    if self.movement[0] > 0:
                         self.rect.right = neighbour_rect.left
                     # This means that the neighbour must have been on the left
-                    if move_x < 0:
+                    if self.movement[0] < 0:
                         self.rect.left = neighbour_rect.right
 
-        self.rect.y += move_y
+        self.rect.y += self.movement[1]
         for neighbour in neighbours:
             # Checks whether the neighbouring cell is filled
             if maze.is_wall(cell=neighbour):
@@ -60,11 +52,13 @@ class Entity:
                 if self.rect.colliderect(neighbour_rect):
                     collision = True
                     # This means that the neighbour must have been on the bottom
-                    if move_y > 0:
+                    if self.movement[1] > 0:
                         self.rect.bottom = neighbour_rect.top
                     # This means that the neighbour must have been on the top
-                    if move_y < 0:
+                    if self.movement[1] < 0:
                         self.rect.top = neighbour_rect.bottom
+
+        self.movement = [0, 0]
 
         return collision
         
@@ -101,14 +95,14 @@ class Player(Entity):
         if self.attacking:
             animation_name = f"attack_{self.animation.current_animation.split('_')[1]}"
             if self.animation.current_animation != animation_name: self.animation.change_animation(animation=animation_name)
-        elif movement['left'] or movement['right']:
+        elif movement[0] != 0: # This means they must be moving either left of right
             if self.animation.current_animation != "running_sideways": self.animation.change_animation(animation="running_sideways")
-            self.animation.flipped = True if movement['left'] else False
-        elif movement['up'] and self.animation.current_animation != "running_backwards":
+            self.animation.flipped = True if movement[0] < 0 else False
+        elif movement[1] < 0 and self.animation.current_animation != "running_backwards": # This means they must be running up the screen
             self.animation.change_animation(animation="running_backwards")
-        elif movement['down'] and self.animation.current_animation != "running_forwards":
+        elif movement[1] > 0 and self.animation.current_animation != "running_forwards": # This means they must be running down the screen
             self.animation.change_animation(animation="running_forwards")
-        elif not movement['left'] and not movement['right'] and not movement['up'] and not movement['down'] and ("idle" not in self.animation.current_animation):
+        elif movement == [0, 0] and "idle" not in self.animation.current_animation:
             if self.animation.current_animation == "running_sideways":
                 self.animation.change_animation(animation="idle_sideways")
             elif self.animation.current_animation == "running_backwards":
@@ -141,12 +135,7 @@ class Player(Entity):
 
         return enemies
 
-        
 
-
-        
-
-        
 class Enemy(Entity):
     def __init__(self, x, y, size, speed, animations_path):
         super().__init__(x, y, size, speed)
@@ -209,12 +198,12 @@ class Enemy(Entity):
         """
         Changes the entity's animation based on their movements
         """
-        if movement['left'] or movement['right']:
+        if movement[0] != 0:
             if self.animation.current_animation != "running": self.animation.change_animation(animation="running")
-            self.animation.flipped = True if movement['left'] else False
-        elif (movement['up'] or movement['down']) and self.animation.current_animation != "running":
+            self.animation.flipped = True if movement[0] < 0 else False
+        elif movement[1] != 0 and self.animation.current_animation != "running":
             self.animation.change_animation(animation="running")
-        elif not movement['left'] and not movement['right'] and not movement['up'] and not movement['down'] and self.animation.current_animation != "idle":
+        elif movement == [0, 0] and self.animation.current_animation != "idle":
             self.animation.change_animation(animation="idle")
     
     def move_to_player(self, maze, dt, player_location):
@@ -246,18 +235,17 @@ class Enemy(Entity):
             cell_center = self.rect.center
         
         # Checks where the enemy needs to move based on the position of the enemy and the first cell in their path
-        movement = {'left': False, 'right': False, 'up': False, 'down': False}
         if self.rect.centerx > cell_center[0]:
-            movement['left'] = True
+            self.movement[0] -= round(self.speed * dt)
         elif self.rect.centerx < cell_center[0]:
-            movement['right'] = True
+            self.movement[0] += round(self.speed * dt)
         elif self.rect.centery < cell_center[1]:
-            movement['down'] = True
+            self.movement[1] += round(self.speed * dt)
         elif self.rect.centery > cell_center[1]:
-            movement['up'] = True
+            self.movement[1] -= round(self.speed * dt)
         
         # Moves the player based on their movement
-        self.move(movement=movement, maze=maze, dt=dt)
+        self.move(maze=maze)
 
 
 

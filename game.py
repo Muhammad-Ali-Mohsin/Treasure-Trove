@@ -24,7 +24,7 @@ class Game:
         # Game Variables
         self.last_time = time()
         self.camera_displacement = [0, 0]
-        self.movement = {'left': False, 'right': False, 'up': False, 'down': False}
+        self.moving = {'left': False, 'right': False, 'up': False, 'down': False}
         self.compass = Compass(base_img=COMPASS_BASE_IMG, spinner_img=COMPASS_SPINNER_IMG)
         self.gold = 0
         self.game_over = False
@@ -113,13 +113,13 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 if event.key == pygame.K_LEFT:
-                    self.movement['left'] = True
+                    self.moving['left'] = True
                 if event.key == pygame.K_RIGHT:
-                    self.movement['right'] = True
+                    self.moving['right'] = True
                 if event.key == pygame.K_DOWN:
-                    self.movement['down'] = True
+                    self.moving['down'] = True
                 if event.key == pygame.K_UP:
-                    self.movement['up'] = True
+                    self.moving['up'] = True
                 if event.key == pygame.K_q:
                     self.dig()
                 if event.key == pygame.K_e:
@@ -135,13 +135,13 @@ class Game:
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
-                    self.movement['left'] = False
+                    self.moving['left'] = False
                 if event.key == pygame.K_RIGHT:
-                    self.movement['right'] = False
+                    self.moving['right'] = False
                 if event.key == pygame.K_DOWN:
-                    self.movement['down'] = False
+                    self.moving['down'] = False
                 if event.key == pygame.K_UP:
-                    self.movement['up'] = False
+                    self.moving['up'] = False
 
     def generate_treasure(self):
         """
@@ -197,10 +197,18 @@ class Game:
             self.camera_displacement[1] = self.player.rect.centery - (MAZE_SURFACE_RESOLUTION[1] // 2)
 
             # Moves the player
-            movement = self.movement
+            if self.moving['left']:
+                self.player.movement[0] -= round(self.player.speed * dt)
+            if self.moving['right']:
+                self.player.movement[0] += round(self.player.speed * dt)
+            if self.moving['up']:
+                self.player.movement[1] -= round(self.player.speed * dt)
+            if self.moving['down']:
+                self.player.movement[1] += round(self.player.speed * dt)
             if self.player.attacking:
-                movement = {'left': False, 'right': False, 'up': False, 'down': False}
-            self.player.move(movement=movement, maze=self.maze, dt=dt)
+                self.player.movement = [0, 0]
+
+            self.player.move(maze=self.maze)
             self.player.animation.tick(dt=dt)
 
             # Moves the enemies to the player
