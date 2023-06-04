@@ -4,8 +4,54 @@ from maze import generate_maze
 from entities import Player, Enemy
 from compass import Compass
 from variables import *
-from misc import get_text_surf
+from misc import get_text_surf, scale_coord_to_new_res
 from map import Map
+from animation import Animation
+
+class Treasure:
+    def __init__(self, maze):
+        self.chest_open_animation = Animation(looped=False)
+        self.chest_open_animation.load_animation(animation_name="chest_open", path="assets/animations/chest_open", times=[0.1, 0.5, 0.1, 1])
+        self.chest_is_open = False
+        self.generate_treasure(maze=maze)
+        self.fadeout_timer = 0
+        self.opacity = 255
+        self.text = get_text_surf(size=30, text="+100 Gold", colour=PRIMARY_COLOUR)
+        self.text_timer = 0
+
+    def generate_treasure(self, maze):
+        # Finds a random empty cell
+        cell = maze.get_random_cell()
+        # Places the treasure at that cell
+        self.cell = cell
+
+    def open_treasure(self):
+        self.chest_open_animation.change_animation("chest_open")
+        self.chest_is_open = True
+        self.fadeout_timer = 0
+
+    def update(self, maze, dt):
+        if self.chest_is_open and self.chest_open_animation.current_animation == None:
+            if self.fadeout_timer >= FADEOUT_TIME:
+                self.generate_treasure(maze=maze)
+                self.opacity = 255
+                self.text_timer = 0
+                self.chest_is_open = False
+            else:
+                self.text_timer += dt * 50
+                self.fadeout_timer += dt
+                self.opacity = round(((FADEOUT_TIME - self.fadeout_timer) / FADEOUT_TIME) * 255)
+
+    def draw(self, camera_displacement):
+        if self.chest_open_animation.current_animation != None:
+            pos = (self.cell[0] * TILE_SIZE + 2 * (CHEST_IMG.get_width() // 2), self.cell[1] * TILE_SIZE + 2 * (CHEST_IMG.get_height() // 2))
+            self.chest_open_animation.draw(MAZE_SURFACE, pos=pos, camera_displacement=camera_displacement)
+        else:
+            pos = (self.cell[0] * TILE_SIZE - camera_displacement[0] + (CHEST_IMG.get_width() // 2), self.cell[1] * TILE_SIZE - camera_displacement[1] + (CHEST_IMG.get_height() // 2))
+            img = CHEST_IMG.copy()
+            img.set_alpha(self.opacity)
+            MAZE_SURFACE.blit(img, pos)
+
 
 
 class Game:
@@ -35,7 +81,7 @@ class Game:
 
         # Maze Variables
         self.maze = generate_maze()
-        self.generate_treasure()
+        self.treasure = Treasure(maze=self.maze)
 
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
@@ -52,12 +98,10 @@ class Game:
         MAZE_SURFACE.fill((0, 0, 0))
 
         # Draws the maze
-        self.maze.draw(MAZE_SURFACE, self.camera_displacement)
+        self.maze.draw(surface=MAZE_SURFACE, camera_displacement=self.camera_displacement)
 
         # Draws the treasure
-        pos = (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0] + (CHEST_IMG.get_width() // 2), self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1] + (CHEST_IMG.get_height() // 2))
-        MAZE_SURFACE.blit(CHEST_IMG, pos)
-        #pygame.draw.rect(MAZE_SURFACE, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
+        self.treasure.draw(camera_displacement=self.camera_displacement)
 
         # Draws the player
         self.player.animation.draw(MAZE_SURFACE, self.player.rect.center, self.camera_displacement)
@@ -68,6 +112,12 @@ class Game:
 
         # Scales the maze surface and blits it onto the screen
         SCREEN.blit(pygame.transform.scale(MAZE_SURFACE, GAME_RESOLUTION), (0, 0))
+
+        # Draws the +100 gold text above the treasure if it's being opened
+        if self.treasure.text_timer != 0:
+            pos = (self.treasure.cell[0] * TILE_SIZE - self.camera_displacement[0] + TILE_SIZE // 2, self.treasure.cell[1] * TILE_SIZE - self.camera_displacement[1] - self.treasure.text_timer)
+            pos = scale_coord_to_new_res(coord=pos, old_resolution=MAZE_SURFACE_RESOLUTION, new_resolution=GAME_RESOLUTION)
+            SCREEN.blit(self.treasure.text, (pos[0] - (self.treasure.text.get_width() // 2), pos[1]))
         
         #Draws the Compass
         self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, y=20)
@@ -143,15 +193,6 @@ class Game:
                 if event.key == pygame.K_UP:
                     self.moving['up'] = False
 
-    def generate_treasure(self):
-        """
-        Generates treasure on a random cell in the maze
-        """
-        # Finds a random empty cell
-        cell = self.maze.get_random_cell()
-        # Places the treasure at that cell
-        self.treasure = {'cell': cell, 'dig_counter': 0}
-
     def spawn_enemy(self):
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
@@ -201,14 +242,23 @@ class Game:
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
                 enemy.animation.tick(dt=dt)
 
-            # Updates the attacking timer if the player is attacking
+            # Updates the chest open animation if the animation is running
+            if self.treasure.chest_open_animation.current_animation != None: self.treasure.chest_open_animation.tick(dt)
+            
+            # Updates the player's attack if they are attacking and opens the chest if they hit the chest
             if self.player.attacking:
-                if self.player.update_attack(treasure=self.treasure, dt=dt) == True:
-                    self.generate_treasure()
-                    self.gold += 100
+                if self.player.update_attack(treasure_cell=self.treasure.cell, dt=dt) == True:
+                    if not self.treasure.chest_is_open:
+                        self.treasure.open_treasure()
+                        self.gold += 100
+
+            # Updates the chest opening if the chest is opening
+            if self.treasure.chest_is_open:
+                self.treasure.update(maze=self.maze, dt=dt)
+
 
             # Finds the bearing between the player and the treasure for the compass
-            self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)
+            self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure.cell, dt=dt)
 
             # Updates the Map
             self.map.update_map(maze=self.maze, player_location=self.player.rect.center)

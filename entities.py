@@ -105,7 +105,7 @@ class Player(Entity):
             self.attack_timer = 0
             self.attacking = True
 
-    def update_attack(self, treasure, dt):
+    def update_attack(self, treasure_cell, dt):
         """
         This will update an ongoing attack by incrementing the timer, stopping the attack if the timer has completed
         """
@@ -117,7 +117,7 @@ class Player(Entity):
             self.attack_timer = 0
             self.attacking = False
         else:
-            rect = pygame.Rect(treasure['cell'][0] * TILE_SIZE, treasure['cell'][1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            rect = pygame.Rect(treasure_cell[0] * TILE_SIZE, treasure_cell[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             if self.rect.colliderect(rect): success = True
         
         return success
