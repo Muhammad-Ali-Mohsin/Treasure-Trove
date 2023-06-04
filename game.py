@@ -38,7 +38,7 @@ class Treasure:
                 self.text_timer = 0
                 self.chest_is_open = False
             else:
-                self.text_timer += dt * 50
+                self.text_timer += dt * 20
                 self.fadeout_timer += dt
                 self.opacity = round(((FADEOUT_TIME - self.fadeout_timer) / FADEOUT_TIME) * 255)
 
@@ -115,6 +115,7 @@ class Game:
 
         # Draws the +100 gold text above the treasure if it's being opened
         if self.treasure.text_timer != 0:
+            self.treasure.text.set_alpha(self.treasure.opacity)
             pos = (self.treasure.cell[0] * TILE_SIZE - self.camera_displacement[0] + TILE_SIZE // 2, self.treasure.cell[1] * TILE_SIZE - self.camera_displacement[1] - self.treasure.text_timer)
             pos = scale_coord_to_new_res(coord=pos, old_resolution=MAZE_SURFACE_RESOLUTION, new_resolution=GAME_RESOLUTION)
             SCREEN.blit(self.treasure.text, (pos[0] - (self.treasure.text.get_width() // 2), pos[1]))
