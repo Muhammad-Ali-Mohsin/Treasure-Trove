@@ -2,7 +2,7 @@ import os
 import pygame
 
 class Animation:
-    def __init__(self):
+    def __init__(self, looped=True):
         """
         Creates the intial variables
         """
@@ -11,6 +11,7 @@ class Animation:
         self.current_animation = None
         self.animation_library = {}
         self.flipped = False
+        self.looped = looped
 
     def load_animation(self, animation_name, path, times):
         """
@@ -18,7 +19,7 @@ class Animation:
         """
         # Creates a list of all the frames
         frames = os.listdir(path)
-        frames.remove("times.txt")
+        if "times.txt" in frames: frames.remove("times.txt")
         animation = []
         
         # Loads each frame into a pygame image and adds it to the list with its corresponding time
@@ -63,7 +64,11 @@ class Animation:
         # Changes the frame to the next frame if the timer has reached the duration of the frame and resets the timer
         if self.timer >= self.animation_library[self.current_animation][self.frame][1]:
             self.timer = 0
-            self.frame = (self.frame + 1 )% len(self.animation_library[self.current_animation])
+            new_frame = (self.frame + 1) % len(self.animation_library[self.current_animation])
+            if new_frame < self.frame and not self.looped:
+                self.current_animation = None
+            self.frame = new_frame
+
 
     def draw(self, surface, pos, camera_displacement):
         """
