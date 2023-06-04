@@ -55,7 +55,9 @@ class Game:
         self.maze.draw(MAZE_SURFACE, self.camera_displacement)
 
         # Draws the treasure
-        pygame.draw.rect(MAZE_SURFACE, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
+        pos = (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0] + (CHEST_IMG.get_width() // 2), self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1] + (CHEST_IMG.get_height() // 2))
+        MAZE_SURFACE.blit(CHEST_IMG, pos)
+        #pygame.draw.rect(MAZE_SURFACE, (255, 255, 0), (self.treasure['cell'][0] * TILE_SIZE - self.camera_displacement[0], self.treasure['cell'][1] * TILE_SIZE - self.camera_displacement[1], TILE_SIZE, TILE_SIZE))
 
         # Draws the player
         self.player.animation.draw(MAZE_SURFACE, self.player.rect.center, self.camera_displacement)
@@ -120,8 +122,6 @@ class Game:
                     self.moving['down'] = True
                 if event.key == pygame.K_UP:
                     self.moving['up'] = True
-                if event.key == pygame.K_q:
-                    self.dig()
                 if event.key == pygame.K_e:
                     self.player.attack()
                 if event.key == pygame.K_TAB:
@@ -152,23 +152,6 @@ class Game:
         # Places the treasure at that cell
         self.treasure = {'cell': cell, 'dig_counter': 0}
 
-    def dig(self):
-        """
-        Attempts to dig for treasure at the player's current cell
-        """
-        # Checks whether the dig is successfull (whether there is treasure there or not)
-        success = self.player.dig(treasure=self.treasure)
-        if success:
-            self.treasure['dig_counter'] += 1
-            # If the player has dug 3 times to fully uncover the treasure
-            if self.treasure['dig_counter'] == 3:
-                # Generate new treausre
-                self.generate_treasure()
-                # Give the player 100 gold
-                self.gold += 100
-        else:
-            pass
-
     def spawn_enemy(self):
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
@@ -196,6 +179,7 @@ class Game:
             self.camera_displacement[0] = self.player.rect.centerx - (MAZE_SURFACE_RESOLUTION[0] // 2)
             self.camera_displacement[1] = self.player.rect.centery - (MAZE_SURFACE_RESOLUTION[1] // 2)
 
+            
             # Moves the player
             if self.moving['left']:
                 self.player.movement[0] -= round(self.player.speed * dt)
@@ -211,13 +195,17 @@ class Game:
             self.player.move(maze=self.maze)
             self.player.animation.tick(dt=dt)
 
+            
             # Moves the enemies to the player
             for enemy in self.enemies:
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
                 enemy.animation.tick(dt=dt)
 
+            # Updates the attacking timer if the player is attacking
             if self.player.attacking:
-                self.enemies = self.player.update_attack(dt=dt, enemies=self.enemies)
+                if self.player.update_attack(treasure=self.treasure, dt=dt) == True:
+                    self.generate_treasure()
+                    self.gold += 100
 
             # Finds the bearing between the player and the treasure for the compass
             self.compass.calculate_angle(player_location=player_cell, treasure_location=self.treasure['cell'], dt=dt)

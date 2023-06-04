@@ -3,8 +3,8 @@ import pygame
 clock = pygame.time.Clock()
 
 # Constants
-MAZE_RESOLUTION = (50, 50)
-REMOVED_TILES = 50
+MAZE_RESOLUTION = (25, 25)
+REMOVED_TILES = 25
 TILE_SIZE = 32
 PRIMARY_COLOUR = (255, 202, 24)
 
@@ -39,6 +39,7 @@ ICON_IMG = pygame.image.load("assets/images/icon.png").convert_alpha()
 CURSOR_1 = pygame.image.load("./assets/images/cursor_1.png").convert_alpha()
 CURSOR_2 = pygame.image.load("./assets/images/cursor_0.png").convert_alpha()
 PAUSE_SCREEN_BOX_IMG = pygame.image.load("assets/images/box.png").convert_alpha()
+CHEST_IMG = pygame.image.load("assets/images/chest.png").convert_alpha()
 
 # Image Rescaling
 COMPASS_BASE_IMG = pygame.transform.scale(COMPASS_BASE_IMG, (COMPASS_SCALE * COMPASS_BASE_IMG.get_width(), COMPASS_SCALE * COMPASS_BASE_IMG.get_width()))

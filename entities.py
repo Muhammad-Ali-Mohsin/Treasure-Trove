@@ -74,19 +74,6 @@ class Player(Entity):
         self.animation.load_animations(animations_path)
         self.attacking = False
         self.attack_timer = 0
-
-
-    def dig(self, treasure):
-        """
-        Checks whether there is treasure at the current location
-        """
-        cell = (self.rect.centerx // TILE_SIZE, self.rect.centery // TILE_SIZE)
-        if cell == treasure['cell']:
-            success = True
-        else:
-            success = False
-
-        return success
     
     def change_entity_animation(self, movement):
         """
@@ -118,22 +105,22 @@ class Player(Entity):
             self.attack_timer = 0
             self.attacking = True
 
-    def update_attack(self, dt, enemies):
+    def update_attack(self, treasure, dt):
         """
-        This will update an ongoing attack by incrementing the timer, stopping the attack if the timer has completed and checking for collisions with enemys
+        This will update an ongoing attack by incrementing the timer, stopping the attack if the timer has completed
         """
         # Increments the attack timer
         self.attack_timer += dt
+        success = False
         # Checks whether the attack is over and ends it if so
         if self.attack_timer >= ATTACK_COOLDOWN:
             self.attack_timer = 0
             self.attacking = False
-
-        for enemy in enemies:
-            if self.rect.colliderect(enemy.rect):
-                enemies.remove(enemy)
-
-        return enemies
+        else:
+            rect = pygame.Rect(treasure['cell'][0] * TILE_SIZE, treasure['cell'][1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            if self.rect.colliderect(rect): success = True
+        
+        return success
 
 
 class Enemy(Entity):
