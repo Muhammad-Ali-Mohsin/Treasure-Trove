@@ -39,10 +39,13 @@ class Treasure:
                 self.opacity = 255
                 self.text_timer = 0
                 self.chest_is_open = False
+                has_opened = True
             else:
                 self.text_timer += dt * 20
                 self.fadeout_timer += dt
                 self.opacity = round(((FADEOUT_TIME - self.fadeout_timer) / FADEOUT_TIME) * 255)
+                has_opened = False
+            return has_opened
 
     def draw(self, camera_displacement):
         # Draws the chest animation or the chest image
@@ -81,6 +84,7 @@ class Game:
         self.map_open = False
         self.map = Map()
         self.enemies = []
+        self.wave = 0
 
         # Maze Variables
         self.maze = generate_maze()
@@ -242,7 +246,6 @@ class Game:
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
                 if enemy.has_died: 
                     self.enemies.remove(enemy)
-
             
             # Updates the player's attack if they are attacking and opens the chest if they hit the chest
             if self.player.attacking:
@@ -253,7 +256,11 @@ class Game:
 
             # Updates the chest opening if the chest is opening
             if self.treasure.chest_is_open:
-                self.treasure.update(maze=self.maze, dt=dt)
+                has_opened = self.treasure.update(maze=self.maze, dt=dt)
+                if has_opened:
+                    self.wave += 1
+                    for i in range(self.wave):
+                        self.spawn_enemy()
 
 
             # Finds the bearing between the player and the treasure for the compass
