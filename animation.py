@@ -2,6 +2,25 @@ import os
 import pygame
 
 class Animation:
+
+    instances = []
+
+    def update(dt):
+        """
+        Adds the change in time to the animation timer and changes the frame if needed for all animations
+        """
+        for animation in Animation.instances:
+            if animation.current_animation == None: continue 
+            # Adds the change in time to the timer
+            animation.timer += dt
+            # Changes the frame to the next frame if the timer has reached the duration of the frame and resets the timer
+            if animation.timer >= animation.animation_library[animation.current_animation][animation.frame][1]:
+                animation.timer = 0
+                new_frame = (animation.frame + 1) % len(animation.animation_library[animation.current_animation])
+                if new_frame < animation.frame and not animation.looped:
+                    animation.current_animation = None
+                animation.frame = new_frame
+
     def __init__(self, looped=True):
         """
         Creates the intial variables
@@ -12,6 +31,8 @@ class Animation:
         self.animation_library = {}
         self.flipped = False
         self.looped = looped
+        Animation.instances.append(self)
+
 
     def load_animation(self, animation_name, path, times):
         """
@@ -53,22 +74,6 @@ class Animation:
             self.current_animation = animation
             self.timer = 0
             self.frame = 0
-
-    def tick(self, dt):
-        """
-        Adds the change in time to the animation timer and changes the frame if needed
-        """
-        if self.current_animation == None: return 
-        # Adds the change in time to the timer
-        self.timer += dt
-        # Changes the frame to the next frame if the timer has reached the duration of the frame and resets the timer
-        if self.timer >= self.animation_library[self.current_animation][self.frame][1]:
-            self.timer = 0
-            new_frame = (self.frame + 1) % len(self.animation_library[self.current_animation])
-            if new_frame < self.frame and not self.looped:
-                self.current_animation = None
-            self.frame = new_frame
-
 
     def draw(self, surface, pos, camera_displacement):
         """

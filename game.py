@@ -26,11 +26,13 @@ class Treasure:
         self.cell = cell
 
     def open_treasure(self):
+        # Starts the chest open animation
         self.chest_open_animation.change_animation("chest_open")
         self.chest_is_open = True
         self.fadeout_timer = 0
 
     def update(self, maze, dt):
+        # Updates the chest fadeout and text position and generates new treasure if the chest has faded out
         if self.chest_is_open and self.chest_open_animation.current_animation == None:
             if self.fadeout_timer >= FADEOUT_TIME:
                 self.generate_treasure(maze=maze)
@@ -43,6 +45,7 @@ class Treasure:
                 self.opacity = round(((FADEOUT_TIME - self.fadeout_timer) / FADEOUT_TIME) * 255)
 
     def draw(self, camera_displacement):
+        # Draws the chest animation or the chest image
         if self.chest_open_animation.current_animation != None:
             pos = (self.cell[0] * TILE_SIZE + 2 * (CHEST_IMG.get_width() // 2), self.cell[1] * TILE_SIZE + 2 * (CHEST_IMG.get_height() // 2))
             self.chest_open_animation.draw(MAZE_SURFACE, pos=pos, camera_displacement=camera_displacement)
@@ -235,16 +238,10 @@ class Game:
                 self.player.movement = [0, 0]
 
             self.player.move(maze=self.maze)
-            self.player.animation.tick(dt=dt)
-
             
             # Moves the enemies to the player
             for enemy in self.enemies:
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
-                enemy.animation.tick(dt=dt)
-
-            # Updates the chest open animation if the animation is running
-            if self.treasure.chest_open_animation.current_animation != None: self.treasure.chest_open_animation.tick(dt)
             
             # Updates the player's attack if they are attacking and opens the chest if they hit the chest
             if self.player.attacking:
@@ -263,6 +260,9 @@ class Game:
 
             # Updates the Map
             self.map.update_map(maze=self.maze, player_location=self.player.rect.center)
+
+            # Updates all the animations
+            Animation.update(dt)
 
         # Calls functions
         self.handle_events()
