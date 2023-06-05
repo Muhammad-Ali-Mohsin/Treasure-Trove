@@ -16,11 +16,11 @@ class Animation:
             if animation.timer >= animation.animation_library[animation.current_animation][animation.frame][1]:
                 animation.timer = 0
                 new_frame = (animation.frame + 1) % len(animation.animation_library[animation.current_animation])
-                if new_frame < animation.frame and not animation.looped:
+                if new_frame < animation.frame and not animation.looped_animations[animation.current_animation]:
                     animation.current_animation = None
                 animation.frame = new_frame
 
-    def __init__(self, looped=True):
+    def __init__(self):
         """
         Creates the intial variables
         """
@@ -28,12 +28,12 @@ class Animation:
         self.frame = 0
         self.current_animation = None
         self.animation_library = {}
+        self.looped_animations = {}
         self.flipped = False
-        self.looped = looped
         Animation.instances.append(self)
 
 
-    def load_animation(self, animation_name, path, times):
+    def load_animation(self, animation_name, path, times, looped=True):
         """
         Loads an animation from a given path and adds it to the animation library with a given name and frame timings
         """
@@ -49,6 +49,7 @@ class Animation:
 
         # Adds the animation to the animation library as a tuple
         self.animation_library[animation_name] = tuple(animation)
+        self.looped_animations[animation_name] = looped
 
     def load_animations(self, animations_path):
         """
