@@ -1,6 +1,6 @@
 import pygame
 from animation import Animation
-from variables import CELL_SIZE, ENEMY_REFRESH_INTERVAL, ATTACK_COOLDOWN, PLAYER_SIZE, PLAYER_SPEED, ENEMY_SIZE, ENEMY_SPEED
+from variables import CELL_SIZE, ENEMY_REFRESH_INTERVAL, ATTACK_COOLDOWN, PLAYER_SIZE, PLAYER_SPEED, ENEMY_SIZE, ENEMY_SPEED, ENEMY_LIFESPAN
 
 class Entity:
     def __init__(self, x, y, size, speed):
@@ -128,8 +128,11 @@ class Enemy(Entity):
         # Loads the animations
         self.animation = Animation()
         self.animation.load_animations(animations_path="assets/animations/slime")
+        self.animation.load_animation(animation_name="death", path="assets/animations/slime/death", times=[0.5, 0.1, 0.2, 0.2, 0.2, 0.2], looped=False)
         self.path = []
         self.path_refresh_timer = 0
+        self.age = 0
+        self.has_died = False
 
     def calculate_path(self, player_location, maze):
         """
@@ -186,6 +189,13 @@ class Enemy(Entity):
         """
         Refreshes the enemy's path based on the refresh timer and moves the enemy to the player
         """
+        # Adds the enemy's age and marks it as dead if it's past its lifetime and the death animation is over
+        self.age += dt
+        if self.age >= ENEMY_LIFESPAN:
+            if self.animation.current_animation != "death": self.animation.change_animation(animation="death")
+            if self.animation.frame == len(self.animation.animation_library[self.animation.current_animation]) - 1:
+                self.has_died = True
+            return
         # Checks whether it's time to refresh the enemy's path and if not, increments the timer
         if self.path_refresh_timer >= ENEMY_REFRESH_INTERVAL:
             # Finds the rect of the cell the enemy is in and makes sure the enemy is fully within the cell before calculating new path

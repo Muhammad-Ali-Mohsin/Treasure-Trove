@@ -10,8 +10,8 @@ from variables import *
 
 class Treasure:
     def __init__(self, maze):
-        self.chest_open_animation = Animation(looped=False)
-        self.chest_open_animation.load_animation(animation_name="chest_open", path="assets/animations/chest_open", times=[0.1, 0.5, 0.1, 1])
+        self.chest_open_animation = Animation()
+        self.chest_open_animation.load_animation(animation_name="chest_open", path="assets/animations/chest_open", times=[0.1, 0.5, 0.1, 1], looped=False)
         self.chest_is_open = False
         self.generate_treasure(maze=maze)
         self.fadeout_timer = 0
@@ -240,6 +240,9 @@ class Game:
             # Moves the enemies to the player
             for enemy in self.enemies:
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
+                if enemy.has_died: 
+                    self.enemies.remove(enemy)
+
             
             # Updates the player's attack if they are attacking and opens the chest if they hit the chest
             if self.player.attacking:
