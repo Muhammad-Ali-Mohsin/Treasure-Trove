@@ -31,9 +31,10 @@ pygame.display.set_caption("Treasure Trove")
 pygame.display.set_icon(ICON_IMG)
 
 screens = {'main menu': MainMenu, 'game': Game, 'options menu': OptionsMenu, 'credits menu': CreditsMenu}
-current_screen = MainMenu(window, fps)
+current_screen = Game(window, fps)
+running = True
 
-while True:
+while running:
     # Runs a frame of the current screen
     current_screen.run_frame()
     # Checks whether the selected screen is no longer the current screen
@@ -49,4 +50,4 @@ while True:
         else:
             # Exits the game
             pygame.display.quit()
-            break
+            running = False

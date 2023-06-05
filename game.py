@@ -3,10 +3,10 @@ from time import time
 from maze import generate_maze
 from entities import Player, Enemy
 from compass import Compass
-from variables import *
 from misc import get_text_surf, scale_coord_to_new_res
 from map import Map
 from animation import Animation
+from variables import *
 
 class Treasure:
     def __init__(self, maze):
@@ -47,10 +47,10 @@ class Treasure:
     def draw(self, camera_displacement):
         # Draws the chest animation or the chest image
         if self.chest_open_animation.current_animation != None:
-            pos = (self.cell[0] * TILE_SIZE + 2 * (CHEST_IMG.get_width() // 2), self.cell[1] * TILE_SIZE + 2 * (CHEST_IMG.get_height() // 2))
+            pos = (self.cell[0] * CELL_SIZE + 2 * (CHEST_IMG.get_width() // 2), self.cell[1] * CELL_SIZE + 2 * (CHEST_IMG.get_height() // 2))
             self.chest_open_animation.draw(MAZE_SURFACE, pos=pos, camera_displacement=camera_displacement)
         else:
-            pos = (self.cell[0] * TILE_SIZE - camera_displacement[0] + (CHEST_IMG.get_width() // 2), self.cell[1] * TILE_SIZE - camera_displacement[1] + (CHEST_IMG.get_height() // 2))
+            pos = (self.cell[0] * CELL_SIZE - camera_displacement[0] + (CHEST_IMG.get_width() // 2), self.cell[1] * CELL_SIZE - camera_displacement[1] + (CHEST_IMG.get_height() // 2))
             img = CHEST_IMG.copy()
             img.set_alpha(self.opacity)
             MAZE_SURFACE.blit(img, pos)
@@ -74,12 +74,12 @@ class Game:
         self.last_time = time()
         self.camera_displacement = [0, 0]
         self.moving = {'left': False, 'right': False, 'up': False, 'down': False}
-        self.compass = Compass(base_img=COMPASS_BASE_IMG, spinner_img=COMPASS_SPINNER_IMG)
+        self.compass = Compass()
         self.gold = 0
         self.game_over = False
         self.paused = False
         self.map_open = False
-        self.map = Map(resolution=MAP_RESOLUTION, maze_resolution=MAZE_RESOLUTION)
+        self.map = Map()
         self.enemies = []
 
         # Maze Variables
@@ -89,8 +89,7 @@ class Game:
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
         # Creates a Player in that cell
-        self.player = Player(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
-                             size=PLAYER_SIZE, speed=PLAYER_SPEED, animations_path="assets/animations/player")
+        self.player = Player(x=cell[0] * CELL_SIZE + (CELL_SIZE // 2), y=cell[1] * CELL_SIZE + (CELL_SIZE // 2))
         self.player.animation.change_animation(animation="idle_forwards")
 
     def update_display(self):
@@ -119,16 +118,16 @@ class Game:
         # Draws the +100 gold text above the treasure if it's being opened
         if self.treasure.text_timer != 0:
             self.treasure.text.set_alpha(self.treasure.opacity)
-            pos = (self.treasure.cell[0] * TILE_SIZE - self.camera_displacement[0] + TILE_SIZE // 2, self.treasure.cell[1] * TILE_SIZE - self.camera_displacement[1] - self.treasure.text_timer)
+            pos = (self.treasure.cell[0] * CELL_SIZE - self.camera_displacement[0] + CELL_SIZE // 2, self.treasure.cell[1] * CELL_SIZE - self.camera_displacement[1] - self.treasure.text_timer)
             pos = scale_coord_to_new_res(coord=pos, old_resolution=MAZE_SURFACE_RESOLUTION, new_resolution=GAME_RESOLUTION)
             SCREEN.blit(self.treasure.text, (pos[0] - (self.treasure.text.get_width() // 2), pos[1]))
         
         #Draws the Compass
-        self.compass.draw(surface=SCREEN, x=GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, y=20)
+        self.compass.draw()
 
         # Draws the map if it's open
         if self.map_open:
-            self.map.draw(surface=SCREEN, pos=((GAME_RESOLUTION[0] // 2) - (MAP_RESOLUTION[0] // 2), (GAME_RESOLUTION[1] // 2) - (MAP_RESOLUTION[1] // 2)), player_pos=self.player.rect.center)
+            self.map.draw(player_pos=self.player.rect.center)
 
         if self.paused:
             # Draws the pause box and pause text
@@ -201,8 +200,7 @@ class Game:
         # Finds Random Spawning Cell
         cell = self.maze.get_random_cell()
         # Creates an Enemy in that cell
-        enemy = Enemy(x=cell[0] * TILE_SIZE + (TILE_SIZE // 2), y=cell[1] * TILE_SIZE + (TILE_SIZE // 2), 
-                           size=ENEMY_SIZE, speed=ENEMY_SPEED, animations_path="assets/animations/slime")
+        enemy = Enemy(x=cell[0] * CELL_SIZE + (CELL_SIZE // 2), y=cell[1] * CELL_SIZE + (CELL_SIZE // 2), )
         enemy.animation.change_animation(animation="idle")
         # Adds the enemy to the enemies list
         self.enemies.append(enemy)

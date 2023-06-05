@@ -1,12 +1,12 @@
 # USAGE: maze = Maze(x, y)
 import random
 import pygame
-from variables import MAZE_RESOLUTION, TILE_SIZE, REMOVED_TILES
+from variables import MAZE_RESOLUTION, CELL_SIZE, CELL_CENTER_SIZE, REMOVED_CELLS
 
 class Maze:
     def __init__(self, x, y):
         self.resolution = (x, y)
-        self.surface = pygame.Surface(((x + 2) * TILE_SIZE, (y + 2) * TILE_SIZE))
+        self.surface = pygame.Surface(((x + 2) * CELL_SIZE, (y + 2) * CELL_SIZE))
         self.hedge_images = []
         self.path_images = []
 
@@ -19,36 +19,8 @@ class Maze:
 
         self._maze = [[len(self.path_images) for i in range(x)] for i in range(y)]
 
-    def draw(self, surface, camera_displacement):
-        """
-        This draws the maze onto it's own surface and then blits that surface onto the screen based on the camera displacement
-        """
-
-        self.surface.fill((35, 72, 39))
-        # Draws the maze
-        for y in range(self.resolution[1]):
-            for x in range(self.resolution[0]):
-                if self.is_wall(cell=(x, y)):
-                    hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - len(self.path_images)]
-                    self.surface.blit(hedge_image, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-                else:
-                    path_image = self.path_images[self.get_cell_value(cell=(x, y))]
-                    self.surface.blit(path_image, (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-
-        # Draws the maze surface onto the screen based on the camera displacement
-        surface.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
-
-    def change_cell(self, cell, data):
-        """
-        Changes the given cell to a new value
-        """
-        self._maze[cell[1]][cell[0]] = data
-
-    def is_wall(self, cell):
-        """
-        Returns whether a wall is present at the given cell or not
-        """
-        return self.get_cell_value(cell=cell) >= len(self.path_images)
+    def __repr__(self):
+        return "\n".join([str(row) for row in self._maze])
 
     def get_cell_value(self, cell):
         """
@@ -60,8 +32,24 @@ class Maze:
         """
         Returns the given cell at a set of coords
         """
-        return (coord[0] // TILE_SIZE, coord[1] // TILE_SIZE)
-
+        return (coord[0] // CELL_SIZE, coord[1] // CELL_SIZE)
+    
+    
+    def get_maze(self):
+        """
+        Returns the maze itself
+        """
+        return self._maze
+    
+    def get_random_cell(self):
+        """
+        Returns a random empty cell
+        """
+        cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
+        while self.is_wall(cell=cell):
+            cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
+        return cell
+    
     def get_neighbours(self, cell, with_diagonals=False):
         """
         Returns the neighbours for the cell
@@ -86,24 +74,9 @@ class Maze:
 
         return neighbours
     
-    def get_random_cell(self):
-        """
-        Returns a random empty cell
-        """
-        cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
-        while self.is_wall(cell=cell):
-            cell = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
-        return cell
-
-    def get_maze(self):
-        """
-        Returns the maze itself
-        """
-        return self._maze
-    
     def get_wall_neighbours_list(self, cell):
         """
-        Returns a list of the sides of a tile which have walls
+        Returns a list of the sides of a cell which have walls
         """
         sides = []
         neighbours = self.get_neighbours(cell=cell)
@@ -121,9 +94,46 @@ class Maze:
                     sides.append('top')
 
         return sides
-            
-    def __repr__(self):
-        return "\n".join([str(row) for row in self._maze])
+    
+    def get_cell_center(self, cell):
+        """
+        Returns the coordinates of the centre of a cell and a rect around the centre
+        """
+        cell_center = ((cell[0] * CELL_SIZE) + (CELL_SIZE // 2), (cell[1] * CELL_SIZE) + (CELL_SIZE // 2))
+        rect = pygame.Rect(0, 0, CELL_CENTER_SIZE, CELL_CENTER_SIZE)
+        rect.center = cell_center
+        return cell_center, rect
+    
+    def change_cell(self, cell, data):
+        """
+        Changes the given cell to a new value
+        """
+        self._maze[cell[1]][cell[0]] = data
+
+    def is_wall(self, cell):
+        """
+        Returns whether a wall is present at the given cell or not
+        """
+        return self.get_cell_value(cell=cell) >= len(self.path_images)
+
+    def draw(self, surface, camera_displacement):
+        """
+        This draws the maze onto it's own surface and then blits that surface onto the screen based on the camera displacement
+        """
+
+        self.surface.fill((35, 72, 39))
+        # Draws the maze
+        for y in range(self.resolution[1]):
+            for x in range(self.resolution[0]):
+                if self.is_wall(cell=(x, y)):
+                    hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - len(self.path_images)]
+                    self.surface.blit(hedge_image, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                else:
+                    path_image = self.path_images[self.get_cell_value(cell=(x, y))]
+                    self.surface.blit(path_image, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+        # Draws the maze surface onto the screen based on the camera displacement
+        surface.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
     
 
 def generate_maze():
@@ -177,7 +187,7 @@ def generate_maze():
             maze_stack.append(neighbour[0])
 
     # This removes a bunch of walls to make the maze more open and have more paths through it
-    for i in range(REMOVED_TILES):
+    for i in range(REMOVED_CELLS):
         # This finds a random cell and checks whether it has 2 walls on opposite sides as those are the only type of walls that should be removed
         cell = (random.randint(0, maze.resolution[0] - 1), random.randint(0, maze.resolution[0] - 1))
         while not maze.is_wall(cell=cell) or maze.get_wall_neighbours_list(cell=cell) not in [['bottom', 'top'], ['right', 'left']]:
@@ -195,7 +205,7 @@ def generate_maze():
     
     maze.resolution = MAZE_RESOLUTION
 
-    # Changes each value in the maze based on the surrounding tiles
+    # Changes each value in the maze based on the surrounding cells
     # This is a list of the possible combinations that can be had with surrounding walls
     combinations = (
         ['right', 'left', 'bottom', 'top'],

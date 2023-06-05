@@ -1,11 +1,9 @@
-import math
-import pygame
+import pygame, math
+from variables import COMPASS_BASE_IMG, COMPASS_SPINNER_IMG, GAME_RESOLUTION, SCREEN
 
 class Compass:
-    def __init__(self, base_img, spinner_img):
+    def __init__(self):
         self.angle = 0
-        self.base_img = base_img
-        self.spinner_img = spinner_img
 
     def calculate_angle(self, player_location, treasure_location, dt):
         """
@@ -38,15 +36,15 @@ class Compass:
                     else: # This means the player is above the treasure
                         self.angle = 90 + self.angle
 
-    def draw(self, surface, x, y):
+    def draw(self):
         """
-        Draws the compass on a surface at the given coordinates
+        Draws the compass onto the screen
         """
         # Draws the base image
-        surface.blit(self.base_img, (x, y))
+        SCREEN.blit(COMPASS_BASE_IMG, (GAME_RESOLUTION[0] - COMPASS_BASE_IMG.get_width() - 20, 20))
         # Rotates the spinner image by the angle towards treasure and subtracts 45 from angle as compass image is already rotated 45 degrees clockwise
         # Angle is also made negative because pygame rotates images anticlockwise and I want to rotate clockwise
-        spinner_img = pygame.transform.rotate(self.spinner_img, -self.angle + 45)
+        spinner_img = pygame.transform.rotate(COMPASS_SPINNER_IMG, -self.angle + 45)
         # Draws the spinner image at the centre of the compass image
-        surface.blit(spinner_img, (round(x + (self.base_img.get_width() / 2) - (spinner_img.get_width() / 2)), round(y + (self.base_img.get_height() / 2) - (spinner_img.get_height() / 2))))
-
+        pos = (GAME_RESOLUTION[0] - (COMPASS_BASE_IMG.get_width() // 2) - (spinner_img.get_width() // 2) - 20, (COMPASS_BASE_IMG.get_height() // 2) - (spinner_img.get_height() // 2) + 20)
+        SCREEN.blit(spinner_img, pos)

@@ -1,38 +1,4 @@
-import pygame
-import os
-
-class Node():
-    """
-    Node used in the enemy pathfinding algorithm
-    """
-    def __init__(self, cell, parent):
-        self.cell = cell
-        self.parent = parent
-
-
-class QueueFrontier():
-    """
-    Queue Frontier used in the enemy pathfinding algorithm
-    """
-    def __init__(self):
-        self.frontier = []
-
-    def add(self, node):
-        self.frontier.append(node)
-
-    def contains_cell(self, cell):
-        return any(node.cell == cell for node in self.frontier)
-
-    def empty(self):
-        return len(self.frontier) == 0
-
-    def remove(self):
-        if self.empty():
-            raise Exception("Empty Frontier")
-        else:
-            node = self.frontier[0]
-            self.frontier = self.frontier[1:]
-            return node
+import pygame, os
         
 def get_text_surf(size, text, colour, bold=False, italic=False, underline=False):
     """
@@ -44,16 +10,6 @@ def get_text_surf(size, text, colour, bold=False, italic=False, underline=False)
     font.set_underline(underline)
     text_surf = font.render(text, True, colour)
     return text_surf
-
-def scale_coord_to_new_res(coord, old_resolution, new_resolution):
-    """
-    Maps a coordinate onto the the corresponding point on a new resolution
-    """
-    x_scale = new_resolution[0] / old_resolution[0]
-    y_scale = new_resolution[1] / old_resolution[1]
-    x = coord[0] * x_scale
-    y = coord[1] * y_scale
-    return (x, y)
 
 def get_mouse_pos(old_resolution, new_resolution):
     """
@@ -76,8 +32,18 @@ def get_options():
         fps = int(options[1])
 
         return user_resolution, fps
-
+    
 def update_options(user_resolution, fps):
     options = f"USER_RESOLUTION={user_resolution[0]}x{user_resolution[1]}\nFPS={fps}"
     with open("assets/options.txt", "w") as file:
         file.write(options)
+
+def scale_coord_to_new_res(coord, old_resolution, new_resolution):
+    """
+    Maps a coordinate onto the the corresponding point on a new resolution
+    """
+    x_scale = new_resolution[0] / old_resolution[0]
+    y_scale = new_resolution[1] / old_resolution[1]
+    x = coord[0] * x_scale
+    y = coord[1] * y_scale
+    return (x, y)

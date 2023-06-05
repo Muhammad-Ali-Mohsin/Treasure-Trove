@@ -46,6 +46,7 @@ class OptionsMenu:
         # Clears the screen
         SCREEN.fill((0, 0, 0))
 
+        # Draws the title
         SCREEN.blit(self.title_text, ((GAME_RESOLUTION[0] // 2) - (self.title_text.get_width() // 2), 100))
 
         # Draws the buttons onto the screen
@@ -141,8 +142,7 @@ class OptionsMenu:
         # Checks whether the mouse is hovering over a button and selects it if so
         self.selected = None
         for i, button in enumerate(self.buttons):
-            if button[2].collidepoint(self.mouse_pos):
-                self.selected = i
+            if button[2].collidepoint(self.mouse_pos): self.selected = i
 
         # Calls functions
         self.handle_events()
@@ -186,6 +186,7 @@ class CreditsMenu:
         # Clears the screen
         SCREEN.fill((0, 0, 0))
 
+        # Draws the title
         SCREEN.blit(self.title_text, ((GAME_RESOLUTION[0] // 2) - (self.title_text.get_width() // 2), 100))
 
         # Draws the buttons onto the screen
@@ -244,8 +245,7 @@ class CreditsMenu:
         """
         # Checks whether the mouse is hovering over a button and selects it if so
         self.selected = False
-        if self.menu_button[1].collidepoint(self.mouse_pos):
-            self.selected = True
+        if self.menu_button[1].collidepoint(self.mouse_pos): self.selected = True
 
         # Calls functions
         self.handle_events()

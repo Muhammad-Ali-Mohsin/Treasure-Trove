@@ -98,12 +98,10 @@ class MainMenu:
         """
         Runs a frame of the main menu
         """
-
         # Checks whether the mouse is hovering over a button and selects it if so
         self.selected = None
         for i, button in enumerate(self.buttons):
-            if button[2].collidepoint(self.mouse_pos):
-                self.selected = i
+            if button[2].collidepoint(self.mouse_pos): self.selected = i
 
         # Calls functions
         self.handle_events()

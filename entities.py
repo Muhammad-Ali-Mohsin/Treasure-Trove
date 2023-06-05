@@ -1,7 +1,6 @@
 import pygame
 from animation import Animation
-from misc import Node, QueueFrontier
-from variables import TILE_SIZE, TILE_CENTER_SIZE, ENEMY_REFRESH_INTERVAL, ATTACK_COOLDOWN
+from variables import CELL_SIZE, ENEMY_REFRESH_INTERVAL, ATTACK_COOLDOWN, PLAYER_SIZE, PLAYER_SPEED, ENEMY_SIZE, ENEMY_SPEED
 
 class Entity:
     def __init__(self, x, y, size, speed):
@@ -9,6 +8,9 @@ class Entity:
         self.rect.center = (x, y)
         self.speed = speed
         self.movement = [0, 0]
+        
+    def __repr__(self):
+        return f"Entity(Location: {self.rect.center} )"
 
     def move(self, maze):
         """
@@ -30,8 +32,8 @@ class Entity:
         for neighbour in neighbours:
             # Checks whether the neighbouring cell is filled
             if maze.is_wall(cell=neighbour):
-                # Creates a rect for the neighbouring tile
-                neighbour_rect = pygame.Rect(neighbour[0] * TILE_SIZE, neighbour[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                # Creates a rect for the neighbouring cell
+                neighbour_rect = pygame.Rect(neighbour[0] * CELL_SIZE, neighbour[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                 # Checks whether the rects are colliding with one another
                 if self.rect.colliderect(neighbour_rect):
                     collision = True
@@ -46,8 +48,8 @@ class Entity:
         for neighbour in neighbours:
             # Checks whether the neighbouring cell is filled
             if maze.is_wall(cell=neighbour):
-                # Creates a rect for the neighbouring tile
-                neighbour_rect = pygame.Rect(neighbour[0] * TILE_SIZE, neighbour[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                # Creates a rect for the neighbouring cell
+                neighbour_rect = pygame.Rect(neighbour[0] * CELL_SIZE, neighbour[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                 # Checks whether the rects are colliding with one another
                 if self.rect.colliderect(neighbour_rect):
                     collision = True
@@ -61,17 +63,14 @@ class Entity:
         self.movement = [0, 0]
 
         return collision
-        
-    def __repr__(self):
-        return f"Entity(Location: {self.rect.center} )"
     
 
 class Player(Entity):
-    def __init__(self, x, y, size, speed, animations_path):
-        super().__init__(x, y, size, speed)
+    def __init__(self, x, y):
+        super().__init__(x, y, PLAYER_SIZE, PLAYER_SPEED)
         # Loads the animations
         self.animation = Animation()
-        self.animation.load_animations(animations_path)
+        self.animation.load_animations(animations_path="assets/animations/player")
         self.attacking = False
         self.attack_timer = 0
     
@@ -117,69 +116,59 @@ class Player(Entity):
             self.attack_timer = 0
             self.attacking = False
         else:
-            rect = pygame.Rect(treasure_cell[0] * TILE_SIZE, treasure_cell[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            rect = pygame.Rect(treasure_cell[0] * CELL_SIZE, treasure_cell[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             if self.rect.colliderect(rect): success = True
         
         return success
 
 
 class Enemy(Entity):
-    def __init__(self, x, y, size, speed, animations_path):
-        super().__init__(x, y, size, speed)
+    def __init__(self, x, y):
+        super().__init__(x, y, ENEMY_SIZE, ENEMY_SPEED)
         # Loads the animations
         self.animation = Animation()
-        self.animation.load_animations(animations_path)
+        self.animation.load_animations(animations_path="assets/animations/slime")
         self.path = []
         self.path_refresh_timer = 0
 
     def calculate_path(self, player_location, maze):
         """
         Uses a Breadth First Search to find the shortest path from the enemy to the player
+        Each node is formatted as [cell, parent cell]
         """
         # Finds the cell the enemy is in and the destination cell which the player is in
         starting_cell = maze.get_cell(self.rect.center)
         destination = maze.get_cell(player_location)
 
-        # Initialise frontier to starting position
-        frontier = QueueFrontier()
+        # Initialise cell list to starting position
+        cell_list = [(starting_cell, None)]
         explored_cells = set()
-        source_node = Node(starting_cell, None)
-        frontier.add(source_node)
 
         while True:
-            # Checks if the frontier is empty as if frontier is empty and target has not been found, there must be no possible path
-            if frontier.empty():
+            # Checks if the cell list is empty as if the cell_list is empty and target has not been found, there must be no possible path
+            if len(cell_list) == 0:
                 raise Exception("No path from enemy to player")
             
-            # Removes the node from the front of the frontier
-            node = frontier.remove()
-            explored_cells.add(node.cell)
+            # Removes the node from the front of the cell list
+            node = cell_list.pop(0)
+            explored_cells.add(node[0])
 
             # Checks whether the node is the target node
-            if node.cell == destination:
+            if node[0] == destination:
                 break
             else:
-                # Adds the node's neighbours to the frontier if the cell in the maze in empty and they haven't been explored
-                for neighbour in maze.get_neighbours(node.cell):
-                    if not maze.is_wall(cell=neighbour) and neighbour not in explored_cells and not frontier.contains_cell(neighbour):
-                        frontier.add(Node(neighbour, node))
+                # Adds the node's neighbours to the cell list if the cell in the maze in empty and they haven't been explored
+                for neighbour in maze.get_neighbours(cell=node[0]):
+                    if not maze.is_wall(cell=neighbour) and neighbour not in explored_cells and not any(cell == node[0] for cell in cell_list):
+                        cell_list.append((neighbour, node))
 
         # Backtracks using the parent of each node to find the shortest path
         shortest_path = []
-        while node.parent != None:
-            shortest_path.insert(0, node.cell)
-            node = node.parent
+        while node[1] != None:
+            shortest_path.insert(0, node[0])
+            node = node[1]
 
         self.path = shortest_path
-
-    def get_cell_center(self, cell):
-        """
-        Returns the coordinates of the centre of a cell and a rect around the centre
-        """
-        cell_center = ((cell[0] * TILE_SIZE) + (TILE_SIZE // 2), (cell[1] * TILE_SIZE) + (TILE_SIZE // 2))
-        rect = pygame.Rect(0, 0, TILE_CENTER_SIZE, TILE_CENTER_SIZE)
-        rect.center = cell_center
-        return cell_center, rect
     
     def change_entity_animation(self, movement):
         """
@@ -201,7 +190,7 @@ class Enemy(Entity):
         if self.path_refresh_timer >= ENEMY_REFRESH_INTERVAL:
             # Finds the rect of the cell the enemy is in and makes sure the enemy is fully within the cell before calculating new path
             enemy_cell = maze.get_cell(self.rect.center)
-            enemy_cell_rect = pygame.Rect(enemy_cell[0] * TILE_SIZE, enemy_cell[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            enemy_cell_rect = pygame.Rect(enemy_cell[0] * CELL_SIZE, enemy_cell[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             if enemy_cell_rect.contains(self.rect):
                 # Calculates new path and resets the timer
                 self.calculate_path(player_location=player_location, maze=maze)
@@ -211,12 +200,13 @@ class Enemy(Entity):
 
         if len(self.path) != 0:
             # Gets the center of the cell which is the first in the enemy's path and a rect around that center
-            cell_center, center_rect = self.get_cell_center(cell=self.path[0])
+            cell_center, center_rect = maze.get_cell_center(cell=self.path[0])
 
-            # Checks whether the enemy rect is entirely within the center rect meaning the player must be in the center of the rect so it can be removed from the path
+            # Checks whether the enemy rect is entirely within the center rect meaning the enemy must be in the center of the rect so it can be removed from the path
             if center_rect.contains(self.rect): self.path.remove(self.path[0])
 
-            if len(self.path) != 0: cell_center, center_rect = self.get_cell_center(cell=self.path[0])
+            # Gets the new cell center if there are still more cells in the enemy's path
+            if len(self.path) != 0: cell_center, center_rect = maze.get_cell_center(cell=self.path[0])
 
         else:
             cell_center = self.rect.center
