@@ -185,8 +185,6 @@ class Game:
                     self.paused = not self.paused
                 if event.key == pygame.K_m:
                     self.map_open = not self.map_open
-                if event.key == pygame.K_1:
-                    self.spawn_enemy()
                 if event.key == pygame.K_BACKSPACE:
                     self.selected_screen = "main menu"
 
@@ -241,11 +239,19 @@ class Game:
 
             self.player.move(maze=self.maze)
             
-            # Moves the enemies to the player
+            # Handles the enemies
             for enemy in self.enemies:
+                # Moves the enemies to the player
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
+
+                # Checks whether the player has been caught by an enemy and ends the game if so
+                if enemy.rect.colliderect(self.player.rect):
+                    self.game_over = True
+
+                # Removes the enemy from the enemies list if it has died
                 if enemy.has_died: 
                     self.enemies.remove(enemy)
+                
             
             # Updates the player's attack if they are attacking and opens the chest if they hit the chest
             if self.player.attacking:
