@@ -131,7 +131,7 @@ class Game:
 
         # Draws the map if it's open
         if self.map_open:
-            self.map.draw(player_pos=self.player.rect.center)
+            self.map.draw(player_pos=self.player.rect.center, enemies=self.enemies)
 
         if self.paused:
             # Draws the pause box and pause text
@@ -259,8 +259,7 @@ class Game:
                 has_opened = self.treasure.update(maze=self.maze, dt=dt)
                 if has_opened:
                     self.wave += 1
-                    for i in range(self.wave):
-                        self.spawn_enemy()
+                    for i in range(self.wave): self.spawn_enemy()
 
 
             # Finds the bearing between the player and the treasure for the compass
