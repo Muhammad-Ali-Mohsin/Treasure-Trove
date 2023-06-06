@@ -1,7 +1,7 @@
 # USAGE: maze = Maze(x, y)
 import random
 import pygame
-from variables import MAZE_RESOLUTION, CELL_SIZE, CELL_CENTER_SIZE, REMOVED_CELLS
+from variables import MAZE_RESOLUTION, CELL_SIZE, CELL_CENTER_SIZE, REMOVED_CELLS, MAZE_SURFACE_RESOLUTION, MAZE_SURFACE
 
 class Maze:
     def __init__(self, x, y):
@@ -104,6 +104,26 @@ class Maze:
         rect.center = cell_center
         return cell_center, rect
     
+    def get_cells_on_screen(self, player_pos):
+        """
+        Returns all the cells around the player which appear on the screen
+        """
+        # Checks how many cells can fit across the width and height of the maze surface
+        x_length = (MAZE_SURFACE_RESOLUTION[0] // CELL_SIZE) + 2
+        y_length = (MAZE_SURFACE_RESOLUTION[1] // CELL_SIZE) + 2
+        # Gets the player's cell and calculates the first cell which appears on the screen
+        player_cell = self.get_cell(player_pos)
+        starting_cell = (player_cell[0] - (x_length // 2), player_cell[1] - (y_length // 2))
+        # Loops through every cell which appears on the screen and adds it to the list if it is not past the maze resolution
+        cells = []
+        for y in range(y_length):
+            for x in range(x_length):
+                cell = (starting_cell[0] + x, starting_cell[1] + y)
+                if not (cell[0] > MAZE_RESOLUTION[0] - 1 or cell[1] > MAZE_RESOLUTION[1] - 1):
+                    cells.append((starting_cell[0] + x, starting_cell[1] + y))
+
+        return cells
+    
     def change_cell(self, cell, data):
         """
         Changes the given cell to a new value
@@ -116,24 +136,25 @@ class Maze:
         """
         return self.get_cell_value(cell=cell) >= len(self.path_images)
 
-    def draw(self, surface, camera_displacement):
+    def draw(self, camera_displacement, player_pos):
         """
         This draws the maze onto it's own surface and then blits that surface onto the screen based on the camera displacement
         """
-
         self.surface.fill((35, 72, 39))
-        # Draws the maze
-        for y in range(self.resolution[1]):
-            for x in range(self.resolution[0]):
-                if self.is_wall(cell=(x, y)):
-                    hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - len(self.path_images)]
-                    self.surface.blit(hedge_image, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-                else:
-                    path_image = self.path_images[self.get_cell_value(cell=(x, y))]
-                    self.surface.blit(path_image, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+        # Gets the cells near the player that should appear on the screen
+        cells = self.get_cells_on_screen(player_pos=player_pos)
+        # Draws each cell
+        for x, y in cells:
+            if self.is_wall(cell=(x, y)):
+                hedge_image = self.hedge_images[self.get_cell_value(cell=(x, y)) - len(self.path_images)]
+                self.surface.blit(hedge_image, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            else:
+                path_image = self.path_images[self.get_cell_value(cell=(x, y))]
+                self.surface.blit(path_image, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         # Draws the maze surface onto the screen based on the camera displacement
-        surface.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
+        MAZE_SURFACE.blit(self.surface, (-camera_displacement[0], -camera_displacement[1]))
     
 
 def generate_maze():

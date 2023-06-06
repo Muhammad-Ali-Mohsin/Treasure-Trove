@@ -104,7 +104,7 @@ class Game:
         MAZE_SURFACE.fill((0, 0, 0))
 
         # Draws the maze
-        self.maze.draw(surface=MAZE_SURFACE, camera_displacement=self.camera_displacement)
+        self.maze.draw(camera_displacement=self.camera_displacement, player_pos=self.player.rect.center)
 
         # Draws the treasure
         self.treasure.draw(camera_displacement=self.camera_displacement)
@@ -133,14 +133,30 @@ class Game:
         if self.map_open:
             self.map.draw(player_pos=self.player.rect.center, enemies=self.enemies)
 
-        if self.paused:
+        if self.paused and not self.game_over:
             # Draws the pause box and pause text
             SCREEN.blit(PAUSE_SCREEN_BOX_IMG, ((GAME_RESOLUTION[0] // 2) - (PAUSE_SCREEN_BOX_IMG.get_width() // 2), (GAME_RESOLUTION[1] // 2) - (PAUSE_SCREEN_BOX_IMG.get_height() // 2)))
             pause_text = get_text_surf(size=80, text="Paused", colour=PRIMARY_COLOUR)
             SCREEN.blit(pause_text, ((GAME_RESOLUTION[0] // 2) - (pause_text.get_width() // 2), (GAME_RESOLUTION[1] // 2) - 170))
 
              # Writes all the stats to the pause screen
-            for i, data in enumerate([["Gold", str(self.gold)], ["Lives", "69"], ["Name", "Bob"]]):
+            for i, data in enumerate([["Gold", str(self.gold)], ["Wave", str(self.wave)]]):
+                text_surf = get_text_surf(size=50, text=data[0], colour=PRIMARY_COLOUR)
+                SCREEN.blit(text_surf, ((GAME_RESOLUTION[0] // 2) - (PAUSE_SCREEN_BOX_IMG.get_width() // 2) + 50, (i * 50) + (GAME_RESOLUTION[1] // 2) - 75))
+                text_surf = get_text_surf(size=50, text=data[1], colour=PRIMARY_COLOUR)
+                SCREEN.blit(text_surf, ((GAME_RESOLUTION[0] // 2) + (PAUSE_SCREEN_BOX_IMG.get_width() // 2) - (text_surf.get_width()) - 50, (i * 50) + (GAME_RESOLUTION[1] // 2) - 75))
+
+            prompt_text = get_text_surf(size=30, text=f"Press Backspace to return to Main Menu", colour=pygame.Color("white"))
+            SCREEN.blit(prompt_text, ((GAME_RESOLUTION[0] // 2) - (prompt_text.get_width() // 2), (GAME_RESOLUTION[1] // 2) + 125))
+
+        if self.game_over:
+            # Draws the pause box and pause text
+            SCREEN.blit(PAUSE_SCREEN_BOX_IMG, ((GAME_RESOLUTION[0] // 2) - (PAUSE_SCREEN_BOX_IMG.get_width() // 2), (GAME_RESOLUTION[1] // 2) - (PAUSE_SCREEN_BOX_IMG.get_height() // 2)))
+            pause_text = get_text_surf(size=80, text="Game Over", colour=PRIMARY_COLOUR)
+            SCREEN.blit(pause_text, ((GAME_RESOLUTION[0] // 2) - (pause_text.get_width() // 2), (GAME_RESOLUTION[1] // 2) - 170))
+
+             # Writes all the stats to the pause screen
+            for i, data in enumerate([["Gold", str(self.gold)], ["Wave", str(self.wave)]]):
                 text_surf = get_text_surf(size=50, text=data[0], colour=PRIMARY_COLOUR)
                 SCREEN.blit(text_surf, ((GAME_RESOLUTION[0] // 2) - (PAUSE_SCREEN_BOX_IMG.get_width() // 2) + 50, (i * 50) + (GAME_RESOLUTION[1] // 2) - 75))
                 text_surf = get_text_surf(size=50, text=data[1], colour=PRIMARY_COLOUR)
@@ -182,7 +198,7 @@ class Game:
                 if event.key == pygame.K_e:
                     self.player.attack()
                 if event.key == pygame.K_TAB:
-                    self.paused = not self.paused
+                    if not self.game_over: self.paused = not self.paused
                 if event.key == pygame.K_m:
                     self.map_open = not self.map_open
                 if event.key == pygame.K_BACKSPACE:
@@ -247,6 +263,7 @@ class Game:
                 # Checks whether the player has been caught by an enemy and ends the game if so
                 if enemy.rect.colliderect(self.player.rect):
                     self.game_over = True
+                    self.paused = True
 
                 # Removes the enemy from the enemies list if it has died
                 if enemy.has_died: 
