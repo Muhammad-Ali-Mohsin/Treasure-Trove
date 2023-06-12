@@ -3,7 +3,7 @@ from time import time
 from maze import generate_maze
 from entities import Player, Enemy
 from compass import Compass
-from misc import get_text_surf, scale_coord_to_new_res
+from misc import get_text_surf, scale_coord_to_new_res, AudioPlayer
 from map import Map
 from animation import Animation
 from variables import *
@@ -252,6 +252,11 @@ class Game:
                 self.player.movement[1] += round(self.player.speed * dt)
             if self.player.attacking:
                 self.player.movement = [0, 0]
+
+            if self.player.movement != [0, 0]:
+                AudioPlayer.play_sound(sound="running")
+            else:
+                AudioPlayer.stop_sound(sound="running")
 
             self.player.move(maze=self.maze)
             

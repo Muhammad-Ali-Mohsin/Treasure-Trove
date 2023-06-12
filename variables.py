@@ -1,4 +1,5 @@
 import pygame
+from misc import AudioPlayer
 
 clock = pygame.time.Clock()
 
@@ -54,6 +55,9 @@ COMPASS_BASE_IMG = pygame.transform.scale(COMPASS_BASE_IMG, (COMPASS_SCALE * COM
 COMPASS_SPINNER_IMG = pygame.transform.scale(COMPASS_SPINNER_IMG, (COMPASS_SCALE * COMPASS_SPINNER_IMG.get_width(), COMPASS_SCALE * COMPASS_SPINNER_IMG.get_width()))
 CURSOR_1 = pygame.transform.scale(CURSOR_1, (CURSOR_1.get_width() * CURSOR_SCALE, CURSOR_1.get_height() * CURSOR_SCALE))
 CURSOR_2 = pygame.transform.scale(CURSOR_2, (CURSOR_2.get_width() * CURSOR_SCALE, CURSOR_2.get_height() * CURSOR_SCALE))
+
+# Sounds
+AudioPlayer.load_sounds(name="running", path="assets/sounds/running", shuffle=True, volume=1)
 
 
 
