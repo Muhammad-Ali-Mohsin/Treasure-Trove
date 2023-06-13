@@ -7,62 +7,52 @@ class Entity:
         self.rect = pygame.Rect(x, y, size, size)
         self.rect.center = (x, y)
         self.speed = speed
-        self.movement = [0, 0]
+        self.velocity = [0, 0]
         
     def __repr__(self):
         return f"Entity(Location: {self.rect.center} )"
 
     def move(self, maze):
         """
-        Moves the entity based on the movement list
+        Moves the entity based on its velocity
         Returns True or False based on whether the entity has collided
         """
         
-        self.change_entity_animation(movement=self.movement)
+        self.change_entity_animation()
 
-        collision = False
+        collisions = []
+        neighbour_wall_rects = []
 
         # This is the cell in the maze where the entity currently is
         cell = maze.get_cell(self.rect.center)
         
         # Gets the neighbouring cells of the cell the entity is in
         neighbours = maze.get_neighbours(cell, with_diagonals=True)
-
-        self.rect.x += self.movement[0]
         for neighbour in neighbours:
-            # Checks whether the neighbouring cell is filled
-            if maze.is_wall(cell=neighbour):
-                # Creates a rect for the neighbouring cell
-                neighbour_rect = pygame.Rect(neighbour[0] * CELL_SIZE, neighbour[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                # Checks whether the rects are colliding with one another
-                if self.rect.colliderect(neighbour_rect):
-                    collision = True
-                    # This means that the neighbour must have been on the right
-                    if self.movement[0] > 0:
-                        self.rect.right = neighbour_rect.left
-                    # This means that the neighbour must have been on the left
-                    if self.movement[0] < 0:
-                        self.rect.left = neighbour_rect.right
+            # Checks whether the neighbouring cell is filled and adds it to the list if so
+            if maze.is_wall(cell=neighbour): neighbour_wall_rects.append(maze.get_rect(cell=neighbour))
 
-        self.rect.y += self.movement[1]
-        for neighbour in neighbours:
-            # Checks whether the neighbouring cell is filled
-            if maze.is_wall(cell=neighbour):
-                # Creates a rect for the neighbouring cell
-                neighbour_rect = pygame.Rect(neighbour[0] * CELL_SIZE, neighbour[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                # Checks whether the rects are colliding with one another
-                if self.rect.colliderect(neighbour_rect):
-                    collision = True
-                    # This means that the neighbour must have been on the bottom
-                    if self.movement[1] > 0:
-                        self.rect.bottom = neighbour_rect.top
-                    # This means that the neighbour must have been on the top
-                    if self.movement[1] < 0:
-                        self.rect.top = neighbour_rect.bottom
+        self.rect.x += self.velocity[0]
+        for rect in neighbour_wall_rects:
+            if self.rect.colliderect(rect):
+                collisions.append(rect)
+                if self.velocity[0] > 0: # This means that the neighbour must have been on the right
+                    self.rect.right = rect.left
+                if self.velocity[0] < 0: # This means that the neighbour must have been on the left
+                    self.rect.left = rect.right
 
-        self.movement = [0, 0]
+        self.rect.y += self.velocity[1]
+        for rect in neighbour_wall_rects:
+            if self.rect.colliderect(rect): # Checks whether the rects are colliding with one another
+                collisions.append(rect)
+                if self.velocity[1] > 0: # This means that the neighbour must have been on the bottom
+                    self.rect.bottom = rect.top
+                if self.velocity[1] < 0: # This means that the neighbour must have been on the top
+                    self.rect.top = rect.bottom
 
-        return collision
+        self.velocity = [0, 0]
+
+        return collisions
     
 
 class Player(Entity):
@@ -74,21 +64,21 @@ class Player(Entity):
         self.attacking = False
         self.attack_timer = 0
     
-    def change_entity_animation(self, movement):
+    def change_entity_animation(self):
         """
-        Changes the entity's animation based on their movements
+        Changes the entity's animation based on their velocity
         """
         if self.attacking:
             animation_name = f"attack_{self.animation.current_animation.split('_')[1]}"
             if self.animation.current_animation != animation_name: self.animation.change_animation(animation=animation_name)
-        elif movement[0] != 0: # This means they must be moving either left of right
+        elif self.velocity[0] != 0: # This means they must be moving either left of right
             if self.animation.current_animation != "running_sideways": self.animation.change_animation(animation="running_sideways")
-            self.animation.flipped = True if movement[0] < 0 else False
-        elif movement[1] < 0 and self.animation.current_animation != "running_backwards": # This means they must be running up the screen
+            self.animation.flipped = True if self.velocity[0] < 0 else False
+        elif self.velocity[1] < 0 and self.animation.current_animation != "running_backwards": # This means they must be running up the screen
             self.animation.change_animation(animation="running_backwards")
-        elif movement[1] > 0 and self.animation.current_animation != "running_forwards": # This means they must be running down the screen
+        elif self.velocity[1] > 0 and self.animation.current_animation != "running_forwards": # This means they must be running down the screen
             self.animation.change_animation(animation="running_forwards")
-        elif movement == [0, 0] and "idle" not in self.animation.current_animation:
+        elif self.velocity == [0, 0] and "idle" not in self.animation.current_animation:
             if self.animation.current_animation == "running_sideways":
                 self.animation.change_animation(animation="idle_sideways")
             elif self.animation.current_animation == "running_backwards":
@@ -104,22 +94,16 @@ class Player(Entity):
             self.attack_timer = 0
             self.attacking = True
 
-    def update_attack(self, treasure_cell, dt):
+    def update_attack(self, dt):
         """
         This will update an ongoing attack by incrementing the timer, stopping the attack if the timer has completed
         """
         # Increments the attack timer
         self.attack_timer += dt
-        success = False
         # Checks whether the attack is over and ends it if so
         if self.attack_timer >= ATTACK_COOLDOWN:
             self.attack_timer = 0
             self.attacking = False
-        else:
-            rect = pygame.Rect(treasure_cell[0] * CELL_SIZE, treasure_cell[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            if self.rect.colliderect(rect): success = True
-        
-        return success
 
 
 class Enemy(Entity):
@@ -173,16 +157,16 @@ class Enemy(Entity):
 
         self.path = shortest_path
     
-    def change_entity_animation(self, movement):
+    def change_entity_animation(self):
         """
-        Changes the entity's animation based on their movements
+        Changes the entity's animation based on their velocity
         """
-        if movement[0] != 0:
+        if self.velocity[0] != 0:
             if self.animation.current_animation != "running": self.animation.change_animation(animation="running")
-            self.animation.flipped = True if movement[0] < 0 else False
-        elif movement[1] != 0 and self.animation.current_animation != "running":
+            self.animation.flipped = True if self.velocity[0] < 0 else False
+        elif self.velocity[1] != 0 and self.animation.current_animation != "running":
             self.animation.change_animation(animation="running")
-        elif movement == [0, 0] and self.animation.current_animation != "idle":
+        elif self.velocity == [0, 0] and self.animation.current_animation != "idle":
             self.animation.change_animation(animation="idle")
     
     def move_to_player(self, maze, dt, player_location):
@@ -223,17 +207,16 @@ class Enemy(Entity):
         
         # Checks where the enemy needs to move based on the position of the enemy and the first cell in their path
         if self.rect.centerx > cell_center[0]:
-            self.movement[0] -= round(self.speed * dt)
+            self.velocity[0] -= round(self.speed * dt)
         elif self.rect.centerx < cell_center[0]:
-            self.movement[0] += round(self.speed * dt)
+            self.velocity[0] += round(self.speed * dt)
         elif self.rect.centery < cell_center[1]:
-            self.movement[1] += round(self.speed * dt)
+            self.velocity[1] += round(self.speed * dt)
         elif self.rect.centery > cell_center[1]:
-            self.movement[1] -= round(self.speed * dt)
+            self.velocity[1] -= round(self.speed * dt)
         
-        # Moves the player based on their movement
-        self.move(maze=maze)
-
+        # Moves the enemy based on their velocity
+        collisions = self.move(maze=maze)
 
 
     

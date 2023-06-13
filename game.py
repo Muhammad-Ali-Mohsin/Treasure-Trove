@@ -243,17 +243,17 @@ class Game:
             
             # Moves the player
             if self.moving['left']:
-                self.player.movement[0] -= round(self.player.speed * dt)
+                self.player.velocity[0] -= round(self.player.speed * dt)
             if self.moving['right']:
-                self.player.movement[0] += round(self.player.speed * dt)
+                self.player.velocity[0] += round(self.player.speed * dt)
             if self.moving['up']:
-                self.player.movement[1] -= round(self.player.speed * dt)
+                self.player.velocity[1] -= round(self.player.speed * dt)
             if self.moving['down']:
-                self.player.movement[1] += round(self.player.speed * dt)
+                self.player.velocity[1] += round(self.player.speed * dt)
             if self.player.attacking:
-                self.player.movement = [0, 0]
+                self.player.velocity = [0, 0]
 
-            if self.player.movement != [0, 0]:
+            if self.player.velocity != [0, 0]:
                 AudioPlayer.play_sound(sound="running")
             else:
                 AudioPlayer.stop_sound(sound="running")
@@ -262,13 +262,12 @@ class Game:
             
             # Handles the enemies
             for enemy in self.enemies:
+
+                if self.player.rect.colliderect(enemy.rect):
+                    if self.player.attacking:
+                        enemy
                 # Moves the enemies to the player
                 enemy.move_to_player(maze=self.maze, dt=dt, player_location=self.player.rect.center)
-
-                # Checks whether the player has been caught by an enemy and ends the game if so
-                if enemy.rect.colliderect(self.player.rect):
-                    self.game_over = True
-                    self.paused = True
 
                 # Removes the enemy from the enemies list if it has died
                 if enemy.has_died: 
@@ -277,7 +276,9 @@ class Game:
             
             # Updates the player's attack if they are attacking and opens the chest if they hit the chest
             if self.player.attacking:
-                if self.player.update_attack(treasure_cell=self.treasure.cell, dt=dt) == True:
+                self.player.update_attack(dt=dt)
+                rect = pygame.Rect(self.treasure.cell[0] * CELL_SIZE, self.treasure.cell[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                if self.player.rect.colliderect(rect):
                     if not self.treasure.chest_is_open:
                         self.treasure.open_treasure()
                         self.gold += 100

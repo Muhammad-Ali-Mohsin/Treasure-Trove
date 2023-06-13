@@ -18,9 +18,16 @@ class Maze:
             self.path_images.append(img)
 
         self._maze = [[len(self.path_images) for i in range(x)] for i in range(y)]
+        self.rects = [[pygame.Rect(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE) for i in range(x)] for j in range(y)]
 
     def __repr__(self):
         return "\n".join([str(row) for row in self._maze])
+    
+    def get_rect(self, cell):
+        """
+        Returns the rect at a given cell
+        """
+        return self.rects[cell[1]][cell[0]]
 
     def get_cell_value(self, cell):
         """
