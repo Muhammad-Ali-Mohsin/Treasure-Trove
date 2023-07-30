@@ -161,11 +161,11 @@ class ParticleHandler:
             ParticleHandler.kill_particle(particle)
 
     def create_particle(type, game, pos, **kwargs):
-        if type in ParticleHandler.particle_types:
-            particle = ParticleHandler.particle_types[type](game, pos, kwargs)
-            ParticleHandler.particles.append(particle)
-        else:
-            raise Exception("Particle not found")
+        """
+        Creates a particle
+        """
+        particle = ParticleHandler.particle_types[type](game, pos, kwargs)
+        ParticleHandler.particles.append(particle)
         
     def kill_particle(particle):
         """

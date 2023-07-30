@@ -9,6 +9,7 @@ from scripts.entities import Player, Enemy
 from scripts.animations import load_animation, load_animation_library, AnimationHandler
 from scripts.particles import ParticleHandler
 from scripts.treasure import Treasure
+from scripts.compass import Compass
 
 random.seed(0)
 
@@ -31,7 +32,9 @@ class Game:
             'hedge': load_images("assets/images/hedges"),
             'path': load_images("assets/images/paths"),
             'healthbar': load_image("assets/images/healthbar.png"),
-            'gold_pouch': load_image("assets/images/gold_pouch.png")
+            'gold_pouch': load_image("assets/images/gold_pouch.png"),
+            'compass_base': load_image("assets/images/compass_base.png"),
+            'compass_spinner': load_image("assets/images/compass_spinner.png")
         }
 
         # Loads all the animations in
@@ -59,6 +62,7 @@ class Game:
         self.gold = 0
 
         # Graphical variables
+        self.compass = Compass(self)
         self.wind_intensity = random.random()
 
     def create_enemy(self):
@@ -142,6 +146,7 @@ class Game:
  
         self.draw_healthbar()
         self.draw_gold()
+        self.compass.draw()
 
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
@@ -186,6 +191,7 @@ class Game:
                     enemy.update()
 
             self.treasure.update()
+            self.compass.update()
 
             # Calculates the camera displacement
             self.camera_displacement[0] = int(self.player.pos[0] - (self.display.get_width() // 2))
