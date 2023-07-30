@@ -3,11 +3,12 @@ import random
 
 import pygame
 
-from scripts.utils import load_image, load_images, get_text_surf
+from scripts.utils import load_image, load_images, get_text_surf, format_num
 from scripts.maze import generate_maze
 from scripts.entities import Player, Enemy
 from scripts.animations import load_animation, load_animation_library, AnimationHandler
 from scripts.particles import ParticleHandler
+from scripts.treasure import Treasure
 
 random.seed(0)
 
@@ -29,18 +30,21 @@ class Game:
         self.images = {
             'hedge': load_images("assets/images/hedges"),
             'path': load_images("assets/images/paths"),
-            'healthbar': load_image("assets/images/healthbar.png")
+            'healthbar': load_image("assets/images/healthbar.png"),
+            'gold_pouch': load_image("assets/images/gold_pouch.png")
         }
 
         # Loads all the animations in
         self.animations = {
             'player': load_animation_library("assets/animations/player"),
             'slime': load_animation_library("assets/animations/slime"),
+            'treasure': load_animation_library("assets/animations/treasure"),
             'dirt': {'default': load_animation("assets/particles/dirt", (0.1, 0.1, 0.1), False)},
             'leaves': {'default': load_animation("assets/particles/leaves", (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), False)},
             'experience': {'default': load_animation("assets/particles/experience", (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), True)},
             'slime_particle': {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)},
-            'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)}
+            'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)},
+            'gold': {'default': load_animation("assets/particles/gold", (0.1, 0.1), True)}
         }
 
         # Changes the opacity of all the dirt particles to make them somewhat transparent
@@ -48,9 +52,11 @@ class Game:
             img.set_alpha(150)
 
         # Creates the game variables
-        self.maze = generate_maze(self, tile_size=32, maze_resolution=(40, 40), removed_tiles=100)
+        self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=100)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
         self.enemies = []
+        self.treasure = Treasure(self)
+        self.gold = 0
 
         # Graphical variables
         self.wind_intensity = random.random()
@@ -93,7 +99,7 @@ class Game:
                 if event.key == pygame.K_1:
                     self.create_enemy()
                 if event.key == pygame.K_2:
-                    self.shake_screen(5, 0.2)
+                    self.treasure.open()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     self.player.moving['left'] = False
@@ -111,6 +117,14 @@ class Game:
         pygame.draw.rect(self.display, (255, 0, 0), (28, 14, (self.player.health / 100) * 77, 6))
         self.display.blit(self.images['healthbar'], (5, 5))
 
+    def draw_gold(self):
+        """
+        Draws the player's gold onto the screen
+        """
+        gold_text = get_text_surf(size=15, text=f"{format_num(self.gold)} gold", colour=(255, 202, 24))
+        self.display.blit(self.images['gold_pouch'], (5, 35))
+        self.display.blit(gold_text, (self.images['gold_pouch'].get_width() + 10, 32 + (gold_text.get_height() // 2)))
+
     def update_display(self):
         """
         Calls all functions to update the display
@@ -119,6 +133,7 @@ class Game:
         self.display.fill((35, 72, 39))
 
         self.maze.draw()
+        self.treasure.draw()
         ParticleHandler.update()
         self.player.draw()
 
@@ -126,14 +141,12 @@ class Game:
             enemy.draw()
  
         self.draw_healthbar()
+        self.draw_gold()
 
-        if self.screen_shake[1] > 0:
-            screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0])
-        else:
-            screen_shake = (0, 0)
+        screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
-        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        self.window.blit(fps_text, (10, 10))
+        #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
+        #self.window.blit(fps_text, (10, 10))
         pygame.display.update()
 
     def run(self):
@@ -171,6 +184,8 @@ class Game:
 
                 for enemy in self.enemies:
                     enemy.update()
+
+            self.treasure.update()
 
             # Calculates the camera displacement
             self.camera_displacement[0] = int(self.player.pos[0] - (self.display.get_width() // 2))

@@ -30,5 +30,16 @@ def get_text_surf(size, text, colour, bold=False, italic=False, underline=False)
     font.set_bold(bold)
     font.set_italic(italic)
     font.set_underline(underline)
-    text_surf = font.render(text, True, colour)
+    text_surf = font.render(text, False, colour).convert_alpha()
     return text_surf
+
+def format_num(num):
+    """
+    Formats numbers
+    """
+    result = str(num)
+    data = (("QT", 18), ("Q", 15), ("T", 12), ("B", 9), ("M", 6), ("k", 3))
+    for value in data:
+        if num >= 10 ** value[1]:
+            result = str(round(num / 10 ** value[1], 1)) + value[0]
+    return result

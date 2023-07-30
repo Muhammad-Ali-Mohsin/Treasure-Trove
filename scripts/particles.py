@@ -4,6 +4,7 @@ import random
 from scripts.animations import AnimationHandler
 
 EXPERIENCE_TARGET_POINT = (17, 10)
+GOLD_TARGET_POINT = (15, 40)
 DISTANCE_FROM_TARGET = 2
 
 
@@ -47,8 +48,8 @@ class Experience(Particle):
     def __init__(self, game, pos, kwargs):
         super().__init__(game, pos)
         self.pos = [pos[0] - self.game.camera_displacement[0], pos[1] - self.game.camera_displacement[1]]
-        self.velocity = [kwargs['velocity'][0] * 0.3, -kwargs['velocity'][1]]
-        self.timer = 100
+        self.velocity = [kwargs['velocity'][0] * 0.3, kwargs['velocity'][1]]
+        self.timer = 10
         self.travelling_up = False
         self.animation.change_animation_library(self.game.animations['experience'])
         self.animation.frame = random.randint(0, len(self.animation.animation_library[self.animation.current_animation]['images']) - 1)
@@ -65,12 +66,13 @@ class Experience(Particle):
             magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
             self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
 
-        elif self.pos[1] > 180 and not self.travelling_up:
-            self.velocity[1] = self.velocity[1] - (self.game.multi * 2)
+        elif self.pos[1] > 140 and not self.travelling_up:
+            self.velocity[1] = self.velocity[1] - (self.game.multi * 0.4)
             self.travelling_up = True
 
         if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
-            self.game.player.health = min(100, self.game.player.health + 0.5)
+            if self.game.player.animation.current_animation != "death":
+                self.game.player.health = min(100, self.game.player.health + 0.5)
             self.timer = 0
 
     def draw(self):
@@ -90,6 +92,39 @@ class Slime(Particle):
         self.pos = (self.parent.pos[0] + (self.parent.size[0] // 2) + self.variance[0], self.parent.pos[1] + self.variance[1])
         self.variance[1] = self.variance[1] - (0.2 * self.game.multi)
 
+class Gold(Particle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos)
+        self.pos = [pos[0] - self.game.camera_displacement[0], pos[1] - self.game.camera_displacement[1]]
+        self.velocity = [kwargs['velocity'][0] * 0.3, kwargs['velocity'][1]]
+        self.timer = 10
+        self.travelling_up = False
+        self.animation.change_animation_library(self.game.animations['gold'])
+
+    def move(self):
+        self.pos[0] += self.velocity[0] * self.game.multi
+        self.pos[1] += self.velocity[1] * self.game.multi
+        if not self.travelling_up:
+            self.velocity[1] = min(self.velocity[1] + (self.game.multi * 0.1), 5)
+
+        displacement = (GOLD_TARGET_POINT[0] - self.pos[0], GOLD_TARGET_POINT[1] - self.pos[1])
+
+        if self.pos[1] > 220:
+            magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
+            self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
+
+        elif self.pos[1] > 140 and not self.travelling_up:
+            self.velocity[1] = self.velocity[1] - (self.game.multi * 0.4)
+            self.travelling_up = True
+
+        if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
+            self.game.gold += random.randint(40, 60)
+            self.timer = 0
+
+    def draw(self):
+        img = self.animation.get_img()
+        pos = (self.pos[0] - (img.get_width() // 2), self.pos[1] - (img.get_height() // 2))
+        self.game.display.blit(img, pos)
 
 class Dust(Particle):
     def __init__(self, game, pos, kwargs):
@@ -105,7 +140,7 @@ class Dust(Particle):
 
 class ParticleHandler:
     particles = []
-    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust}
+    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold}
 
     def update():
         """

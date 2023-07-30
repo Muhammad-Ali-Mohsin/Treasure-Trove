@@ -102,6 +102,7 @@ class Player(Entity):
         super().__init__(game, loc, size, speed, health)
         self.animation.change_animation_library(self.game.animations['player'])
         self.animation.change_animation("idle_forwards")
+        self.has_hit = False
 
     def get_attack_rect(self):
         """
@@ -123,6 +124,7 @@ class Player(Entity):
         Changes the player's animation to attack
         """
         if "attack" not in self.animation.current_animation:
+            self.has_hit = False
             # Creates a bunch of dirt particles at the player's feet to signal the attack
             for i in range(10):
                 ParticleHandler.create_particle("dirt", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + self.size[1] + random.randint(-5, 5)))
@@ -133,15 +135,15 @@ class Player(Entity):
         """
         Hits the player. Called in the enemy class when the enemy hits the player
         """
-        # Removes their health if they are not being knocked back. This gives them invulneribility whilst being knocked back
+        # Hits the player if they aren't being knocked back. This gives them invulneribility whilst being knocked back
         if self.knockback_timer <= 0:
             self.health -= 10
-        # Creates dust particles which fly off the player to show they've been hit
-        for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-            ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
-        # Knocks the player back from the center of the enemy and shakes the screen
-        self.knockback((enemy.pos[0] + (enemy.size[0] // 2), enemy.pos[1] + (enemy.size[1] // 2)), 3)
-        self.game.shake_screen(5, 0.2)
+            # Creates dust particles which fly off the player to show they've been hit
+            for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
+                ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
+            # Knocks the player back from the center of the enemy and shakes the screen
+            self.knockback((enemy.pos[0] + (enemy.size[0] // 2), enemy.pos[1] + (enemy.size[1] // 2)), 3)
+            self.game.shake_screen(5, 0.2)
 
     def update(self):
         """
@@ -149,11 +151,20 @@ class Player(Entity):
         """
         moving = self.moving.copy()
         if "attack" in self.animation.current_animation:
-            # Checks whether there are enemies within the player's attack rect and hits them if so
-            attack_rect = self.get_attack_rect()
-            for enemy in self.game.enemies:
-                if attack_rect.colliderect(enemy.get_rect()):
-                    enemy.hit()
+            if not self.has_hit:
+                # Checks whether there are enemies within the player's attack rect and hits them if so
+                attack_rect = self.get_attack_rect()
+                for enemy in self.game.enemies:
+                    if attack_rect.colliderect(enemy.get_rect()):
+                        enemy.hit()
+                        self.has_hit = True
+
+                # Checks whether the enemy is hitting the treasure and opens it if so
+                if attack_rect.colliderect(self.game.treasure.get_rect()) and self.game.treasure.animation.current_animation != "open":
+                    # Creates dust particles which fly off the player to show they've hit the treasure
+                    for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
+                        ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
+                        self.game.treasure.open()
 
             # Checks whether the attack animation is over and if so, changes the player to an idle animation
             if self.animation.done:
@@ -221,7 +232,7 @@ class Enemy(Entity):
             if self.health <= 0:
                 self.animation.change_animation("death")
                 for i in range(10):
-                    ParticleHandler.create_particle("experience", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + (self.size[1] // 2) + random.randint(-5, 5)), velocity=(random.randint(-3, 6), -random.randint(0, 6)))
+                    ParticleHandler.create_particle("experience", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + (self.size[1] // 2) + random.randint(-5, 5)), velocity=(random.randint(-4, 4), -random.randint(3, 5)))
         # Creates dust particles that fly off from the enemy to show that they've been hit
         for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
             ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())

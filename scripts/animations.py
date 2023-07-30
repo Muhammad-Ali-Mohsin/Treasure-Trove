@@ -38,7 +38,7 @@ class AnimationHandler:
         Adds the change in time to the animation timer and changes the frame if needed for all animations
         """
         for animation in AnimationHandler.animations:
-            if animation.current_animation == None: continue 
+            if animation.current_animation == None or animation.done == True: continue 
             # Adds the change in time to the timer
             animation.timer += dt
             # Changes the frame to the next frame if the timer has reached the duration of the frame and resets the timer
@@ -89,6 +89,7 @@ class Animation:
             self.current_animation = animation
             self.timer = 0
             self.frame = 0
+            self.done = False
 
     def get_img(self):
         """
