@@ -26,6 +26,8 @@ class Game:
         self.dt = 0
         self.last_time = 0
         self.screen_shake = [0, 0]
+        self.paused = False
+        self.game_over = False
 
         # Loads all the images in
         self.images = {
@@ -34,7 +36,9 @@ class Game:
             'healthbar': load_image("assets/images/healthbar.png"),
             'gold_pouch': load_image("assets/images/gold_pouch.png"),
             'compass_base': load_image("assets/images/compass_base.png"),
-            'compass_spinner': load_image("assets/images/compass_spinner.png")
+            'compass_spinner': load_image("assets/images/compass_spinner.png"),
+            'box': load_image("assets/images/box.png"),
+            'grey_screen': pygame.Surface(self.display.get_size())
         }
 
         # Loads all the animations in
@@ -54,6 +58,9 @@ class Game:
         for img in self.animations['dirt']['default']['images']:
             img.set_alpha(150)
 
+        # Makes the grey screen transparent
+        self.images['grey_screen'].set_alpha(175)
+
         # Creates the game variables
         self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=100)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
@@ -64,6 +71,8 @@ class Game:
         # Graphical variables
         self.compass = Compass(self)
         self.wind_intensity = random.random()
+        self.paused_text = get_text_surf(size=40, text="Paused", colour=(172, 116, 27))
+        self.game_over_text = get_text_surf(size=30, text="Game Over", colour=(172, 116, 27))
 
     def create_enemy(self):
         """
@@ -98,6 +107,8 @@ class Game:
                     self.player.moving['down'] = True
                 if event.key == pygame.K_ESCAPE:
                     self.kill_screen = True
+                if event.key == pygame.K_TAB:
+                    self.paused = not self.paused
                 if event.key == pygame.K_x:
                     if self.player.animation.current_animation != "death": self.player.attack()
                 if event.key == pygame.K_1:
@@ -129,6 +140,15 @@ class Game:
         self.display.blit(self.images['gold_pouch'], (5, 35))
         self.display.blit(gold_text, (self.images['gold_pouch'].get_width() + 10, 32 + (gold_text.get_height() // 2)))
 
+    def draw_screen(self, text):
+        """
+        Draws a screen with a given text as the center (Used for the pause screen and game over screen)
+        """
+        self.display.blit(self.images['grey_screen'], (0, 0))
+        self.display.blit(self.images['box'], ((self.display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.display.get_height() // 2) - (self.images['box'].get_height() // 2)))
+        self.display.blit(text, ((self.display.get_width() // 2) - (text.get_width() // 2), (self.display.get_height() // 2) - (text.get_height() // 2)))
+
+
     def update_display(self):
         """
         Calls all functions to update the display
@@ -148,6 +168,12 @@ class Game:
         self.draw_gold()
         self.compass.draw()
 
+        if self.game_over:
+            self.draw_screen(self.game_over_text)
+        elif self.paused:
+            self.draw_screen(self.paused_text)
+        
+
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
         #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
@@ -159,43 +185,47 @@ class Game:
         Runs the game loop
         """
         while not self.kill_screen:
-            # Calculates the change in time
-            self.dt = (time.time() - self.last_time)
-            self.last_time = time.time()
-            self.multi = self.dt * 60
+            if not self.paused and not self.game_over:
+                # Calculates the change in time
+                self.dt = (time.time() - self.last_time)
+                self.last_time = time.time()
+                self.multi = self.dt * 60
 
-            # Counts down the screen shake
-            self.screen_shake[1] = max(self.screen_shake[1] - self.dt, 0)
+                # Counts down the screen shake
+                self.screen_shake[1] = max(self.screen_shake[1] - self.dt, 0)
 
-            # Randomly changes the wind intensity
-            if random.randint(0, 100) == 1:
-                self.wind_intensity = random.random()
+                # Randomly changes the wind intensity
+                if random.randint(0, 100) == 1:
+                    self.wind_intensity = random.random()
 
-            # Spawns leaves from the hedges that are on the screen
-            if random.randint(0, 10) == 1:
-                top_left_loc = self.maze.get_loc(self.camera_displacement)
-                bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
-                top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
-                bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
-                loc = self.maze.get_random_loc("hedge", (top_left_loc, bottom_right_loc))
-                ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * random.random())
-            
-            # Updates all animations. This isn't done in update display as some logic relies on the animation states
-            AnimationHandler.update(self.dt)
+                # Spawns leaves from the hedges that are on the screen
+                if random.randint(0, 10) == 1:
+                    top_left_loc = self.maze.get_loc(self.camera_displacement)
+                    bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
+                    top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
+                    bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
+                    loc = self.maze.get_random_loc("hedge", (top_left_loc, bottom_right_loc))
+                    ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * random.random())
+                
+                # Updates all animations. This isn't done in update display as some logic relies on the animation states
+                AnimationHandler.update(self.dt)
 
-            # Updates the player and the enemies if the player isn't dead
-            if not self.player.animation.current_animation == "death":
-                self.player.update()
+                # Updates the player and the enemies if the player isn't dead
+                if not self.player.animation.current_animation == "death":
+                    self.player.update()
 
-                for enemy in self.enemies:
-                    enemy.update()
+                    for enemy in self.enemies:
+                        enemy.update()
 
-            self.treasure.update()
-            self.compass.update()
+                elif self.player.animation.done:
+                    self.game_over = True
 
-            # Calculates the camera displacement
-            self.camera_displacement[0] = int(self.player.pos[0] - (self.display.get_width() // 2))
-            self.camera_displacement[1] = int(self.player.pos[1] - (self.display.get_height() // 2))
+                self.treasure.update()
+                self.compass.update()
+
+                # Calculates the camera displacement
+                self.camera_displacement[0] = int(self.player.pos[0] - (self.display.get_width() // 2))
+                self.camera_displacement[1] = int(self.player.pos[1] - (self.display.get_height() // 2))
 
             self.handle_events()
             self.update_display()
