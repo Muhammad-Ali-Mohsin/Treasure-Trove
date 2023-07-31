@@ -54,11 +54,12 @@ class Game:
             'gold': {'default': load_animation("assets/particles/gold", (0.1, 0.1), True)}
         }
 
-        # Changes the opacity of all the dirt particles to make them somewhat transparent
+        # Image rescaling
+        self.images['compass_spinner'] = pygame.transform.scale(self.images['compass_spinner'], (self.images['compass_spinner'].get_width() * 3, self.images['compass_spinner'].get_height() * 3))
+
+        # Changes transparency
         for img in self.animations['dirt']['default']['images']:
             img.set_alpha(150)
-
-        # Makes the grey screen transparent
         self.images['grey_screen'].set_alpha(175)
 
         # Creates the game variables

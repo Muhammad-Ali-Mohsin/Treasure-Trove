@@ -14,7 +14,9 @@ class Compass:
         player_loc = self.game.maze.get_loc(self.game.player.pos)
         displacement = (player_loc[0] - self.game.treasure.loc[0], player_loc[1] - self.game.treasure.loc[1])
 
-        if displacement[0] == 0:
+        if player_loc == self.game.treasure.loc:
+            angle = (self.angle + round(10 * self.game.multi)) % 360
+        elif displacement[0] == 0:
             angle = 180 if displacement[1] < 0 else 0
         elif displacement[1] == 0:
             angle = 90 if displacement[0] < 0 else 270
@@ -44,5 +46,5 @@ class Compass:
         # Angle is also made negative because pygame rotates images anticlockwise and I want to rotate clockwise
         spinner_img = pygame.transform.rotate(self.game.images['compass_spinner'], -self.angle + 45)
         # Draws the spinner image at the centre of the compass image
-        pos = (self.game.display.get_width() - (self.game.images['compass_base'].get_width() // 2) - (spinner_img.get_width() // 2) - PADDING, (self.game.images['compass_base'].get_height() // 2) - (spinner_img.get_height() // 2) + PADDING)
-        self.game.display.blit(spinner_img, pos)
+        pos = (self.game.larger_display.get_width() - (self.game.images['compass_base'].get_width() * 3 // 2) - (spinner_img.get_width() // 2) - PADDING * 3, (self.game.images['compass_base'].get_height() * 3 // 2) - (spinner_img.get_height() // 2) + PADDING * 3)
+        self.game.larger_display.blit(spinner_img, pos)
