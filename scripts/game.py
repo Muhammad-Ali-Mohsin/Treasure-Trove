@@ -11,15 +11,15 @@ from scripts.particles import ParticleHandler
 from scripts.treasure import Treasure
 from scripts.compass import Compass
 
-random.seed(0)
-
 class Game:
-    def __init__(self):
-        pygame.init()
+    def __init__(self, window, fps):
+        random.seed(0)
         self.kill_screen = False
-        self.window = pygame.display.set_mode((1920, 1080))
+        self.fps = fps
+        self.window = window
         pygame.display.set_caption("Treasure Trove")
         self.display = pygame.Surface((426, 240))
+        self.larger_display = pygame.Surface((1280, 720)).convert_alpha()
         self.clock = pygame.time.Clock()
 
         self.camera_displacement = [0, 0]
@@ -148,13 +148,13 @@ class Game:
         self.display.blit(self.images['box'], ((self.display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.display.get_height() // 2) - (self.images['box'].get_height() // 2)))
         self.display.blit(text, ((self.display.get_width() // 2) - (text.get_width() // 2), (self.display.get_height() // 2) - (text.get_height() // 2)))
 
-
     def update_display(self):
         """
         Calls all functions to update the display
         """
         # Clears the display
         self.display.fill((35, 72, 39))
+        self.larger_display.fill((0, 0, 0, 0))
 
         self.maze.draw()
         self.treasure.draw()
@@ -176,6 +176,7 @@ class Game:
 
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
+        self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
         #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
         #self.window.blit(fps_text, (10, 10))
         pygame.display.update()
@@ -229,9 +230,6 @@ class Game:
 
             self.handle_events()
             self.update_display()
-            self.clock.tick(60)
+            self.clock.tick(self.fps)
 
-
-game = Game()
-game.run()
-pygame.quit()
+        return "main_menu"

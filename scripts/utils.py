@@ -43,3 +43,13 @@ def format_num(num):
         if num >= 10 ** value[1]:
             result = str(round(num / 10 ** value[1], 1)) + value[0]
     return result
+
+def scale_coord_to_new_res(coord, old_resolution, new_resolution):
+    """
+    Maps a coordinate onto the the corresponding point on a new resolution
+    """
+    x_scale = new_resolution[0] / old_resolution[0]
+    y_scale = new_resolution[1] / old_resolution[1]
+    x = coord[0] * x_scale
+    y = coord[1] * y_scale
+    return (x, y)
