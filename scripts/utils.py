@@ -1,5 +1,6 @@
 import pygame
 import os
+import re
 
 def load_image(path):
     """
@@ -35,14 +36,9 @@ def get_text_surf(size, text, colour, bold=False, italic=False, underline=False)
 
 def format_num(num):
     """
-    Formats numbers
+    Formats numbers with a comma
     """
-    result = str(num)
-    data = (("QT", 18), ("Q", 15), ("T", 12), ("B", 9), ("M", 6), ("k", 3))
-    for value in data:
-        if num >= 10 ** value[1]:
-            result = str(round(num / 10 ** value[1], 1)) + value[0]
-    return result
+    return re.sub("(?<=\d)(?=(\d{3})+(?!\d))", ",", str(num))
 
 def scale_coord_to_new_res(coord, old_resolution, new_resolution):
     """
@@ -55,6 +51,9 @@ def scale_coord_to_new_res(coord, old_resolution, new_resolution):
     return (x, y)
 
 def create_window(resolution):
+    """
+    Creates a window
+    """
     pygame.display.init()
     window = pygame.display.set_mode(resolution)
     pygame.mouse.set_visible(False)

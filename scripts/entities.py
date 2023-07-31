@@ -370,6 +370,7 @@ class Enemy(Entity):
         """
         Removes the enemy's animation and then removes it from the enemies list
         """
+        self.game.killed += 1
         AnimationHandler.kill_animation(self.animation)
         self.game.enemies.remove(self)
 

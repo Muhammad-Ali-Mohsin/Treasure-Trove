@@ -66,7 +66,7 @@ class Experience(Particle):
             magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
             self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
 
-        elif self.pos[1] > 140 and not self.travelling_up:
+        elif self.pos[1] > 150 and not self.travelling_up:
             self.velocity[1] = self.velocity[1] - (self.game.multi * 0.4)
             self.travelling_up = True
 
@@ -113,7 +113,7 @@ class Gold(Particle):
             magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
             self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
 
-        elif self.pos[1] > 140 and not self.travelling_up:
+        elif self.pos[1] > 150 and not self.travelling_up:
             self.velocity[1] = self.velocity[1] - (self.game.multi * 0.4)
             self.travelling_up = True
 

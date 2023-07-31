@@ -13,7 +13,6 @@ pygame.init()
 window = create_window((1920, 1080))
 fps = 60
 
-
 screens = {'main_menu': MainMenu, 'game': Game, 'options_menu': OptionsMenu}
 current_screen = 'main_menu'
 running = True

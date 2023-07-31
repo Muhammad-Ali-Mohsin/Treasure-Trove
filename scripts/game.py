@@ -11,23 +11,31 @@ from scripts.particles import ParticleHandler
 from scripts.treasure import Treasure
 from scripts.compass import Compass
 
+TRANSITION_DURATION = 1
+
 class Game:
     def __init__(self, window, fps):
         random.seed(0)
+        pygame.display.set_caption("Treasure Trove")
         self.kill_screen = False
         self.fps = fps
         self.window = window
-        pygame.display.set_caption("Treasure Trove")
         self.display = pygame.Surface((426, 240))
         self.larger_display = pygame.Surface((1280, 720)).convert_alpha()
         self.clock = pygame.time.Clock()
 
+        # Variables about the transition
+        self.transition_surf = pygame.Surface(self.larger_display.get_size())
+        self.transition_surf.set_colorkey((255, 255, 255))
+        self.transition_surf.fill((255, 255, 255))
+        self.transition_timer = 0
+        self.end_transition = False
+
+        # Variables about the camera
         self.camera_displacement = [0, 0]
         self.dt = 0
-        self.last_time = 0
+        self.last_time = time.time()
         self.screen_shake = [0, 0]
-        self.paused = False
-        self.game_over = False
 
         # Loads all the images in
         self.images = {
@@ -38,7 +46,7 @@ class Game:
             'compass_base': load_image("assets/images/compass_base.png"),
             'compass_spinner': load_image("assets/images/compass_spinner.png"),
             'box': load_image("assets/images/box.png"),
-            'grey_screen': pygame.Surface(self.display.get_size())
+            'grey_screen': pygame.Surface(self.larger_display.get_size()).convert_alpha()
         }
 
         # Loads all the animations in
@@ -56,37 +64,38 @@ class Game:
 
         # Image rescaling
         self.images['compass_spinner'] = pygame.transform.scale(self.images['compass_spinner'], (self.images['compass_spinner'].get_width() * 3, self.images['compass_spinner'].get_height() * 3))
+        self.images['box'] = pygame.transform.scale(self.images['box'], (self.images['box'].get_width() * 3, self.images['box'].get_height() * 3))
 
         # Changes transparency
         for img in self.animations['dirt']['default']['images']:
             img.set_alpha(150)
         self.images['grey_screen'].set_alpha(175)
 
-        # Creates the game variables
+        # Variables about the game
         self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=100)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
         self.enemies = []
         self.treasure = Treasure(self)
         self.gold = 0
+        self.wave = 0
+        self.killed = 0
+        self.paused = False
+        self.game_over = False
 
         # Graphical variables
         self.compass = Compass(self)
         self.wind_intensity = random.random()
-        self.paused_text = get_text_surf(size=40, text="Paused", colour=(172, 116, 27))
-        self.game_over_text = get_text_surf(size=30, text="Game Over", colour=(172, 116, 27))
-
-    def create_enemy(self):
-        """
-        Spawns an enemy in a random location
-        """
-        self.enemies.append(Enemy(self, self.maze.get_loc(self.player.pos), (16, 16), random.randint(2, 3), 30))
-        #self.enemies.append(Enemy(self, self.maze.get_random_loc("path"), (16, 16), random.randint(2, 3), 30))
-
-    def shake_screen(self, magnitude, duration):
-        """
-        Shakes the screen
-        """
-        self.screen_shake = [magnitude, duration]
+        self.text_updated = False
+        self.text = {
+            'paused': get_text_surf(size=70, text="Paused", colour=(172, 116, 27)), 
+            'game_over': get_text_surf(size=70, text="Game Over", colour=(172, 116, 27)),
+            'return': get_text_surf(size=20, text="Press Backspace to return to Main Menu", colour=(172, 116, 27)),
+            'wave_label': get_text_surf(size=30, text=f"Wave:", colour=(172, 116, 27)),
+            'killed_label': get_text_surf(size=30, text=f"Enemies Killed:", colour=(172, 116, 27)),
+            'remaining_label': get_text_surf(size=30, text=f"Enemies Remaining:", colour=(172, 116, 27)),
+            'gold_label': get_text_surf(size=30, text=f"Gold collected:", colour=(172, 116, 27))
+            }
+        self.update_text()
 
     def handle_events(self):
         """
@@ -107,15 +116,13 @@ class Game:
                 if event.key == pygame.K_DOWN:
                     self.player.moving['down'] = True
                 if event.key == pygame.K_ESCAPE:
-                    self.kill_screen = True
-                if event.key == pygame.K_TAB:
                     self.paused = not self.paused
+                if event.key == pygame.K_BACKSPACE:
+                    if self.paused or self.game_over: 
+                        self.transition_timer = -TRANSITION_DURATION
+                        self.end_transition = True
                 if event.key == pygame.K_x:
                     if self.player.animation.current_animation != "death": self.player.attack()
-                if event.key == pygame.K_1:
-                    self.create_enemy()
-                if event.key == pygame.K_2:
-                    self.treasure.open()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     self.player.moving['left'] = False
@@ -125,6 +132,25 @@ class Game:
                     self.player.moving['up'] = False
                 if event.key == pygame.K_DOWN:
                     self.player.moving['down'] = False
+
+    def create_enemy(self):
+        """
+        Spawns an enemy in a random location
+        """
+        self.enemies.append(Enemy(self, self.maze.get_random_loc("path"), (16, 16), (random.random()) + 1, 30))
+
+    def spawn_enemies(self):
+        """
+        Spawns a bunch of enemies based on the current wave
+        """
+        for i in range(round(self.wave / 1.5)):
+            self.create_enemy()
+
+    def shake_screen(self, magnitude, duration):
+        """
+        Shakes the screen
+        """
+        self.screen_shake = [magnitude, duration]
 
     def draw_healthbar(self):
         """
@@ -145,9 +171,26 @@ class Game:
         """
         Draws a screen with a given text as the center (Used for the pause screen and game over screen)
         """
-        self.display.blit(self.images['grey_screen'], (0, 0))
-        self.display.blit(self.images['box'], ((self.display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.display.get_height() // 2) - (self.images['box'].get_height() // 2)))
-        self.display.blit(text, ((self.display.get_width() // 2) - (text.get_width() // 2), (self.display.get_height() // 2) - (text.get_height() // 2)))
+        # Draws the grey screen, the box, the return to menu text and the title text
+        self.larger_display.blit(self.images['grey_screen'], (0, 0))
+        box_pos = ((self.larger_display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.images['box'].get_height() // 2))
+        self.larger_display.blit(self.images['box'], box_pos)
+        self.larger_display.blit(text, ((self.larger_display.get_width() // 2) - (text.get_width() // 2), (self.larger_display.get_height() // 2) - (text.get_height() // 2) - 80))
+        self.larger_display.blit(self.text['return'], ((self.larger_display.get_width() // 2) - (self.text['return'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.text['return'].get_height() // 2) + 120))
+
+        # Draws the metrics onto the screen
+        for i, metric in enumerate(('wave', 'killed', 'remaining', 'gold')):
+            self.larger_display.blit(self.text[metric + '_label'], (box_pos[0] + 100, (self.larger_display.get_height() // 2) - (self.text[metric + '_label'].get_height() // 2) + (i * 30) - 20))
+            self.larger_display.blit(self.text[metric], (box_pos[0] + self.images['box'].get_width() - (self.text[metric].get_width() // 2) - 100, (self.larger_display.get_height() // 2) - (self.text[metric].get_height() // 2) + (i * 30) - 20))
+
+    def update_text(self):
+        """
+        Updates the text surfaces that are drawn during the pause and game over screens
+        """
+        self.text['wave'] = get_text_surf(size=30, text=str(self.wave), colour=(172, 116, 27))
+        self.text['killed'] = get_text_surf(size=30, text=str(self.killed), colour=(172, 116, 27))
+        self.text['remaining'] = get_text_surf(size=30, text=str(len(self.enemies)), colour=(172, 116, 27))
+        self.text['gold'] = get_text_surf(size=30, text=format_num(self.gold), colour=(172, 116, 27))
 
     def update_display(self):
         """
@@ -157,29 +200,39 @@ class Game:
         self.display.fill((35, 72, 39))
         self.larger_display.fill((0, 0, 0, 0))
 
+        # Draws all maze elements
         self.maze.draw()
         self.treasure.draw()
-        ParticleHandler.update()
-        self.player.draw()
 
+        # Updates and draws the particles
+        ParticleHandler.update()
+
+        # Draws all entities
+        self.player.draw()
         for enemy in self.enemies:
             enemy.draw()
  
+        # Draws the HUD
         self.draw_healthbar()
         self.draw_gold()
         self.compass.draw()
 
+        # Draws the game over and paused screens
         if self.game_over:
-            self.draw_screen(self.game_over_text)
+            self.draw_screen(self.text['game_over'])
         elif self.paused:
-            self.draw_screen(self.paused_text)
-        
+            self.draw_screen(self.text['paused'])
 
+        # Draws the transition
+        if self.transition_timer != TRANSITION_DURATION:
+            self.transition_surf.fill((0, 0, 0))
+            pygame.draw.circle(self.transition_surf, (255, 255, 255), (self.transition_surf.get_width() // 2, self.transition_surf.get_height() // 2), ((self.transition_surf.get_width() * 3/4) * (abs(self.transition_timer) / TRANSITION_DURATION)))
+
+        # Blits the transition surface onto the larger surf and then both surfaces onto the window
+        self.larger_display.blit(self.transition_surf, (0, 0))
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
         self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
-        #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        #self.window.blit(fps_text, (10, 10))
         pygame.display.update()
 
     def run(self):
@@ -187,11 +240,13 @@ class Game:
         Runs the game loop
         """
         while not self.kill_screen:
+            # Calculates the change in time
+            self.dt = (time.time() - self.last_time)
+            self.last_time = time.time()
+            self.multi = self.dt * 60
             if not self.paused and not self.game_over:
-                # Calculates the change in time
-                self.dt = (time.time() - self.last_time)
-                self.last_time = time.time()
-                self.multi = self.dt * 60
+                # Sets the text to not updated as the game is not paused
+                if self.text_updated: self.text_updated = False
 
                 # Counts down the screen shake
                 self.screen_shake[1] = max(self.screen_shake[1] - self.dt, 0)
@@ -219,6 +274,7 @@ class Game:
                     for enemy in self.enemies:
                         enemy.update()
 
+                # Ends the game if the player's death animation is over
                 elif self.player.animation.done:
                     self.game_over = True
 
@@ -229,8 +285,21 @@ class Game:
                 self.camera_displacement[0] = int(self.player.pos[0] - (self.display.get_width() // 2))
                 self.camera_displacement[1] = int(self.player.pos[1] - (self.display.get_height() // 2))
 
+            # Runs after the game ends or the game is paused and updates the text
+            elif not self.text_updated:
+                self.update_text()
+                self.text_updated = True
+
+            # Decrements the transition timer and draws the transition   
+            self.transition_timer = min(self.transition_timer + self.dt, TRANSITION_DURATION)
+
+            # Ends the screen if the transition is over
+            if self.transition_timer >= 0 and (self.game_over or self.paused) and self.end_transition:
+                self.kill_screen = True
+
             self.handle_events()
             self.update_display()
             self.clock.tick(self.fps)
 
+        # Returns to the main menu once the game loop has finished
         return "main_menu"

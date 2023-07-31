@@ -37,6 +37,8 @@ class Treasure:
  
             self.reset()
             self.released_gold = False
+            self.game.wave += 1
+            self.game.spawn_enemies()
 
     def draw(self):
         img = self.animation.get_img()
