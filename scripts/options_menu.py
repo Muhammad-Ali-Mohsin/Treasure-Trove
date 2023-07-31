@@ -1,6 +1,6 @@
 import pygame
 
-from scripts.utils import load_image, get_text_surf, scale_coord_to_new_res
+from scripts.utils import load_image, get_text_surf, scale_coord_to_new_res, create_window
 
 RESOLUTIONS = ((3840, 2160), (2560, 1440), (1920, 1080), (1280, 720), (854, 480), (640, 360), (426, 240))
 
@@ -108,11 +108,8 @@ class OptionsMenu:
         elif "res" in button['action']:
             new_res = RESOLUTIONS[(RESOLUTIONS.index(self.window.get_size()) + (1 if button['action'] == "decrease_res" else -1)) % len(RESOLUTIONS)]
             pygame.display.quit()
-            pygame.display.init()
-            self.window = pygame.display.set_mode(new_res)
-            pygame.mouse.set_visible(False)
+            self.window = create_window(new_res)
             pygame.display.set_caption("Treasure Trove - Options Menu")
-            pygame.display.set_icon(load_image("assets/images/icon.png"))
             self.text[3]['text'] = get_text_surf(size=40, text=f"{self.window.get_width()}x{self.window.get_height()}", colour=(255, 255, 255))
 
         elif button['action'] == "main_menu":

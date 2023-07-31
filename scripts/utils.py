@@ -53,3 +53,11 @@ def scale_coord_to_new_res(coord, old_resolution, new_resolution):
     x = coord[0] * x_scale
     y = coord[1] * y_scale
     return (x, y)
+
+def create_window(resolution):
+    pygame.display.init()
+    window = pygame.display.set_mode(resolution)
+    pygame.mouse.set_visible(False)
+    pygame.display.set_caption("Treasure Trove - Options Menu")
+    pygame.display.set_icon(load_image("assets/images/icon.png"))
+    return window
