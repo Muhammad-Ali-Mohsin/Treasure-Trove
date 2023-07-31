@@ -20,13 +20,13 @@ class MainMenu:
         self.clicked = False
         self.mouse_pos = pygame.mouse.get_pos()
         self.selected_screen = None
+        self.selected = None
 
         self.buttons = []
-        self.selected = None
 
         for i, data in enumerate((("Start Game", "game"), ("Options", "options_menu"), ("Leaderboard", "main_menu"), ("Credits", "credits_menu"), ("Exit to Desktop", None))):
             self.buttons.append({
-                'label': get_text_surf(size=40, text=data[0], colour=pygame.Color("white")), 
+                'label': get_text_surf(size=40, text=data[0], colour=(255, 255, 255)), 
                 'action': data[1],
                 'rect': pygame.Rect((self.display.get_width() // 2) - 150, ((i + 1) * 50) + 300, 300, 40)
                 })

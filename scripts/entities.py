@@ -233,12 +233,14 @@ class Enemy(Entity):
                 self.animation.change_animation("death")
                 for i in range(10):
                     ParticleHandler.create_particle("experience", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + (self.size[1] // 2) + random.randint(-5, 5)), velocity=(random.randint(-4, 4), -random.randint(2, 4)))
-        # Creates dust particles that fly off from the enemy to show that they've been hit
-        for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-            ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
-        # Knocks the enemy and shakes the screen
-        self.knockback((self.game.player.pos[0] + (self.game.player.size[0] // 2), self.game.player.pos[1] + (self.game.player.size[1] // 2)), 3)
-        self.game.shake_screen(5, 0.2)
+        
+            # Creates dust particles that fly off from the enemy to show that they've been hit
+            for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
+                ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
+            
+            # Knocks the enemy and shakes the screen
+            self.knockback((self.game.player.pos[0] + (self.game.player.size[0] // 2), self.game.player.pos[1] + (self.game.player.size[1] // 2)), 3)
+            self.game.shake_screen(5, 0.2)
 
     def knockback(self, point, velocity):
         """
