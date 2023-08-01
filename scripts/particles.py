@@ -95,6 +95,7 @@ class Slime(Particle):
         self.pos = (self.parent.pos[0] + (self.parent.size[0] // 2) + self.variance[0], self.parent.pos[1] + self.variance[1])
         self.variance[1] = self.variance[1] - (0.2 * self.game.multi)
 
+
 class Gold(Particle):
     def __init__(self, game, pos, kwargs):
         super().__init__(game, pos)
@@ -142,10 +143,33 @@ class Dust(Particle):
         self.pos[0] += math.cos(self.angle) * self.speed * self.game.multi
         self.pos[1] += math.sin(self.angle) * self.speed * self.game.multi
 
+class Bee(Particle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos)
+        self.speed = kwargs['speed']
+        self.animation.change_animation_library(self.game.animations['bee'])
+        self.timer = 20
+        self.angle = random.random() * math.pi * 2
+        self.angle_increase = 0
+
+    def move(self):
+        self.pos[0] += math.sin(self.angle) * self.speed * self.game.multi
+        self.pos[1] += math.cos(self.angle) * self.speed * self.game.multi
+        self.angle += self.angle_increase
+        if random.random() < 0.01:
+            self.angle_increase = random.random() * 0.2 - 0.1
+
+    def draw(self):
+        img = self.animation.get_img()
+        if self.timer < 5:
+            img.set_alpha(self.timer / 5 * 255)
+        pos = (self.pos[0] - (img.get_width() // 2) - self.game.camera_displacement[0], self.pos[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
+        self.game.display.blit(img, pos)
+
 
 class ParticleHandler:
     particles = []
-    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold}
+    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold, 'bee': Bee}
 
     def update():
         """

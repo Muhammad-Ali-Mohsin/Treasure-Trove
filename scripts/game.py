@@ -59,7 +59,8 @@ class Game:
             'experience': {'default': load_animation("assets/particles/experience", (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), True)},
             'slime_particle': {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)},
             'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)},
-            'gold': {'default': load_animation("assets/particles/gold", (0.1, 0.1), True)}
+            'gold': {'default': load_animation("assets/particles/gold", (0.1, 0.1), True)},
+            'bee': {'default': load_animation("assets/particles/bee", (0.1, 0.1, 0.1), True)}
         }
 
         # Image rescaling
@@ -274,18 +275,23 @@ class Game:
                 self.screen_shake[1] = max(self.screen_shake[1] - self.dt, 0)
 
                 # Randomly changes the wind intensity
-                if random.randint(0, 100) == 1:
+                if random.random() < 0.01:
                     self.wind_intensity = random.random()
 
                 # Spawns leaves from the hedges that are on the screen
-                if random.randint(0, 10) == 1:
+                if random.random() < 0.1:
                     top_left_loc = self.maze.get_loc(self.camera_displacement)
                     bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
                     top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
                     bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
                     loc = self.maze.get_random_loc("hedge", (top_left_loc, bottom_right_loc))
-                    ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * random.random())
+                    if random.random() < 0.1:
+                        ParticleHandler.create_particle("bee", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * 0.25 + 0.1)
+                    else:
+                        ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * random.random())
                 
+
+
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
 
