@@ -10,7 +10,8 @@ pygame.init()
 pygame.mixer.set_num_channels(32)
 
 # Set up pygame
-window = create_window((1920, 1080))
+monitor = pygame.display.Info()
+window = create_window((monitor.current_w, monitor.current_h))
 fps = 60
 
 screens = {'main_menu': MainMenu, 'game': Game, 'options_menu': OptionsMenu}

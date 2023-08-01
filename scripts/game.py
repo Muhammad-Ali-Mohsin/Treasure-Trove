@@ -15,7 +15,7 @@ TRANSITION_DURATION = 1
 
 class Game:
     def __init__(self, window, fps):
-        random.seed(0)
+        #random.seed(0)
         pygame.display.set_caption("Treasure Trove")
         self.kill_screen = False
         self.fps = fps
@@ -111,7 +111,7 @@ class Game:
         AudioPlayer.load_sound("gold", "assets/sfx/gold.wav", 0.7)
         AudioPlayer.load_sound("player_attack", "assets/sfx/player_attack.wav", 0.8)
         AudioPlayer.load_sound("enemy_death", "assets/sfx/enemy_death.wav", 1)
-        AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.4)
+        AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.1)
         AudioPlayer.load_sound("experience", "assets/sfx/experience.wav", 0.3)
         AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
 
