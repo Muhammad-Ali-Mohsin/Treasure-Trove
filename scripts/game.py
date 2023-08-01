@@ -162,7 +162,7 @@ class Game:
         """
         Spawns a bunch of enemies based on the current wave
         """
-        for i in range(round(self.wave / 1.5)):
+        for i in range(round(self.wave)):
             self.create_enemy()
 
     def shake_screen(self, magnitude, duration):
@@ -230,7 +230,7 @@ class Game:
         self.player.draw()
         for enemy in self.enemies:
             enemy.draw()
- 
+
         # Draws the HUD
         self.draw_healthbar()
         self.draw_gold()
@@ -252,6 +252,8 @@ class Game:
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
         self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
+        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
+        self.window.blit(fps_text, (10, 10))
         pygame.display.update()
 
     def run(self):
@@ -328,7 +330,7 @@ class Game:
 
             self.handle_events()
             self.update_display()
-            self.clock.tick(self.fps)
+            self.clock.tick()#self.fps)
 
         # Kills all animations, particles and sounds and then returns to the main menu once the game loop has finished
         for particle in ParticleHandler.particles.copy():

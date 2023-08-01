@@ -17,6 +17,8 @@ STUN_TIME = 1
 PLAYER_ATTACK_RANGE = 8
 # This is the attack range of the enemy
 ENEMY_ATTACK_RANGE = 4
+# This is the height of the rect used to detect collisions
+FEET_HEIGHT = 4
 
 class Entity:
     def __init__(self, game, loc, size, speed, health):
@@ -37,6 +39,12 @@ class Entity:
         Returns a rect for the entity
         """
         return pygame.Rect(*self.pos, *self.size)
+    
+    def get_feet_rect(self):
+        """
+        Returns a rect at the entity's feet
+        """
+        return pygame.Rect(self.pos[0], self.pos[1] + self.size[1] - FEET_HEIGHT, self.size[0], FEET_HEIGHT)
     
     def knockback(self, point, speed):
         """
@@ -64,30 +72,31 @@ class Entity:
             self.knockback_timer -= self.game.dt
         else:
             # Changes the displacement if the entity is not being knocked back based on the direction they are moving
-            x_displacement = ((self.moving['right'] * self.speed) - (self.moving['left'] * self.speed)) * self.game.multi
-            y_displacement = ((self.moving['down'] * self.speed) - (self.moving['up'] * self.speed)) * self.game.multi
+            x_displacement = ((self.moving['right'] * self.speed) - (self.moving['left'] * self.speed)) * self.game.multi * (0.75 if "attack" in self.animation.current_animation else 1)
+            y_displacement = ((self.moving['down'] * self.speed) - (self.moving['up'] * self.speed)) * self.game.multi * (0.75 if "attack" in self.animation.current_animation else 1)
 
         # Adds the x displacement and checks for collisions with all neighbours
         self.pos[0] += x_displacement
-        e_rect = self.get_rect()
-        for rect in self.game.maze.get_neighbour_rects(self.game.maze.get_tile(e_rect.center)):
-            if e_rect.colliderect(rect):
+        feet_rect = self.get_feet_rect()
+        neighbours = self.game.maze.get_neighbour_rects(self.game.maze.get_tile(feet_rect.center))
+        for rect in neighbours:
+            if feet_rect.colliderect(rect):
                 if x_displacement > 0:
-                    e_rect.right = rect.left
+                    feet_rect.right = rect.left
                 else:
-                    e_rect.left = rect.right
-                self.pos[0] = e_rect.x
+                    feet_rect.left = rect.right
+                self.pos[0] = feet_rect.x
 
         # Adds the y displacement and checks for collisions with all neighbours
         self.pos[1] += y_displacement
-        e_rect = self.get_rect()
-        for rect in self.game.maze.get_neighbour_rects(self.game.maze.get_tile(e_rect.center)):
-            if e_rect.colliderect(rect):
+        feet_rect = self.get_feet_rect()
+        for rect in neighbours:
+            if feet_rect.colliderect(rect):
                 if y_displacement > 0:
-                    e_rect.bottom = rect.top
+                    feet_rect.bottom = rect.top
                 else:
-                    e_rect.top = rect.bottom
-                self.pos[1] = e_rect.y
+                    feet_rect.top = rect.bottom
+                self.pos[1] = feet_rect.bottom - self.size[1]
 
     def draw(self):
         """
@@ -152,7 +161,7 @@ class Player(Entity):
         """
         Updates the player's movement, attack, animation and particles
         """
-        moving = self.moving.copy()
+        super().update()
         if "attack" in self.animation.current_animation:
             if not self.has_hit:
                 # Checks whether there are enemies within the player's attack rect and hits them if so
@@ -173,12 +182,6 @@ class Player(Entity):
             if self.animation.done:
                 self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
                 self.animation.done = False
-            
-            # Makes sure the player can't move while they are attacking
-            self.moving = {'left': False, 'right': False, 'up': False, 'down': False}
-
-        super().update()
-        self.moving = moving
 
         # Kills the player after their knockback timer is over
         if self.health <= 0 and self.knockback_timer <= 0:
@@ -260,7 +263,7 @@ class Enemy(Entity):
         """
         # Finds the starting tile the enemy is in and the destination tile which the player is in
         starting_tile_loc = self.game.maze.get_loc((self.pos[0] + self.size[0] // 2, self.pos[1] + self.size[1] // 2))
-        destination = self.game.maze.get_loc(self.game.player.pos)
+        destination = self.game.maze.get_loc((self.game.player.pos[0] + self.game.player.size[0] // 2, self.game.player.pos[1] + self.game.player.size[1] - (FEET_HEIGHT // 2)))
 
         # Initialises tile list to starting position
         node_list = [(starting_tile_loc, None)]
