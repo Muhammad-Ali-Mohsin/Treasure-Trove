@@ -323,9 +323,10 @@ class Game:
             self.update_display()
             self.clock.tick(self.fps)
 
-        # Kills all animations and particles and then returns to the main menu once the game loop has finished
+        # Kills all animations, particles and sounds and then returns to the main menu once the game loop has finished
         for particle in ParticleHandler.particles.copy():
             ParticleHandler.kill_particle(particle)
         for animation in AnimationHandler.animations.copy():
             AnimationHandler.kill_animation(animation)
+        pygame.mixer.stop()
         return "main_menu"

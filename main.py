@@ -3,9 +3,8 @@ import os
 import pygame
 
 from scripts.game import Game
-from scripts.main_menu import MainMenu
-from scripts.options_menu import OptionsMenu
-from scripts.utils import load_image, create_window
+from scripts.menus import MainMenu, OptionsMenu
+from scripts.utils import create_window
 
 pygame.init()
 pygame.mixer.set_num_channels(32)

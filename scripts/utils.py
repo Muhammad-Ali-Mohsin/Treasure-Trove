@@ -89,6 +89,6 @@ class AudioPlayer:
                 sound['current'] = (sound['current'] + 1) % len(sound['sounds'])
             sound['sounds'][sound['current']].play()
 
-
     def stop_sound(sound):
         AudioPlayer.sounds[sound]['sounds'][AudioPlayer.sounds[sound]['current']].stop()
+
