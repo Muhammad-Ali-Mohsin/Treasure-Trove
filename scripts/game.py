@@ -124,15 +124,15 @@ class Game:
             if event.type == pygame.QUIT:
                 self.kill_screen = True
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = True
                     if self.player.animation.current_animation != "death": self.player.animation.flip = True
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                     self.player.moving['right'] = True
                     if self.player.animation.current_animation != "death": self.player.animation.flip = False
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_UP or event.key == pygame.K_w:
                     self.player.moving['up'] = True
-                if event.key == pygame.K_DOWN:
+                if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     self.player.moving['down'] = True
                 if event.key == pygame.K_ESCAPE:
                     self.paused = not self.paused
@@ -143,14 +143,16 @@ class Game:
                 if event.key == pygame.K_x:
                     if self.player.animation.current_animation != "death": self.player.attack()
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = False
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                     self.player.moving['right'] = False
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_UP or event.key == pygame.K_w:
                     self.player.moving['up'] = False
-                if event.key == pygame.K_DOWN:
+                if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     self.player.moving['down'] = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.player.animation.current_animation != "death": self.player.attack()
 
     def create_enemy(self):
         """
@@ -252,8 +254,8 @@ class Game:
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
         self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
-        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        self.window.blit(fps_text, (10, 10))
+        #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
+        #self.window.blit(fps_text, (10, 10))
         pygame.display.update()
 
     def run(self):
@@ -293,8 +295,6 @@ class Game:
                     else:
                         ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * random.random())
                 
-
-
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
 
@@ -330,7 +330,7 @@ class Game:
 
             self.handle_events()
             self.update_display()
-            self.clock.tick()#self.fps)
+            self.clock.tick(self.fps)
 
         # Kills all animations, particles and sounds and then returns to the main menu once the game loop has finished
         for particle in ParticleHandler.particles.copy():
