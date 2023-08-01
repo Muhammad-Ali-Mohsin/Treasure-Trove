@@ -5,6 +5,7 @@ import pygame
 
 from scripts.particles import ParticleHandler
 from scripts.animations import AnimationHandler
+from scripts.utils import AudioPlayer
 
 class Treasure:
     def __init__(self, game):

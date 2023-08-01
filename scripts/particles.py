@@ -1,6 +1,7 @@
 import math
 import random
 
+from scripts.utils import AudioPlayer
 from scripts.animations import AnimationHandler
 
 EXPERIENCE_TARGET_POINT = (17, 10)
@@ -53,6 +54,7 @@ class Experience(Particle):
         self.travelling_up = False
         self.animation.change_animation_library(self.game.animations['experience'])
         self.animation.frame = random.randint(0, len(self.animation.animation_library[self.animation.current_animation]['images']) - 1)
+        AudioPlayer.play_sound("experience")
 
     def move(self):
         self.pos[0] += self.velocity[0] * self.game.multi
@@ -74,6 +76,7 @@ class Experience(Particle):
             if self.game.player.animation.current_animation != "death":
                 self.game.player.health = min(100, self.game.player.health + 0.5)
             self.timer = 0
+            AudioPlayer.play_sound("health")
 
     def draw(self):
         img = self.animation.get_img()
@@ -100,6 +103,7 @@ class Gold(Particle):
         self.timer = 10
         self.travelling_up = False
         self.animation.change_animation_library(self.game.animations['gold'])
+        AudioPlayer.play_sound("treasure")
 
     def move(self):
         self.pos[0] += self.velocity[0] * self.game.multi
@@ -120,6 +124,7 @@ class Gold(Particle):
         if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
             self.game.gold += random.randint(40, 60)
             self.timer = 0
+            AudioPlayer.play_sound("gold")
 
     def draw(self):
         img = self.animation.get_img()

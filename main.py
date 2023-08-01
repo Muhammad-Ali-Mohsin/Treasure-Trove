@@ -8,6 +8,7 @@ from scripts.options_menu import OptionsMenu
 from scripts.utils import load_image, create_window
 
 pygame.init()
+pygame.mixer.set_num_channels(32)
 
 # Set up pygame
 window = create_window((1920, 1080))

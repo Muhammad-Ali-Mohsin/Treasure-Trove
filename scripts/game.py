@@ -3,7 +3,7 @@ import random
 
 import pygame
 
-from scripts.utils import load_image, load_images, get_text_surf, format_num
+from scripts.utils import load_image, load_images, get_text_surf, format_num, AudioPlayer
 from scripts.maze import generate_maze
 from scripts.entities import Player, Enemy
 from scripts.animations import load_animation, load_animation_library, AnimationHandler
@@ -72,7 +72,7 @@ class Game:
         self.images['grey_screen'].set_alpha(175)
 
         # Variables about the game
-        self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=100)
+        self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=25)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
         self.enemies = []
         self.treasure = Treasure(self)
@@ -96,6 +96,23 @@ class Game:
             'gold_label': get_text_surf(size=30, text=f"Gold collected:", colour=(172, 116, 27))
             }
         self.update_text()
+
+        # Audio
+        music = pygame.mixer.Sound("assets/sfx/music.wav")
+        music.set_volume(0.7)
+        music.play(-1, fade_ms=1000)
+        ambience = pygame.mixer.Sound("assets/sfx/ambience.wav")
+        ambience.play(-1, fade_ms=1000)
+        AudioPlayer.load_sounds("running", "assets/sfx/running", 0.2, True)
+        AudioPlayer.load_sounds("enemy_attack", "assets/sfx/enemy_attack", 0.8, True)
+        AudioPlayer.load_sound("health", "assets/sfx/health.wav", 0.7)
+        AudioPlayer.load_sound("gold", "assets/sfx/gold.wav", 0.7)
+        AudioPlayer.load_sound("player_attack", "assets/sfx/player_attack.wav", 0.8)
+        AudioPlayer.load_sound("enemy_death", "assets/sfx/enemy_death.wav", 1)
+        AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.4)
+        AudioPlayer.load_sound("experience", "assets/sfx/experience.wav", 0.3)
+        AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
+
 
     def handle_events(self):
         """
@@ -245,6 +262,11 @@ class Game:
             self.last_time = time.time()
             self.multi = self.dt * 60
             if not self.paused and not self.game_over:
+
+                # Plays the running sound if the player is running
+                if self.player.moving['right'] or self.player.moving['left'] or self.player.moving['up'] or self.player.moving['down']:
+                    AudioPlayer.play_sound("running")
+
                 # Sets the text to not updated as the game is not paused
                 if self.text_updated: self.text_updated = False
 

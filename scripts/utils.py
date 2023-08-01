@@ -1,6 +1,8 @@
-import pygame
 import os
 import re
+import random
+
+import pygame
 
 def load_image(path):
     """
@@ -60,3 +62,33 @@ def create_window(resolution):
     pygame.display.set_caption("Treasure Trove - Options Menu")
     pygame.display.set_icon(load_image("assets/images/icon.png"))
     return window
+
+class AudioPlayer:
+    sounds = {}
+
+    def load_sound(name, path, volume=1):
+        sound = pygame.mixer.Sound(path)
+        sound.set_volume(volume)
+        AudioPlayer.sounds[name] = {'sounds': tuple([sound]), 'shuffle': False, 'current': 0}
+
+    def load_sounds(name, path, volume=1, shuffle=False):
+        sounds_list = os.listdir(path)
+        sounds = []
+        for filename in sounds_list:
+            sound = pygame.mixer.Sound(path + '/' + filename)
+            sound.set_volume(volume)
+            sounds.append(sound)
+        AudioPlayer.sounds[name] = {'sounds': tuple(sounds), 'shuffle': shuffle, 'current': 0}
+
+    def play_sound(sound):
+        sound = AudioPlayer.sounds[sound]
+        if sound['sounds'][sound['current']].get_num_channels() == 0 or len(sound['sounds']) == 1:
+            if sound['shuffle']:
+                sound['current'] = random.randint(0, len(sound['sounds']) - 1)
+            else:
+                sound['current'] = (sound['current'] + 1) % len(sound['sounds'])
+            sound['sounds'][sound['current']].play()
+
+
+    def stop_sound(sound):
+        AudioPlayer.sounds[sound]['sounds'][AudioPlayer.sounds[sound]['current']].stop()

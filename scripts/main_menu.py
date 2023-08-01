@@ -11,6 +11,7 @@ class MainMenu:
         self.display = pygame.Surface((1280, 720))
         self.clock = pygame.time.Clock()
         
+        # Loads the images in
         self.images = {
             'cursor_0': load_image("assets/images/cursor_0.png"),
             'cursor_1': load_image("assets/images/cursor_1.png")
@@ -22,8 +23,8 @@ class MainMenu:
         self.selected_screen = None
         self.selected = None
 
+        #Loads all the buttons in
         self.buttons = []
-
         for i, data in enumerate((("Start Game", "game"), ("Options", "options_menu"), ("Leaderboard", "main_menu"), ("Credits", "credits_menu"), ("Exit to Desktop", None))):
             self.buttons.append({
                 'label': get_text_surf(size=40, text=data[0], colour=(255, 255, 255)), 

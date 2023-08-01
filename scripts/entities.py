@@ -5,6 +5,7 @@ import pygame
 
 from scripts.animations import AnimationHandler
 from scripts.particles import ParticleHandler
+from scripts.utils import AudioPlayer
 
 # This is the maximum distance from the center of a tile that an enemy can be for it to be considered in the center of that tile
 MAX_DISTANCE = 2
@@ -128,8 +129,9 @@ class Player(Entity):
             # Creates a bunch of dirt particles at the player's feet to signal the attack
             for i in range(10):
                 ParticleHandler.create_particle("dirt", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + self.size[1] + random.randint(-5, 5)))
-            # Changes the player's animation to attack in whatever direction they are facing
+            # Changes the player's animation to attack in whatever direction they are facing and plays the attack sound
             self.animation.change_animation("attack_" + self.animation.current_animation.split("_")[1])
+            AudioPlayer.play_sound("player_attack")
 
     def hit(self, enemy):
         """
@@ -141,9 +143,10 @@ class Player(Entity):
             # Creates dust particles which fly off the player to show they've been hit
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
                 ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
-            # Knocks the player back from the center of the enemy and shakes the screen
+            # Knocks the player back from the center of the enemy, shakes the screen and plays a sound
             self.knockback((enemy.pos[0] + (enemy.size[0] // 2), enemy.pos[1] + (enemy.size[1] // 2)), 3)
             self.game.shake_screen(5, 0.2)
+            AudioPlayer.play_sound("hit")
 
     def update(self):
         """
@@ -238,9 +241,10 @@ class Enemy(Entity):
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
                 ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
             
-            # Knocks the enemy and shakes the screen
+            # Knocks the enemy, shakes the screen and plays a sound
             self.knockback((self.game.player.pos[0] + (self.game.player.size[0] // 2), self.game.player.pos[1] + (self.game.player.size[1] // 2)), 3)
             self.game.shake_screen(5, 0.2)
+            AudioPlayer.play_sound("hit")
 
     def knockback(self, point, velocity):
         """
@@ -326,6 +330,7 @@ class Enemy(Entity):
                     self.game.player.hit(self)
                     self.stunned_timer = STUN_TIME
                     displacement = (0, 0)
+                    AudioPlayer.play_sound("enemy_attack")
                 else:
                     displacement = (self.game.player.pos[0] - self.pos[0], self.game.player.pos[1] - self.pos[1])
             
@@ -373,5 +378,6 @@ class Enemy(Entity):
         self.game.killed += 1
         AnimationHandler.kill_animation(self.animation)
         self.game.enemies.remove(self)
+        AudioPlayer.play_sound("enemy_death")
 
         
