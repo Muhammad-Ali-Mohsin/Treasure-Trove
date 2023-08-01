@@ -41,6 +41,7 @@ class Game:
         self.images = {
             'hedge': load_images("assets/images/hedges"),
             'path': load_images("assets/images/paths"),
+            'flowers': load_images("assets/images/flowers"),
             'healthbar': load_image("assets/images/healthbar.png"),
             'gold_pouch': load_image("assets/images/gold_pouch.png"),
             'compass_base': load_image("assets/images/compass_base.png"),

@@ -8,6 +8,7 @@ class Maze:
         self.tile_size = tile_size
         self.tiles = {}
         self.resolution = resolution
+        self.flowers = {}
 
     def get_loc(self, pos):
         """
@@ -100,6 +101,9 @@ class Maze:
                 if loc in self.tiles:
                     tile = self.tiles[loc]
                     self.game.display.blit(self.game.images[tile['type']][tile['img_index']], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
+                if loc in self.flowers:
+                    tile = self.tiles[loc]
+                    self.game.display.blit(self.game.images['flowers'][self.flowers[loc]], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
 
 
 
@@ -168,6 +172,15 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
             tile = maze.tiles[random.choice(list(maze.tiles))]
         tile['type'] = "path"
 
+    # This generates a bunch of flowers within the maze
+    for i in range(200):
+        # This finds a random tile which is a path and gives it a random flower
+        tile = maze.tiles[random.choice(list(maze.tiles))]
+        while not tile['type'] == "path":
+            tile = maze.tiles[random.choice(list(maze.tiles))]
+        maze.flowers[tile['loc']] = random.randint(0, len(game.images['flowers']) - 1)
+
+    # Adds borders to the maze
     for y in range(maze_resolution[1]):
         for x in (-1, maze_resolution[0]):
             maze.tiles[(x, y)] = {'loc': (x, y), 'type': "hedge", 'img_index': 0}
