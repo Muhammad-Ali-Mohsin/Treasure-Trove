@@ -1,7 +1,7 @@
 import pygame
 
 from scripts.game import Game
-from scripts.menus import MainMenu, OptionsMenu
+from scripts.menus import MainMenu, OptionsMenu, CreditsMenu, LeaderboardMenu
 from scripts.utils import create_window
 
 pygame.init()
@@ -12,7 +12,7 @@ monitor = pygame.display.Info()
 window = create_window((monitor.current_w, monitor.current_h))
 fps = 60
 
-screens = {'main_menu': MainMenu, 'game': Game, 'options_menu': OptionsMenu}
+screens = {'main_menu': MainMenu, 'game': Game, 'options_menu': OptionsMenu, 'credits_menu': CreditsMenu, 'leaderboard': LeaderboardMenu}
 current_screen = 'main_menu'
 running = True
 

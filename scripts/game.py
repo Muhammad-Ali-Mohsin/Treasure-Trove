@@ -3,7 +3,7 @@ import random
 
 import pygame
 
-from scripts.utils import load_image, load_images, get_text_surf, format_num, AudioPlayer
+from scripts.utils import load_image, load_images, get_text_surf, format_num, update_scores, AudioPlayer
 from scripts.maze import generate_maze
 from scripts.entities import Player, Enemy
 from scripts.animations import load_animation, load_animation_library, AnimationHandler
@@ -311,6 +311,7 @@ class Game:
                 elif self.player.animation.done:
                     self.game_over = True
                     AudioPlayer.play_sound("game_over")
+                    update_scores(("Player 1", self.gold))
 
                 self.treasure.update()
                 self.compass.update()

@@ -1,6 +1,7 @@
 import os
 import re
 import random
+import json
 
 import pygame
 
@@ -24,6 +25,35 @@ def load_images(path):
             img = load_image(f"{path}/{filename}")
             images.append(img)
     return images
+
+def load_high_scores():
+    if os.path.exists("scores.json"):
+        with open("scores.json" ,"r") as f:
+            scores = json.load(f)
+    else:
+        scores = {'scores': []}
+    return scores['scores']
+
+def update_scores(score):
+    """
+    Takes a score and updates the high scores file using an insertion sort
+    """
+    # Loads the scores and adds the new score
+    high_scores = load_high_scores()
+    high_scores.append(score)
+
+    # Sorts the scores
+    for i in range(len(high_scores)):
+        index = i
+        while index != 0 and high_scores[i][1] > high_scores[index - 1][1]:
+            index = index - 1
+        score = high_scores.pop(i)
+        high_scores.insert(index, score)
+    high_scores = high_scores[:10]
+
+    # Saves the scores
+    with open("scores.json", "w") as f:
+        json.dump({"scores": high_scores}, f, indent=4)
 
 def get_text_surf(size, text, colour, bold=False, italic=False, underline=False):
     """
