@@ -5,7 +5,7 @@ from scripts.menus import MainMenu, OptionsMenu
 from scripts.utils import create_window
 
 pygame.init()
-pygame.mixer.set_num_channels(32)
+pygame.mixer.set_num_channels(16)
 
 # Set up pygame
 monitor = pygame.display.Info()

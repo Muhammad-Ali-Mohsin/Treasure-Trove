@@ -15,7 +15,7 @@ TRANSITION_DURATION = 1
 
 class Game:
     def __init__(self, window, fps):
-        #random.seed(0)
+        random.seed(0)
         pygame.display.set_caption("Treasure Trove")
         self.kill_screen = False
         self.fps = fps
@@ -56,7 +56,7 @@ class Game:
             'slime': load_animation_library("assets/animations/slime"),
             'treasure': load_animation_library("assets/animations/treasure"),
             'dirt': {'default': load_animation("assets/particles/dirt", (0.1, 0.1, 0.1), False)},
-            'leaves': {'default': load_animation("assets/particles/leaves", (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), False)},
+            'leaves': {'default': load_animation("assets/particles/leaves", (0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2), False)},
             'experience': {'default': load_animation("assets/particles/experience", (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), True)},
             'slime_particle': {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)},
             'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)},
@@ -86,7 +86,7 @@ class Game:
 
         # Graphical variables
         self.compass = Compass(self)
-        self.wind_intensity = random.random()
+        self.wind_intensity = random.uniform(-1, 1)
         self.text_updated = False
         self.text = {
             'paused': get_text_surf(size=70, text="Paused", colour=(172, 116, 27)), 
@@ -114,6 +114,8 @@ class Game:
         AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.1)
         AudioPlayer.load_sound("experience", "assets/sfx/experience.wav", 0.3)
         AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
+        AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
+        AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
 
 
     def handle_events(self):
@@ -158,7 +160,7 @@ class Game:
         """
         Spawns an enemy in a random location
         """
-        self.enemies.append(Enemy(self, self.maze.get_random_loc("path"), (16, 16), (random.random()) + 1, 30))
+        self.enemies.append(Enemy(self, self.maze.get_random_loc("path"), (16, 16), random.uniform(1, 2), 30))
 
     def spawn_enemies(self):
         """
@@ -280,8 +282,8 @@ class Game:
                 self.screen_shake[1] = max(self.screen_shake[1] - self.dt, 0)
 
                 # Randomly changes the wind intensity
-                if random.random() < 0.01:
-                    self.wind_intensity = random.random()
+                if random.random() < 0.005:
+                    self.wind_intensity = random.uniform(-1, 1)
 
                 # Spawns leaves from the hedges that are on the screen
                 if random.random() < 0.1:
@@ -291,9 +293,9 @@ class Game:
                     bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
                     loc = self.maze.get_random_loc("hedge", (top_left_loc, bottom_right_loc))
                     if random.random() < 0.1:
-                        ParticleHandler.create_particle("bee", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * 0.25 + 0.1)
+                        ParticleHandler.create_particle("bee", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.5))
                     else:
-                        ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.random() * random.random())
+                        ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.9))
                 
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
@@ -308,6 +310,7 @@ class Game:
                 # Ends the game if the player's death animation is over
                 elif self.player.animation.done:
                     self.game_over = True
+                    AudioPlayer.play_sound("game_over")
 
                 self.treasure.update()
                 self.compass.update()

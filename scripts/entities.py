@@ -184,11 +184,12 @@ class Player(Entity):
                 self.animation.done = False
 
         # Kills the player after their knockback timer is over
-        if self.health <= 0 and self.knockback_timer <= 0:
+        if self.health <= 0 and self.knockback_timer <= 0 and self.animation.current_animation != "death":
             self.animation.change_animation("death")
+            AudioPlayer.play_sound("player_death")
 
         # Changes the player's animations 
-        if "attack" not in self.animation.current_animation and "death" not in self.animation.current_animation:
+        if "attack" not in self.animation.current_animation and self.animation.current_animation != "death":
             if self.moving['right'] or self.moving['left']:
                 self.animation.change_animation("running_sideways")
             elif self.moving['up']:
@@ -238,7 +239,7 @@ class Enemy(Entity):
             if self.health <= 0:
                 self.animation.change_animation("death")
                 for i in range(10):
-                    ParticleHandler.create_particle("experience", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + (self.size[1] // 2) + random.randint(-5, 5)), velocity=(random.randint(-4, 4), -random.randint(2, 4)))
+                    ParticleHandler.create_particle("experience", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + (self.size[1] // 2) + random.randint(-5, 5)), velocity=(random.uniform(2, -2), random.uniform(-4, -2)))
         
             # Creates dust particles that fly off from the enemy to show that they've been hit
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):

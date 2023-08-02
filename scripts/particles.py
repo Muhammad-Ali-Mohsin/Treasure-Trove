@@ -8,7 +8,6 @@ EXPERIENCE_TARGET_POINT = (17, 10)
 GOLD_TARGET_POINT = (15, 40)
 DISTANCE_FROM_TARGET = 2
 
-
 class Particle:
     def __init__(self, game, pos):
         self.game = game
@@ -27,6 +26,68 @@ class Particle:
         pos = (self.pos[0] - (img.get_width() // 2) - self.game.camera_displacement[0], self.pos[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
         self.game.display.blit(img, pos)
 
+class StatParticle(Particle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos)
+        self.pos = [pos[0] - self.game.camera_displacement[0], pos[1] - self.game.camera_displacement[1]]
+        self.velocity = list(kwargs['velocity'])
+        self.timer = 10
+        self.travelling_up = False
+        self.target = None
+
+    def move(self):
+        self.pos[0] += self.velocity[0] * self.game.multi
+        self.pos[1] += self.velocity[1] * self.game.multi
+        if not self.travelling_up:
+            self.velocity[1] = min(self.velocity[1] + (self.game.multi * 0.1), 5)
+        
+        displacement = (self.target[0] - self.pos[0], self.target[1] - self.pos[1])
+
+        if self.pos[1] > 220:
+            magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
+            self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
+            self.travelling_up = True
+
+        if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
+            if self.game.player.animation.current_animation != "death":
+                self.target_reached()
+            self.timer = 0
+
+    def target_reached(self):
+        pass
+
+    def draw(self):
+        img = self.animation.get_img()
+        pos = (self.pos[0] - (img.get_width() // 2), self.pos[1] - (img.get_height() // 2))
+        self.game.display.blit(img, pos)
+
+
+class Experience(StatParticle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos, kwargs)
+        self.target = EXPERIENCE_TARGET_POINT
+        self.animation.change_animation_library(self.game.animations['experience'])
+        self.animation.frame = random.randint(0, len(self.animation.animation_library[self.animation.current_animation]['images']) - 1)
+        AudioPlayer.play_sound("experience")
+
+    def target_reached(self):
+        super().target_reached()
+        self.game.player.health = min(100, self.game.player.health + 0.5)
+        AudioPlayer.play_sound("health")
+
+
+class Gold(StatParticle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos, kwargs)
+        self.target = GOLD_TARGET_POINT
+        self.animation.change_animation_library(self.game.animations['gold'])
+        AudioPlayer.play_sound("treasure")
+
+    def target_reached(self):
+        super().target_reached()
+        self.game.gold += random.randint(40, 60)
+        AudioPlayer.play_sound("gold")
+
 
 class Dirt(Particle):
     def __init__(self, game, pos, kwargs):
@@ -41,47 +102,8 @@ class Leaf(Particle):
         self.animation.change_animation_library(self.game.animations['leaves'])
 
     def move(self):
-        self.pos[0] += math.sin(2 * math.pi * (self.animation.timer / 0.9)) * (self.game.wind_intensity * 3) * self.game.multi
+        self.pos[0] += (math.sin(2 * math.pi * (self.animation.frame / 10)) * self.speed * self.game.multi) + (2 * self.game.wind_intensity * self.game.multi)
         self.pos[1] += self.speed * self.game.multi
-
-
-class Experience(Particle):
-    def __init__(self, game, pos, kwargs):
-        super().__init__(game, pos)
-        self.pos = [pos[0] - self.game.camera_displacement[0], pos[1] - self.game.camera_displacement[1]]
-        self.velocity = [kwargs['velocity'][0] * 0.3, kwargs['velocity'][1]]
-        self.timer = 10
-        self.travelling_up = False
-        self.animation.change_animation_library(self.game.animations['experience'])
-        self.animation.frame = random.randint(0, len(self.animation.animation_library[self.animation.current_animation]['images']) - 1)
-        AudioPlayer.play_sound("experience")
-
-    def move(self):
-        self.pos[0] += self.velocity[0] * self.game.multi
-        self.pos[1] += self.velocity[1] * self.game.multi
-        if not self.travelling_up:
-            self.velocity[1] = min(self.velocity[1] + (self.game.multi * 0.1), 5)
-
-        displacement = (EXPERIENCE_TARGET_POINT[0] - self.pos[0], EXPERIENCE_TARGET_POINT[1] - self.pos[1])
-
-        if self.pos[1] > 220:
-            magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
-            self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
-
-        elif self.pos[1] > 150 and not self.travelling_up:
-            self.velocity[1] = self.velocity[1] - (self.game.multi * 0.4)
-            self.travelling_up = True
-
-        if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
-            if self.game.player.animation.current_animation != "death":
-                self.game.player.health = min(100, self.game.player.health + 0.5)
-            self.timer = 0
-            AudioPlayer.play_sound("health")
-
-    def draw(self):
-        img = self.animation.get_img()
-        pos = (self.pos[0] - (img.get_width() // 2), self.pos[1] - (img.get_height() // 2))
-        self.game.display.blit(img, pos)
 
 
 class Slime(Particle):
@@ -95,42 +117,6 @@ class Slime(Particle):
         self.pos = (self.parent.pos[0] + (self.parent.size[0] // 2) + self.variance[0], self.parent.pos[1] + self.variance[1])
         self.variance[1] = self.variance[1] - (0.2 * self.game.multi)
 
-
-class Gold(Particle):
-    def __init__(self, game, pos, kwargs):
-        super().__init__(game, pos)
-        self.pos = [pos[0] - self.game.camera_displacement[0], pos[1] - self.game.camera_displacement[1]]
-        self.velocity = [kwargs['velocity'][0] * 0.3, kwargs['velocity'][1]]
-        self.timer = 10
-        self.travelling_up = False
-        self.animation.change_animation_library(self.game.animations['gold'])
-        AudioPlayer.play_sound("treasure")
-
-    def move(self):
-        self.pos[0] += self.velocity[0] * self.game.multi
-        self.pos[1] += self.velocity[1] * self.game.multi
-        if not self.travelling_up:
-            self.velocity[1] = min(self.velocity[1] + (self.game.multi * 0.1), 5)
-
-        displacement = (GOLD_TARGET_POINT[0] - self.pos[0], GOLD_TARGET_POINT[1] - self.pos[1])
-
-        if self.pos[1] > 220:
-            magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
-            self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
-
-        elif self.pos[1] > 150 and not self.travelling_up:
-            self.velocity[1] = self.velocity[1] - (self.game.multi * 0.4)
-            self.travelling_up = True
-
-        if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
-            self.game.gold += random.randint(40, 60)
-            self.timer = 0
-            AudioPlayer.play_sound("gold")
-
-    def draw(self):
-        img = self.animation.get_img()
-        pos = (self.pos[0] - (img.get_width() // 2), self.pos[1] - (img.get_height() // 2))
-        self.game.display.blit(img, pos)
 
 class Dust(Particle):
     def __init__(self, game, pos, kwargs):
@@ -149,7 +135,7 @@ class Bee(Particle):
         self.speed = kwargs['speed']
         self.animation.change_animation_library(self.game.animations['bee'])
         self.timer = 20
-        self.angle = random.random() * math.pi * 2
+        self.angle = random.uniform(0, 2 * math.pi)
         self.angle_increase = 0
 
     def move(self):
@@ -157,7 +143,7 @@ class Bee(Particle):
         self.pos[1] += math.cos(self.angle) * self.speed * self.game.multi
         self.angle += self.angle_increase
         if random.random() < 0.01:
-            self.angle_increase = random.random() * 0.2 - 0.1
+            self.angle_increase = random.uniform(0, 0.1)
 
     def draw(self):
         img = self.animation.get_img()
