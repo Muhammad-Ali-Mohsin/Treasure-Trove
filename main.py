@@ -1,8 +1,8 @@
 import pygame
 
 from scripts.game import Game
-from scripts.menus import MainMenu, OptionsMenu, CreditsMenu, LeaderboardMenu
-from scripts.utils import create_window
+from scripts.menus import MainMenu, OptionsMenu, CreditsMenu, LeaderboardMenu, SignUpMenu, LoginMenu, SelectionMenu
+from scripts.utils import create_window, load_data
 
 pygame.init()
 pygame.mixer.set_num_channels(16)
@@ -12,8 +12,16 @@ monitor = pygame.display.Info()
 window = create_window((monitor.current_w, monitor.current_h))
 fps = 60
 
-screens = {'main_menu': MainMenu, 'game': Game, 'options_menu': OptionsMenu, 'credits_menu': CreditsMenu, 'leaderboard': LeaderboardMenu}
-current_screen = 'main_menu'
+data = load_data()
+if 'logged_in' in data:
+    current_screen = 'main_menu'
+else:
+    current_screen = 'selection'
+
+screens = {
+    'selection': SelectionMenu, 'signup': SignUpMenu, 'login': LoginMenu, 
+    'main_menu': MainMenu, 'game': Game, 'options_menu': OptionsMenu, 'leaderboard': LeaderboardMenu, 'credits_menu': CreditsMenu
+    }
 running = True
 
 while running:

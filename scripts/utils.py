@@ -5,6 +5,10 @@ import json
 
 import pygame
 
+DATA_PATH = "assets/data.json"
+IMG_NAME = "img"
+FONT_PATH = "assets/font.ttf"
+
 def load_image(path):
     """
     Loads an image from a specified path
@@ -20,26 +24,31 @@ def load_images(path):
     filenames = os.listdir(path)
     images = []
     for i in range(img_count):
-        filename = f"img_{i}.png"
+        filename = f"{IMG_NAME}_{i}.png"
         if filename in filenames:
             img = load_image(f"{path}/{filename}")
             images.append(img)
     return images
 
-def load_high_scores():
-    if os.path.exists("scores.json"):
-        with open("scores.json" ,"r") as f:
-            scores = json.load(f)
+def load_data():
+    if os.path.exists(DATA_PATH):
+        with open(DATA_PATH ,"r") as f:
+            data = json.load(f)
     else:
-        scores = {'scores': []}
-    return scores['scores']
+        data = {'scores': [], 'accounts': {}}
+    return data
+
+def save_data(data):
+    with open(DATA_PATH, "w") as f:
+        json.dump(data, f, indent=4)
 
 def update_scores(score):
     """
     Takes a score and updates the high scores file using an insertion sort
     """
     # Loads the scores and adds the new score
-    high_scores = load_high_scores()
+    data = load_data()
+    high_scores = data['scores']
     high_scores.append(score)
 
     # Sorts the scores
@@ -49,17 +58,17 @@ def update_scores(score):
             index = index - 1
         score = high_scores.pop(i)
         high_scores.insert(index, score)
-    high_scores = high_scores[:10]
-
+    
     # Saves the scores
-    with open("scores.json", "w") as f:
-        json.dump({"scores": high_scores}, f, indent=4)
+    data['scores'] = high_scores[:10]
+    save_data(data)
 
-def get_text_surf(size, text, colour, bold=False, italic=False, underline=False):
+def get_text_surf(size, text, colour, font=None, bold=False, italic=False, underline=False):
     """
     Writes text to a surface
     """
-    font = pygame.font.Font("assets/font.ttf", size)
+    if font == None:
+        font = pygame.font.Font(FONT_PATH, size)
     font.set_bold(bold)
     font.set_italic(italic)
     font.set_underline(underline)
@@ -89,7 +98,6 @@ def create_window(resolution):
     pygame.display.init()
     window = pygame.display.set_mode(resolution)
     pygame.mouse.set_visible(False)
-    pygame.display.set_caption("Treasure Trove - Options Menu")
     pygame.display.set_icon(load_image("assets/images/icon.png"))
     return window
 
