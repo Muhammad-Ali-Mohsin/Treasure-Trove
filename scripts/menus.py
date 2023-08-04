@@ -1,6 +1,8 @@
+import time
+
 import pygame
 
-from scripts.utils import load_image, scale_coord_to_new_res, get_text_surf, create_window, load_data, save_data, AudioPlayer
+from scripts.utils import load_image, scale_coord_to_new_res, get_text_surf, create_window, load_data, save_data, get_hash, AudioPlayer
 
 RESOLUTIONS = ((3840, 2160), (2560, 1440), (1920, 1080), (1280, 720), (854, 480), (640, 360), (426, 240))
 
@@ -12,16 +14,19 @@ class Menu:
         self.window = window
         self.display = pygame.Surface((1280, 720))
         self.clock = pygame.time.Clock()
+        self.dt = 0
+        self.last_time = time.time()
         
         # Menu variables
         self.images = {
             'cursor_0': load_image("assets/images/cursor_0.png"),
-            'cursor_1': load_image("assets/images/cursor_1.png")
+            'cursor_1': load_image("assets/images/cursor_1.png"),
         }
         self.buttons = {}
         self.textboxes = {}
         self.text = []
         self.error_msg = {'surf': None, 'pos': None}
+        self.cursor_timer = 0
 
         # Player Variables
         self.clicked = False
@@ -43,7 +48,10 @@ class Menu:
         Updates the screen
         """
         # Clears the screen
-        self.display.fill((0, 0, 0))
+        if "bg" in self.images:
+            self.display.blit(pygame.transform.scale(self.images['bg'], self.display.get_size()), (0, 0))
+        else:
+            self.display.fill((0, 0, 0))
 
         # Draws the text onto the screen
         for text in self.text:
@@ -67,6 +75,11 @@ class Menu:
 
         # Draws the cursor on to the screen
         self.display.blit(self.images['cursor_0'] if self.clicked else self.images['cursor_1'], self.mouse_pos)
+
+        # Draws the textbox cursor
+        if self.selected_textbox != None and self.cursor_timer <= 0.5:
+            textbox = self.selected_textbox
+            pygame.draw.rect(self.display, (255, 255, 255), (textbox['rect'].centerx + (textbox['text_surf'].get_width() // 2) + 5, textbox['rect'].centery - 13, 3, 26))
 
         # Ouputs the display in the user resolution
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), (0, 0))
@@ -143,7 +156,11 @@ class Menu:
         Runs a frame of the main menu
         """
         while not self.kill_screen:
-
+            self.dt = (time.time() - self.last_time)
+            self.last_time = time.time()
+            self.cursor_timer += self.dt
+            if self.cursor_timer >= 1:
+                self.cursor_timer = 0
             # Calls functions
             self.handle_events()
             self.update_display()
@@ -158,27 +175,35 @@ class MainMenu(Menu):
         super().__init__(window, fps)
         pygame.display.set_caption("Treasure Trove - Main Menu")
 
+        #self.images['bg'] = load_image("assets/images/main_menu.png")
+
         #Loads all the buttons in
         self.buttons = {}
         for i, data in enumerate((("Start Game", "game"), ("Options", "options_menu"), ("Leaderboard", "leaderboard"), ("Credits", "credits_menu"), ("Exit to Desktop", "exit"))):
             self.buttons[data[1]] = {
                 'label': get_text_surf(size=40, text=data[0], colour=(255, 255, 255)), 
                 'id': data[1],
-                'rect': pygame.Rect((self.display.get_width() // 2) - 150, ((i + 1) * 50) + 300, 300, 40)
+                'rect': pygame.Rect(100, (i * 60) + 350, 300, 50)
             }
         
         self.buttons['sign_out'] = {
-                'label': get_text_surf(size=10, text="Sign Out", colour=(255, 255, 255)), 
+                'label': get_text_surf(size=20, text="Sign Out", colour=(255, 255, 255)), 
                 'id': 'sign_out',
-                'rect': pygame.Rect(self.display.get_width() - 60, self.display.get_height() - 40, 50, 30)
+                'rect': pygame.Rect(1180, 670, 80, 30)
             }
+
+        current_user = load_data()['logged_in']
 
         # Loads the text in
         self.text = [
-            {'surf': get_text_surf(size=100, text="Treasure Trove", colour=(255, 202, 24)), 'pos': None},
+            {'surf': get_text_surf(size=100, text="Treasure", colour=(255, 202, 24)), 'pos': None},
+            {'surf': get_text_surf(size=100, text="Trove", colour=(255, 202, 24)), 'pos': None},
+            {'surf': get_text_surf(size=20, text=f"Logged in as {current_user}", colour=(255, 255, 255)), 'pos': None}
         ]
 
-        self.text[0]['pos'] = ((self.display.get_width() // 2) - (self.text[0]['surf'].get_width() // 2), 100)
+        self.text[0]['pos'] = (250 - (self.text[0]['surf'].get_width() // 2), 100)
+        self.text[1]['pos'] = (250 - (self.text[1]['surf'].get_width() // 2), 175)
+        self.text[2]['pos'] = (1170 - self.text[2]['surf'].get_width(), self.buttons['sign_out']['rect'].centery - (self.text[2]['surf'].get_height() // 2))
 
     def button_press(self, button):
         super().button_press(button)
@@ -225,6 +250,9 @@ class OptionsMenu(Menu):
         super().button_press(button)
         if "fps" in button['id']:
             self.fps += 1 if button['id'] == "increase_fps" else -1
+            data = load_data()
+            data['options']['fps'] = self.fps
+            save_data(data)
             self.text[4]['surf'] = get_text_surf(size=40, text=str(self.fps), colour=(255, 255, 255))
 
         elif "res" in button['id']:
@@ -232,7 +260,10 @@ class OptionsMenu(Menu):
             pygame.display.quit()
             self.window = create_window(new_res)
             pygame.display.set_caption("Treasure Trove - Options Menu")
-            self.text[3]['surf'] = get_text_surf(size=40, text=f"{self.window.get_width()}x{self.window.get_height()}", colour=(255, 255, 255))
+            data = load_data()
+            data['options']['res'] = new_res
+            save_data(data)
+            self.text[3]['surf'] = get_text_surf(size=40, text=f"{new_res[0]}x{new_res[1]}", colour=(255, 255, 255))
 
         elif button['id'] == "main_menu":
             self.selected_screen = "main_menu"
@@ -382,7 +413,7 @@ class SignUpMenu(Menu):
             elif self.textboxes['username']['text'] in self.accounts:
                 self.change_error_message("This username has been taken")
             else:
-                self.accounts[self.textboxes['username']['text']] = hash(self.textboxes['password']['text'])
+                self.accounts[self.textboxes['username']['text']] = get_hash(self.textboxes['password']['text'])
                 data = load_data()
                 data['accounts'] = self.accounts
                 data['logged_in'] = self.textboxes['username']['text']
@@ -445,7 +476,7 @@ class LoginMenu(Menu):
             # Checks whether the username has been taken
             elif self.textboxes['username']['text'] not in self.accounts:
                 self.change_error_message("Username not found")
-            elif hash(self.textboxes['password']['text']) != self.accounts[self.textboxes['username']['text']]:
+            elif get_hash(self.textboxes['password']['text']) != self.accounts[self.textboxes['username']['text']]:
                 self.change_error_message("Incorrect password")
             else: 
                 data = load_data()

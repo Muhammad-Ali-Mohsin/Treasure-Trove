@@ -2,6 +2,7 @@ import os
 import re
 import random
 import json
+import hashlib
 
 import pygame
 
@@ -35,12 +36,17 @@ def load_data():
         with open(DATA_PATH ,"r") as f:
             data = json.load(f)
     else:
-        data = {'scores': [], 'accounts': {}}
+        data = {'scores': [], 'accounts': {}, 'options': {'res': None, 'fps': 60}}
     return data
 
 def save_data(data):
     with open(DATA_PATH, "w") as f:
         json.dump(data, f, indent=4)
+
+def get_hash(text):
+    sha256 = hashlib.sha256()
+    sha256.update(str.encode(text))
+    return sha256.hexdigest()
 
 def update_scores(score):
     """
