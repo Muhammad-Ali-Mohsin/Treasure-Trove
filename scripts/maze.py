@@ -77,16 +77,21 @@ class Maze:
 
         return sides
     
-    def get_random_loc(self, type, border_limits=None):
+    def get_random_loc(self, type, border_limits=None, border_function='inside'):
         """
         Returns a random tile location of a specified type
         Allows you to optionally define two border locations for where the tile should fit between
         """
         if border_limits == None:
             border_limits = ((0, 0), (self.resolution[0], self.resolution[1]))
-        loc = (random.randint(border_limits[0][0], border_limits[1][0]), random.randint(border_limits[0][1], border_limits[1][1]))
-        while self.tiles[loc]['type'] != type:
+        if border_function == 'inside':
             loc = (random.randint(border_limits[0][0], border_limits[1][0]), random.randint(border_limits[0][1], border_limits[1][1]))
+            while self.tiles[loc]['type'] != type:
+                loc = (random.randint(border_limits[0][0], border_limits[1][0]), random.randint(border_limits[0][1], border_limits[1][1]))
+        elif border_function == 'outside':
+            loc = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
+            while self.tiles[loc]['type'] != type or (loc[0] > border_limits[0][0] and loc[0] < border_limits[1][0] and loc[1] > border_limits[0][1] and loc[1] < border_limits[1][1]):
+                loc = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
         return loc
                 
     
@@ -102,8 +107,8 @@ class Maze:
                     tile = self.tiles[loc]
                     self.game.display.blit(self.game.images[tile['type']][tile['img_index']], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
                 if loc in self.flowers:
-                    tile = self.tiles[loc]
-                    self.game.display.blit(self.game.images['flowers'][self.flowers[loc]], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
+                    for flower_index in self.flowers[loc]:
+                        self.game.display.blit(self.game.images['flowers'][flower_index], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
 
 
 
@@ -178,8 +183,11 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
         tile = maze.tiles[random.choice(list(maze.tiles))]
         while not tile['type'] == "path":
             tile = maze.tiles[random.choice(list(maze.tiles))]
-        maze.flowers[tile['loc']] = random.randint(0, len(game.images['flowers']) - 1)
-
+        if tile['loc'] in maze.flowers:
+            maze.flowers[tile['loc']].append(random.randint(0, len(game.images['flowers']) - 1))
+        else:
+            maze.flowers[tile['loc']] = [random.randint(0, len(game.images['flowers']) - 1)]
+            
     # Adds borders to the maze
     for y in range(maze_resolution[1]):
         for x in (-1, maze_resolution[0]):

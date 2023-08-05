@@ -20,7 +20,12 @@ class Treasure:
         return pygame.Rect((self.loc[0] * self.game.maze.tile_size) + 8, (self.loc[1] * self.game.maze.tile_size) + 8, 16, 16)
 
     def reset(self):
-        self.loc = self.game.maze.get_random_loc("path")
+        top_left_loc = self.game.maze.get_loc(self.game.camera_displacement)
+        bottom_right_loc = self.game.maze.get_loc((self.game.camera_displacement[0] + self.game.display.get_width(), self.game.camera_displacement[1] + self.game.display.get_height()))
+        top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
+        bottom_right_loc = (min(self.game.maze.resolution[0], bottom_right_loc[0]), min(self.game.maze.resolution[1], bottom_right_loc[1]))
+        loc = self.game.maze.get_random_loc("path", (top_left_loc, bottom_right_loc), 'outside')
+        self.loc = loc
         self.animation.change_animation("closed")
 
     def open(self):

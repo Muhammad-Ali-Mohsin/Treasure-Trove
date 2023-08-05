@@ -160,7 +160,12 @@ class Game:
         """
         Spawns an enemy in a random location
         """
-        self.enemies.append(Enemy(self, self.maze.get_random_loc("path"), (16, 16), random.uniform(1, 2), 30))
+        top_left_loc = self.maze.get_loc(self.camera_displacement)
+        bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
+        top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
+        bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
+        loc = self.maze.get_random_loc("path", (top_left_loc, bottom_right_loc), 'outside')
+        self.enemies.append(Enemy(self, loc, (16, 16), random.uniform(1, 2), 30))
 
     def spawn_enemies(self):
         """
@@ -256,8 +261,8 @@ class Game:
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
         self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
-        #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        #self.window.blit(fps_text, (10, 10))
+        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
+        self.window.blit(fps_text, (10, 10))
         pygame.display.update()
 
     def run(self):
