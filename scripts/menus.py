@@ -2,7 +2,7 @@ import time
 
 import pygame
 
-from scripts.utils import load_image, scale_coord_to_new_res, get_text_surf, create_window, load_data, save_data, get_hash, AudioPlayer
+from scripts.utils import load_image, scale_coord_to_new_res, get_text_surf, create_window, load_data, save_data, get_hash, format_num, AudioPlayer
 
 RESOLUTIONS = ((3840, 2160), (2560, 1440), (1920, 1080), (1280, 720), (854, 480), (640, 360), (426, 240))
 
@@ -100,6 +100,7 @@ class Menu:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.clicked = False
+                    self.selected_textbox = None
                     for _id in self.buttons:
                         if self.buttons[_id]['rect'].collidepoint(self.mouse_pos):
                             self.button_press(self.buttons[_id])
@@ -344,7 +345,7 @@ class LeaderboardMenu(Menu):
         # Loads all the high scores in and creates text objects for them
         high_scores = load_data()['scores']
         for i, score in enumerate(high_scores):
-            surf = get_text_surf(size=35, text=f"{i + 1}) {score[0]} - {score[1]}", colour=(255, 255, 255))
+            surf = get_text_surf(size=35, text=f"{i + 1}) {score[0]} - {format_num(score[1])} Gold", colour=(255, 255, 255))
             self.text.append({
                 'surf': surf, 
                 'pos': ((self.display.get_width() // 2) - (surf.get_width() // 2), 200 + (i * 30))
