@@ -163,7 +163,7 @@ class Player(Entity):
                 ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
             # Knocks the player back from the center of the enemy, shakes the screen and plays a sound
             self.knockback(enemy.get_center(), 3)
-            self.game.shake_screen(5, 0.2)
+            self.game.shake_screen(10, 0.2)
             AudioPlayer.play_sound("hit")
 
     def update(self):
@@ -257,7 +257,7 @@ class Enemy(Entity):
             
             # Knocks the enemy back, shakes the screen and plays a sound
             self.knockback(self.game.player.get_center(), 3)
-            self.game.shake_screen(5, 0.2)
+            self.game.shake_screen(10, 0.2)
             AudioPlayer.play_sound("hit")
 
     def knockback(self, point, velocity):

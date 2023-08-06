@@ -13,7 +13,7 @@ class Compass:
         """
         Calculates the angle that the spinner needs to be rotated by to point to the treasure
         """
-        player_loc = self.game.maze.get_loc(self.game.player.pos)
+        player_loc = self.game.maze.get_loc(self.game.player.get_center())
         displacement = (player_loc[0] - self.game.treasure.loc[0], player_loc[1] - self.game.treasure.loc[1])
 
         if player_loc == self.game.treasure.loc:

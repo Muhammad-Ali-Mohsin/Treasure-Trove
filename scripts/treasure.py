@@ -28,6 +28,7 @@ class Treasure:
         self.animation.change_animation("closed")
 
     def open(self):
+        self.game.shake_screen(10, 0.5)
         self.animation.change_animation("open")
 
     def update(self):
