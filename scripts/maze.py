@@ -1,6 +1,6 @@
-import pygame
-
 import random
+
+import pygame
 
 class Maze:
     def __init__(self, game, tile_size, resolution):

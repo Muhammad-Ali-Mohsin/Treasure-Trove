@@ -1,8 +1,8 @@
 import math
 import random
 
-from scripts.utils import AudioPlayer
 from scripts.animations import AnimationHandler
+from scripts.utils import AudioPlayer
 
 EXPERIENCE_TARGET_POINT = (17, 10)
 GOLD_TARGET_POINT = (15, 40)

@@ -2,7 +2,7 @@ import time
 
 import pygame
 
-from scripts.utils import load_image, scale_coord_to_new_res, get_text_surf, create_window, load_data, save_data, get_hash, format_num, AudioPlayer
+from scripts.utils import AudioPlayer, load_image, load_data, save_data, get_text_surf, get_hash, create_window, format_num, scale_coord_to_new_res
 
 RESOLUTIONS = ((3840, 2160), (2560, 1440), (1920, 1080), (1280, 720), (854, 480), (640, 360), (426, 240))
 

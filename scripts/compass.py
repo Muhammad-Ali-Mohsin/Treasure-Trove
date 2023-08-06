@@ -1,4 +1,6 @@
-import pygame, math
+import math
+
+import pygame
 
 PADDING = 10
 

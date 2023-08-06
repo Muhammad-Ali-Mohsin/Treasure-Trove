@@ -3,9 +3,8 @@ import math
 
 import pygame
 
-from scripts.particles import ParticleHandler
 from scripts.animations import AnimationHandler
-from scripts.utils import AudioPlayer
+from scripts.particles import ParticleHandler
 
 class Treasure:
     def __init__(self, game):

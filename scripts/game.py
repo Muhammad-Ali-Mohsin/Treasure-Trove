@@ -3,13 +3,13 @@ import random
 
 import pygame
 
-from scripts.utils import load_image, load_images, get_text_surf, format_num, update_scores, load_data, scale_coord_to_new_res, AudioPlayer
-from scripts.maze import generate_maze
+from scripts.animations import AnimationHandler, load_animation, load_animation_library
+from scripts.compass import Compass
 from scripts.entities import Player, Enemy
-from scripts.animations import load_animation, load_animation_library, AnimationHandler
+from scripts.maze import generate_maze
 from scripts.particles import ParticleHandler
 from scripts.treasure import Treasure
-from scripts.compass import Compass
+from scripts.utils import AudioPlayer, load_image, load_images, load_data, get_text_surf, scale_coord_to_new_res, format_num, update_scores
 
 TRANSITION_DURATION = 1
 
@@ -280,8 +280,8 @@ class Game:
         screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
         self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
-        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        self.window.blit(fps_text, (10, 10))
+        #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
+        #self.window.blit(fps_text, (10, 10))
         pygame.display.update()
 
     def run(self):
