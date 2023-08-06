@@ -5,6 +5,7 @@ import pygame
 
 from scripts.animations import AnimationHandler
 from scripts.particles import ParticleHandler
+from scripts.utils import AudioPlayer
 
 class Treasure:
     def __init__(self, game):
@@ -28,8 +29,9 @@ class Treasure:
         self.animation.change_animation("closed")
 
     def open(self):
-        self.game.shake_screen(10, 0.5)
+        self.game.shake_screen(10, 0.3)
         self.animation.change_animation("open")
+        AudioPlayer.play_sound("chest")
 
     def update(self):
         if self.animation.current_animation == "open" and self.animation.frame == len(self.animation.animation_library[self.animation.current_animation]['images']) - 1 and not self.released_gold:

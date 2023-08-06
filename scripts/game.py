@@ -126,6 +126,7 @@ class Game:
         AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
         AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
         AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.3, True, True)
+        AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
 
 
     def handle_events(self):
