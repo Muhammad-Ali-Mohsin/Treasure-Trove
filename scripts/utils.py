@@ -115,7 +115,7 @@ class AudioPlayer:
         sound.set_volume(volume)
         AudioPlayer.sounds[name] = {'sounds': tuple([sound]), 'shuffle': False, 'current': 0}
 
-    def load_sounds(name, path, volume=1, shuffle=False):
+    def load_sounds(name, path, volume=1, shuffle=False, overlap=False):
         sounds_list = os.listdir(path)
         sounds = []
         for filename in sounds_list:
@@ -123,10 +123,12 @@ class AudioPlayer:
             sound.set_volume(volume)
             sounds.append(sound)
         AudioPlayer.sounds[name] = {'sounds': tuple(sounds), 'shuffle': shuffle, 'current': 0}
+        if overlap:
+            AudioPlayer.sounds[name]['overlap'] = True
 
     def play_sound(sound):
         sound = AudioPlayer.sounds[sound]
-        if sound['sounds'][sound['current']].get_num_channels() == 0 or len(sound['sounds']) == 1:
+        if sound['sounds'][sound['current']].get_num_channels() == 0 or len(sound['sounds']) == 1 or 'overlap' in sound:
             if sound['shuffle']:
                 sound['current'] = random.randint(0, len(sound['sounds']) - 1)
             else:

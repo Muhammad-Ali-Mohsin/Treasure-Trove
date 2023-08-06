@@ -290,8 +290,9 @@ class CreditsMenu(Menu):
             "  Muhammad-Ali Mohsin",
             "",
             "|Free assets used",
-            "Player and Enemy animations",
+            "Player/Enemy Animations and Keyboard keys",
             "https://game-endeavor.itch.io/mystic-woods",
+            "https://opengameart.org/content/free-keyboard-and-controllers-prompts-pack",
             "",
             "Font",
             "https://tinyworlds.itch.io/free-pixel-font-thaleah",
@@ -303,7 +304,8 @@ class CreditsMenu(Menu):
             "https://leohpaz.itch.io/rpg-essentials-sfx-free",
             "https://opengameart.org/content/sack-of-gold",
             "https://opengameart.org/content/menu-music",
-            "https://opengameart.org/content/game-over-bad-chest-sfx"
+            "https://opengameart.org/content/game-over-bad-chest-sfx",
+            "https://opengameart.org/content/single-key-press-sounds"
         ]
 
         # Creates text objects for all the credits

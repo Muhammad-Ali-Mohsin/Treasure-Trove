@@ -3,7 +3,7 @@ import random
 
 import pygame
 
-from scripts.utils import load_image, load_images, get_text_surf, format_num, update_scores, load_data, AudioPlayer
+from scripts.utils import load_image, load_images, get_text_surf, format_num, update_scores, load_data, scale_coord_to_new_res, AudioPlayer
 from scripts.maze import generate_maze
 from scripts.entities import Player, Enemy
 from scripts.animations import load_animation, load_animation_library, AnimationHandler
@@ -47,7 +47,10 @@ class Game:
             'compass_base': load_image("assets/images/compass_base.png"),
             'compass_spinner': load_image("assets/images/compass_spinner.png"),
             'box': load_image("assets/images/box.png"),
-            'grey_screen': pygame.Surface(self.larger_display.get_size()).convert_alpha()
+            'grey_screen': pygame.Surface(self.larger_display.get_size()).convert_alpha(),
+            'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
+            'x_key': load_image("assets/images/keys/x_key.png"),
+            'textbox': load_image("assets/images/textbox.png"),
         }
 
         # Loads all the animations in
@@ -83,6 +86,12 @@ class Game:
         self.killed = 0
         self.paused = False
         self.game_over = False
+        self.tutorial = [
+            {'name': "movement", 'img': "arrow_keys", 'text': "Use the arrow keys to move around", 'directions': set()},
+            {'name': "treasure", 'text': "Use the compass to find the treasure"},
+            {'name': "attack", 'img': "x_key", 'text': "Press X to attack"}
+        ]
+        self.tutorial_text_timer = 0
 
         # Graphical variables
         self.compass = Compass(self)
@@ -116,6 +125,7 @@ class Game:
         AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
         AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
         AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
+        AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.3, True, True)
 
 
     def handle_events(self):
@@ -240,6 +250,15 @@ class Game:
         for enemy in self.enemies:
             enemy.draw()
 
+        # Draws the tutorial
+        if len(self.tutorial) != 0:
+            pos = scale_coord_to_new_res((self.player.pos[0] + self.player.size[0] // 2 - self.camera_displacement[0], self.player.pos[1] - self.camera_displacement[1] - 5), self.display.get_size(), self.larger_display.get_size())
+            self.larger_display.blit(self.images['textbox'], (self.larger_display.get_width() // 2 - self.images['textbox'].get_width() // 2, self.larger_display.get_height() - 100))
+            if 'text_surf' in self.tutorial[0]:
+                self.larger_display.blit(self.tutorial[0]['text_surf'], (self.larger_display.get_width() // 2 - self.tutorial[0]['text_surf'].get_width() // 2, self.larger_display.get_height() - 80))
+            if 'img' in self.tutorial[0]:
+                self.larger_display.blit(self.images[self.tutorial[0]['img']], (pos[0] - self.images[self.tutorial[0]['img']].get_width() // 2, pos[1] - self.images[self.tutorial[0]['img']].get_height()))
+
         # Draws the HUD
         self.draw_healthbar()
         self.draw_gold()
@@ -275,6 +294,38 @@ class Game:
             self.last_time = time.time()
             self.multi = self.dt * 60
             if not self.paused and not self.game_over:
+
+                # Shows the tutorial text typing animation
+                if len(self.tutorial) != 0:
+                    if 'completed_text' not in self.tutorial[0]:
+                        self.tutorial[0]['completed_text'] = ""
+
+                    if self.tutorial[0]['completed_text'] != True:
+                        self.tutorial_text_timer += self.dt
+                        if self.tutorial_text_timer > 0.05:
+                            self.tutorial[0]['completed_text'] = self.tutorial[0]['text'][:len(self.tutorial[0]['completed_text']) + 1]
+                            self.tutorial[0]['text_surf'] = get_text_surf(30, self.tutorial[0]['completed_text'], (110, 74, 17))
+                            self.tutorial_text_timer = 0
+                            AudioPlayer.play_sound("key_press")
+                            if self.tutorial[0]['completed_text'] == self.tutorial[0]['text']:
+                                self.tutorial[0]['completed_text'] = True
+
+                    # Checks what the tutorial is and updates it appropriately
+                    if self.tutorial[0]['name'] == "movement":
+                        if self.player.moving['left']: self.tutorial[0]['directions'].add('left')
+                        if self.player.moving['right']: self.tutorial[0]['directions'].add('right')
+                        if self.player.moving['up']: self.tutorial[0]['directions'].add('up')
+                        if self.player.moving['down']: self.tutorial[0]['directions'].add('down')
+                        if len(self.tutorial[0]['directions']) == 4:
+                            self.tutorial.remove(self.tutorial[0])
+
+                    elif self.tutorial[0]['name'] == "attack":
+                        if "attack" in self.player.animation.current_animation and self.player.animation.frame == len(self.player.animation.animation_library[self.player.animation.current_animation]['images']) - 1:
+                            self.tutorial.remove(self.tutorial[0])
+
+                    elif self.tutorial[0]['name'] == "treasure":
+                        if self.maze.get_loc((self.player.pos[0] + self.player.size[0] // 2, self.player.pos[1] + self.player.size[1] // 2)) == self.treasure.loc:
+                            self.tutorial.remove(self.tutorial[0])
 
                 # Plays the running sound if the player is running
                 if self.player.moving['right'] or self.player.moving['left'] or self.player.moving['up'] or self.player.moving['down']:
