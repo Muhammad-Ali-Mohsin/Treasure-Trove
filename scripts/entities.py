@@ -34,6 +34,12 @@ class Entity:
         self.knockback_velocity = [0, 0]
         self.health = health
 
+    def get_center(self):
+        """
+        Returns the center of an entity
+        """
+        return (self.pos[0] + self.size[0] // 2, self.pos[1] + self.size[0] // 2)
+
     def get_rect(self):
         """
         Returns a rect for the entity
@@ -51,7 +57,8 @@ class Entity:
         Knocks the entity backwards from a point
         """
         # Calculates the displacement between the entity's center and the point
-        displacement = ((self.pos[0] + self.size[0] // 2) - point[0], (self.pos[1] + self.size[1] // 2) - point[1])
+        center = self.get_center()
+        displacement = (center[0] - point[0], center[1] - point[1])
         # Calculates the magnitude of the displacement using pythagoras' theorem
         magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
         if magnitude == 0:
@@ -103,7 +110,8 @@ class Entity:
         Draws the entity onto the display
         """
         img = self.animation.get_img()
-        pos = (self.pos[0] + (self.size[0] // 2) - (img.get_width() // 2) - self.game.camera_displacement[0], self.pos[1] + (self.size[1] // 2) - (img.get_height() // 2) - self.game.camera_displacement[1])
+        center = self.get_center()
+        pos = (center[0] - (img.get_width() // 2) - self.game.camera_displacement[0], center[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
         self.game.display.blit(img, pos)
 
 
@@ -136,8 +144,9 @@ class Player(Entity):
         if "attack" not in self.animation.current_animation:
             self.has_hit = False
             # Creates a bunch of dirt particles at the player's feet to signal the attack
+            center = self.get_center()
             for i in range(10):
-                ParticleHandler.create_particle("dirt", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + self.size[1] + random.randint(-5, 5)))
+                ParticleHandler.create_particle("dirt", self.game, (center[0] + random.randint(-5, 5), self.pos[1] + self.size[1] + random.randint(-5, 5)))
             # Changes the player's animation to attack in whatever direction they are facing and plays the attack sound
             self.animation.change_animation("attack_" + self.animation.current_animation.split("_")[1])
             AudioPlayer.play_sound("player_attack")
@@ -151,9 +160,9 @@ class Player(Entity):
             self.health -= 10
             # Creates dust particles which fly off the player to show they've been hit
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-                ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
+                ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
             # Knocks the player back from the center of the enemy, shakes the screen and plays a sound
-            self.knockback((enemy.pos[0] + (enemy.size[0] // 2), enemy.pos[1] + (enemy.size[1] // 2)), 3)
+            self.knockback(enemy.get_center(), 3)
             self.game.shake_screen(5, 0.2)
             AudioPlayer.play_sound("hit")
 
@@ -175,7 +184,7 @@ class Player(Entity):
                 if attack_rect.colliderect(self.game.treasure.get_rect()) and self.game.treasure.animation.current_animation != "open":
                     # Creates dust particles which fly off the player to show they've hit the treasure
                     for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-                        ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
+                        ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
                         self.game.treasure.open()
 
             # Checks whether the attack animation is over and if so, changes the player to an idle animation
@@ -238,15 +247,16 @@ class Enemy(Entity):
             # Checks whether they have died and changes their animation as well as spawns a bunch of experience
             if self.health <= 0:
                 self.animation.change_animation("death")
+                center = self.get_center()
                 for i in range(10):
-                    ParticleHandler.create_particle("experience", self.game, (self.pos[0] + (self.size[0] // 2) + random.randint(-5, 5), self.pos[1] + (self.size[1] // 2) + random.randint(-5, 5)), velocity=(random.uniform(2, -2), random.uniform(-4, -2)))
+                    ParticleHandler.create_particle("experience", self.game, (center[0] + random.randint(-5, 5), center[1] + random.randint(-5, 5)), velocity=(random.uniform(2, -2), random.uniform(-4, -2)))
         
             # Creates dust particles that fly off from the enemy to show that they've been hit
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-                ParticleHandler.create_particle("dust", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), speed=random.random() * 2, angle=angle * random.random())
+                ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
             
-            # Knocks the enemy, shakes the screen and plays a sound
-            self.knockback((self.game.player.pos[0] + (self.game.player.size[0] // 2), self.game.player.pos[1] + (self.game.player.size[1] // 2)), 3)
+            # Knocks the enemy back, shakes the screen and plays a sound
+            self.knockback(self.game.player.get_center(), 3)
             self.game.shake_screen(5, 0.2)
             AudioPlayer.play_sound("hit")
 
@@ -263,7 +273,7 @@ class Enemy(Entity):
         Each node is formatted as [tile location, parent tile location]
         """
         # Finds the starting tile the enemy is in and the destination tile which the player is in
-        starting_tile_loc = self.game.maze.get_loc((self.pos[0] + self.size[0] // 2, self.pos[1] + self.size[1] // 2))
+        starting_tile_loc = self.game.maze.get_loc(self.get_center())
         destination = self.game.maze.get_loc((self.game.player.pos[0] + self.game.player.size[0] // 2, self.game.player.pos[1] + self.game.player.size[1] - (FEET_HEIGHT // 2)))
 
         # Initialises tile list to starting position
@@ -300,7 +310,8 @@ class Enemy(Entity):
         """
         Returns the displacement from the center of a given tile location
         """
-        return ((loc[0] * self.game.maze.tile_size) + (self.game.maze.tile_size // 2) - (self.pos[0] + self.size[0] // 2), (loc[1] * self.game.maze.tile_size) + (self.game.maze.tile_size // 2) - (self.pos[1] + self.size[1] // 2))
+        center = self.get_center()
+        return ((loc[0] * self.game.maze.tile_size) + (self.game.maze.tile_size // 2) - center[0], (loc[1] * self.game.maze.tile_size) + (self.game.maze.tile_size // 2) - center[1])
 
     def update(self):
         """
@@ -310,7 +321,7 @@ class Enemy(Entity):
 
         if self.stunned_timer <= 0 and not self.animation.current_animation == "death":
             # Checks whether the enemy is close to the center of a tile and refreshes their path if so
-            displacement = self.get_displacement_from_center(self.game.maze.get_loc(self.pos))
+            displacement = self.get_displacement_from_center(self.game.maze.get_loc(self.get_center()))
             if abs(displacement[0]) <= MAX_DISTANCE and abs(displacement[1]) <= MAX_DISTANCE or len(self.path) == 0:
                 self.calculate_path()
 
@@ -367,13 +378,13 @@ class Enemy(Entity):
         self.dirt_timer += self.game.multi
         if "running" in self.animation.current_animation and self.dirt_timer > 4:
             self.dirt_timer = 0
-            ParticleHandler.create_particle("dirt", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)))
+            ParticleHandler.create_particle("dirt", self.game, self.get_center())
 
         # Creates dirt particles under the enemy's feet if they are running
         self.slime_particle_timer += self.game.multi
         if "running" in self.animation.current_animation and self.slime_particle_timer > 5:
             self.slime_particle_timer = 0
-            ParticleHandler.create_particle("slime", self.game, (self.pos[0] + (self.size[0] // 2), self.pos[1] + (self.size[1] // 2)), parent=self, variance=(random.randint(-10, 10), random.randint(-3, 3)))
+            ParticleHandler.create_particle("slime", self.game, self.get_center(), parent=self, variance=(random.randint(-10, 10), random.randint(-3, 3)))
         
     def kill(self):
         """
