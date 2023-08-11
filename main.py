@@ -5,7 +5,7 @@ from scripts.menus import MainMenu, OptionsMenu, CreditsMenu, LeaderboardMenu, S
 from scripts.utils import create_window, load_data
 
 pygame.init()
-pygame.mixer.set_num_channels(16)
+pygame.mixer.set_num_channels(32)
 
 # Load the options
 data = load_data()
