@@ -27,7 +27,6 @@ class Game:
         # Variables about the transition
         self.transition_surf = pygame.Surface(self.larger_display.get_size())
         self.transition_surf.set_colorkey((255, 255, 255))
-        self.transition_surf.fill((255, 255, 255))
         self.transition_timer = 0
         self.end_transition = False
 
@@ -108,26 +107,30 @@ class Game:
             }
         self.update_text()
 
-        # Audio
+        # Loads the background music and ambience and plays it on a loop
         music = pygame.mixer.Sound("assets/sfx/music.wav")
         music.set_volume(0.7)
         music.play(-1, fade_ms=1000)
         ambience = pygame.mixer.Sound("assets/sfx/ambience.wav")
         ambience.play(-1, fade_ms=1000)
+
+        # Loads all sfx sounds
         AudioPlayer.load_sounds("running", "assets/sfx/running", 0.2, True)
+        AudioPlayer.load_sound("player_attack", "assets/sfx/player_attack.wav", 0.8)
+        AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
+        AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
+
         AudioPlayer.load_sounds("enemy_attack", "assets/sfx/enemy_attack", 0.8, True)
+        AudioPlayer.load_sound("enemy_death", "assets/sfx/enemy_death.wav", 1)
+
         AudioPlayer.load_sound("health", "assets/sfx/health.wav", 0.7)
         AudioPlayer.load_sound("gold", "assets/sfx/gold.wav", 0.7)
-        AudioPlayer.load_sound("player_attack", "assets/sfx/player_attack.wav", 0.8)
-        AudioPlayer.load_sound("enemy_death", "assets/sfx/enemy_death.wav", 1)
-        AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.1)
         AudioPlayer.load_sound("experience", "assets/sfx/experience.wav", 0.3)
-        AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
-        AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
-        AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
-        AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.3, True, True)
-        AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
+        AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.1)
 
+        AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
+        AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
+        AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.3, True, True)
 
     def handle_events(self):
         """
