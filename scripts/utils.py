@@ -3,6 +3,7 @@ import re
 import random
 import json
 import hashlib
+import math
 
 import pygame
 
@@ -106,6 +107,21 @@ def create_window(resolution):
     pygame.mouse.set_visible(False)
     pygame.display.set_icon(load_image("assets/images/icon.png"))
     return window
+
+def get_vector(coords, speed):
+    """
+    Returns a vector with a certain magnitude between two points
+    """
+    displacement = (coords[0][0] - coords[1][0], coords[0][1] - coords[1][1])
+    if displacement[0] == 0 or displacement[1] == 0:
+        displacement = (random.choice(-1, 1), random.choice(-1, 1))
+
+    magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
+
+    # Creates a vector of magnitude 'speed' by multiplying each component by speed/magnitude
+    vector = (displacement[0] * (speed/magnitude), displacement[1] * (speed/magnitude))
+
+    return vector
 
 class AudioPlayer:
     sounds = {}
