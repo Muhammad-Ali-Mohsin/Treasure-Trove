@@ -24,6 +24,7 @@ class Menu:
         }
         self.buttons = {}
         self.textboxes = {}
+        self.enter_button = None
         self.text = []
         self.error_msg = {'surf': None, 'pos': None}
         self.cursor_timer = 0
@@ -143,8 +144,12 @@ class Menu:
         """
         if event.key == pygame.K_BACKSPACE:
             self.selected_textbox['text'] = self.selected_textbox['text'][:-1]
-        else:
-            self.selected_textbox['text'] = self.selected_textbox['text'] + event.unicode
+        elif event.key == pygame.K_RETURN:
+            if self.enter_button != None:
+                self.button_press(self.buttons[self.enter_button])
+        elif event.unicode.lower() in "abcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()_-+={[}]|\:;\"'<,>.?/":
+            if len(self.selected_textbox['text']) <= 35:
+                self.selected_textbox['text'] = self.selected_textbox['text'] + event.unicode
         font = pygame.font.SysFont(None, 25)
         self.selected_textbox['text_surf'] = get_text_surf(size=25, text=self.selected_textbox['text'], colour=(255, 255, 255), font=font)
 
@@ -369,8 +374,9 @@ class SignUpMenu(Menu):
 
         self.accounts = load_data()['accounts']
 
-        # Changes the position of the error message
+        # Changes the position of the error message and changes the enter button
         self.error_msg = {'surf': None, 'pos': (self.display.get_width() // 2, self.display.get_height() - 260)}
+        self.enter_button = "sign_up"
 
         # Loads all the buttons in
         self.buttons = {
@@ -445,8 +451,9 @@ class LoginMenu(Menu):
 
         self.accounts = load_data()['accounts']
 
-        # Changes the position of the error message
+        # Changes the position of the error message and changes the enter button
         self.error_msg = {'surf': None, 'pos': (self.display.get_width() // 2, self.display.get_height() - 260)}
+        self.enter_button = "login"
 
         # Loads all the buttons in
         self.buttons = {
