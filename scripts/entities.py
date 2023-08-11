@@ -5,7 +5,7 @@ import pygame
 
 from scripts.animations import AnimationHandler
 from scripts.particles import ParticleHandler
-from scripts.utils import AudioPlayer
+from scripts.utils import AudioPlayer, get_vector
 
 # This is the maximum distance from the center of a tile that an enemy can be for it to be considered in the center of that tile
 MAX_DISTANCE = 2
@@ -56,16 +56,8 @@ class Entity:
         """
         Knocks the entity backwards from a point
         """
-        # Calculates the displacement between the entity's center and the point
-        center = self.get_center()
-        displacement = (center[0] - point[0], center[1] - point[1])
-        # Calculates the magnitude of the displacement using pythagoras' theorem
-        magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
-        if magnitude == 0:
-            displacement = (1, 1)
-            magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
-        # Creates a unit vector by dividing the displacement components by the magnitude. Each component is then multiplied by the speed
-        self.knockback_velocity = ((displacement[0] / magnitude) * speed, (displacement[1] / magnitude) * speed)
+        # Sets the velocity for the entity's knockback and changes the timer
+        self.knockback_velocity = get_vector((self.get_center(), point), speed)
         self.knockback_timer = KNOCKBACK_TIME
     
     def update(self):
@@ -159,8 +151,9 @@ class Player(Entity):
         if self.knockback_timer <= 0:
             self.health -= 10
             # Creates dust particles which fly off the player to show they've been hit
+            center = self.get_center()
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-                ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
+                ParticleHandler.create_particle("dust", self.game, center, speed=random.random() * 2, angle=angle * random.random())
             # Knocks the player back from the center of the enemy, shakes the screen and plays a sound
             self.knockback(enemy.get_center(), 3)
             self.game.shake_screen(10, 0.2)
@@ -183,8 +176,9 @@ class Player(Entity):
                 # Checks whether the enemy is hitting the treasure and opens it if so
                 if attack_rect.colliderect(self.game.treasure.get_rect()) and self.game.treasure.animation.current_animation != "open":
                     # Creates dust particles which fly off the player to show they've hit the treasure
+                    center = self.get_center()
                     for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-                        ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
+                        ParticleHandler.create_particle("dust", self.game, center, speed=random.random() * 2, angle=angle * random.random())
                         self.game.treasure.open()
 
             # Checks whether the attack animation is over and if so, changes the player to an idle animation
