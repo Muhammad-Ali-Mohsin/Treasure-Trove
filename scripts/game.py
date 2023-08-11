@@ -16,7 +16,7 @@ TRANSITION_DURATION = 1
 class Game:
     def __init__(self, window, fps):
         random.seed(0)
-        pygame.display.set_caption("Treasure Trove")
+        pygame.display.set_caption("Treasure Trove - Playing game")
         self.kill_screen = False
         self.fps = fps
         self.window = window
