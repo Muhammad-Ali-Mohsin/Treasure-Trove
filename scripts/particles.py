@@ -2,7 +2,7 @@ import math
 import random
 
 from scripts.animations import AnimationHandler
-from scripts.utils import AudioPlayer
+from scripts.utils import AudioPlayer, get_vector
 
 EXPERIENCE_TARGET_POINT = (17, 10)
 GOLD_TARGET_POINT = (15, 40)
@@ -44,8 +44,7 @@ class StatParticle(Particle):
         displacement = (self.target[0] - self.pos[0], self.target[1] - self.pos[1])
 
         if self.pos[1] > 220:
-            magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
-            self.velocity = ((displacement[0] / magnitude) * 3, (displacement[1] / magnitude) * 3)
+            self.velocity = get_vector((self.target, self.pos), 3)
             self.travelling_up = True
 
         if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
@@ -136,14 +135,19 @@ class Bee(Particle):
         self.animation.change_animation_library(self.game.animations['bee'])
         self.timer = 20
         self.angle = random.uniform(0, 2 * math.pi)
-        self.angle_increase = 0
+        self.angular_speed = 0
 
     def move(self):
+        # Uses the angle to calculate x and y displacements before adding them to the position
         self.pos[0] += math.sin(self.angle) * self.speed * self.game.multi
         self.pos[1] += math.cos(self.angle) * self.speed * self.game.multi
-        self.angle += self.angle_increase
+
+        # Adds the angular speed to the angle
+        self.angle += self.angular_speed * self.game.multi
+
+        # Randomly changes the angular speed (a smaller speed means a bigger radius and a bigger speed means a smaller radius)
         if random.random() < 0.01:
-            self.angle_increase = random.uniform(0, 0.1)
+            self.angular_speed = random.uniform(0, 0.1)
 
     def draw(self):
         img = self.animation.get_img()
