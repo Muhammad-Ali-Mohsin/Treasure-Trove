@@ -418,7 +418,7 @@ class SignUpMenu(Menu):
             elif self.textboxes['username']['text'] in self.accounts:
                 self.change_error_message("This username has been taken")
             else:
-                self.accounts[self.textboxes['username']['text']] = get_hash(self.textboxes['password']['text'])
+                self.accounts[self.textboxes['username']['text']] = {'password_hash': get_hash(self.textboxes['password']['text'])}
                 data = load_data()
                 data['accounts'] = self.accounts
                 data['logged_in'] = self.textboxes['username']['text']
@@ -481,7 +481,7 @@ class LoginMenu(Menu):
             # Checks whether the username has been taken
             elif self.textboxes['username']['text'] not in self.accounts:
                 self.change_error_message("Username not found")
-            elif get_hash(self.textboxes['password']['text']) != self.accounts[self.textboxes['username']['text']]:
+            elif get_hash(self.textboxes['password']['text']) != self.accounts[self.textboxes['username']['text']]['password_hash']:
                 self.change_error_message("Incorrect password")
             else: 
                 data = load_data()
