@@ -35,10 +35,12 @@ class Menu:
         self.selected = None
         self.selected_textbox = None
 
-        # Audio
+        # Loads the background music and ambience and plays it on a loop
         self.music = pygame.mixer.Sound("assets/sfx/menu_music.wav")
         self.music.set_volume(0.5)
         self.music.play(-1, fade_ms=1000)
+
+        # Loads all the sound effects
         AudioPlayer.load_sound("hover", "assets/sfx/hover.wav", 0.5)
         AudioPlayer.load_sound("click", "assets/sfx/click.wav", 1)
         AudioPlayer.load_sound("error", "assets/sfx/error.wav", 1)
