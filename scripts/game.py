@@ -32,8 +32,6 @@ class Game:
 
         # Variables about the camera
         self.camera_displacement = [0, 0]
-        self.dt = 0
-        self.last_time = time.time()
         self.screen_shake = [0, 0]
 
         # Loads all the images in
@@ -139,6 +137,10 @@ class Game:
         AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
         AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
         AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.1, True, True)
+
+        # Time
+        self.dt = 0
+        self.last_time = time.time()
 
     def handle_events(self):
         """

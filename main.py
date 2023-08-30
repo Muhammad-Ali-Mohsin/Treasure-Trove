@@ -28,6 +28,6 @@ while running:
     window = screen.window
     fps = screen.fps
     if current_screen not in screens:
-        break
+        running = False
 
 pygame.quit()
