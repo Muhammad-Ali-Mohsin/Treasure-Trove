@@ -363,6 +363,8 @@ class Enemy(Entity):
         if not self.animation.current_animation == "death":
             if self.moving['right'] or self.moving['left'] or self.moving['up'] or self.moving['down']:
                 self.animation.change_animation("running")
+                if self.moving['right']: self.animation.flip = False
+                if self.moving['left']: self.animation.flip = True
             else:
                 self.animation.change_animation("idle")
         elif self.animation.done:
