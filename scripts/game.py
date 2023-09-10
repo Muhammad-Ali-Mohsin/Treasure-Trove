@@ -343,7 +343,7 @@ class Game:
         self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
         #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
         #self.window.blit(fps_text, (10, 10))
-        pygame.display.update()
+        self.window.update()
 
     def run(self):
         """

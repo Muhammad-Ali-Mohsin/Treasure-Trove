@@ -7,6 +7,8 @@ import math
 
 import pygame
 
+from scripts.shaders.window import MGLWindow
+
 DATA_PATH = "assets/data.json"
 IMG_NAME = "img"
 FONT_PATH = "assets/font.ttf"
@@ -103,7 +105,7 @@ def create_window(resolution):
     Creates a window
     """
     pygame.display.init()
-    window = pygame.display.set_mode(resolution)
+    window = MGLWindow("scripts/shaders/shader.vert", "scripts/shaders/shader.frag", resolution)
     pygame.mouse.set_visible(False)
     pygame.display.set_icon(load_image("assets/images/icon.png"))
     return window

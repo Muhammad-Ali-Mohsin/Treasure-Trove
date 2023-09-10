@@ -86,7 +86,7 @@ class Menu:
 
         # Ouputs the display in the user resolution
         self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), (0, 0))
-        pygame.display.update()
+        self.window.update()
 
     def handle_events(self):
         """
