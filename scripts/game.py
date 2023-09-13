@@ -34,6 +34,10 @@ class Game:
         self.camera_displacement = [0, 0]
         self.screen_shake = [0, 0]
 
+        # Lighting
+        self.light_images = {}
+        self.light_map = pygame.Surface(self.display.get_size()).convert_alpha()
+
         # Loads all the images in
         self.images = {
             'hedge': load_images("assets/images/hedges"),
@@ -48,6 +52,7 @@ class Game:
             'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
             'x_key': load_image("assets/images/keys/x_key.png"),
             'textbox': load_image("assets/images/textbox.png"),
+            'light': load_image("assets/images/light.png"),
         }
 
         # Loads all the animations in
@@ -66,6 +71,9 @@ class Game:
 
         # Image rescaling
         self.images['compass_spinner'] = pygame.transform.scale(self.images['compass_spinner'], (self.images['compass_spinner'].get_width() * 3, self.images['compass_spinner'].get_height() * 3))
+        self.images['compass_base'] = pygame.transform.scale(self.images['compass_base'], (self.images['compass_base'].get_width() * 3, self.images['compass_base'].get_height() * 3))
+        self.images['gold_pouch'] = pygame.transform.scale(self.images['gold_pouch'], (self.images['gold_pouch'].get_width() * 3, self.images['gold_pouch'].get_height() * 3))
+        self.images['healthbar'] = pygame.transform.scale(self.images['healthbar'], (self.images['healthbar'].get_width() * 3, self.images['healthbar'].get_height() * 3))
         self.images['box'] = pygame.transform.scale(self.images['box'], (self.images['box'].get_width() * 3, self.images['box'].get_height() * 3))
 
         # Changes transparency
@@ -141,6 +149,18 @@ class Game:
         # Time
         self.dt = 0
         self.last_time = time.time()
+        self.time = 0
+
+    def glow(self, pos, color, radius):
+        if (color, radius) not in self.light_images:
+            img = pygame.transform.scale(self.images['light'].copy(), (radius * 2, radius * 2))
+            img.set_colorkey((0, 0, 0))
+            img2 = img.copy()
+            img.fill(color)
+            img.blit(img2, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            self.light_images[(color, radius)] = img
+        
+        self.light_map.blit(self.light_images[(color, radius)], (pos[0] - self.light_images[(color, radius)].get_width() // 2 - self.camera_displacement[0], pos[1] - self.light_images[(color, radius)].get_height() // 2 - self.camera_displacement[1]), special_flags=pygame.BLEND_RGB_ADD)
 
     def handle_events(self):
         """
@@ -208,16 +228,16 @@ class Game:
         """
         Draws the healthbar image as as well as the player's health
         """
-        pygame.draw.rect(self.display, (255, 0, 0), (28, 14, (self.player.health / 100) * 77, 6))
-        self.display.blit(self.images['healthbar'], (5, 5))
+        pygame.draw.rect(self.larger_display, (255, 0, 0), (84, 42, (self.player.health / 100) * 231, 18))
+        self.larger_display.blit(self.images['healthbar'], (15, 15))
 
     def draw_gold(self):
         """
         Draws the player's gold onto the screen
         """
-        gold_text = get_text_surf(size=15, text=f"{format_num(self.gold)} gold", colour=(255, 202, 24))
-        self.display.blit(self.images['gold_pouch'], (5, 35))
-        self.display.blit(gold_text, (self.images['gold_pouch'].get_width() + 10, 32 + (gold_text.get_height() // 2)))
+        gold_text = get_text_surf(size=45, text=f"{format_num(self.gold)} gold", colour=(255, 202, 24))
+        self.larger_display.blit(self.images['gold_pouch'], (15, 105))
+        self.larger_display.blit(gold_text, (self.images['gold_pouch'].get_width() + 30, 96 + (gold_text.get_height() // 2)))
 
     def draw_screen(self, text):
         """
@@ -298,6 +318,7 @@ class Game:
         # Clears the display
         self.display.fill((35, 72, 39))
         self.larger_display.fill((0, 0, 0, 0))
+        self.light_map.fill((0, 0, 0))
 
         # Draws all maze elements
         self.maze.draw()
@@ -336,14 +357,14 @@ class Game:
             self.transition_surf.fill((0, 0, 0))
             pygame.draw.circle(self.transition_surf, (255, 255, 255), (self.transition_surf.get_width() // 2, self.transition_surf.get_height() // 2), ((self.transition_surf.get_width() * 3/4) * (abs(self.transition_timer) / TRANSITION_DURATION)))
 
-        # Blits the transition surface onto the larger surf and then both surfaces onto the window
-        self.larger_display.blit(self.transition_surf, (0, 0))
-        screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0]) if self.screen_shake[1] > 0 else (0, 0)
-        self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), screen_shake)
-        self.window.blit(pygame.transform.scale(self.larger_display, self.window.get_size()), screen_shake)
-        #fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        #self.window.blit(fps_text, (10, 10))
-        self.window.update()
+            # Blits the transition surface onto the larger surf and then both surfaces onto the window
+            self.larger_display.blit(self.transition_surf, (0, 0))
+
+        if self.screen_shake[1] > 0:
+            screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0])
+            self.display.blit(self.display, screen_shake)
+            
+        self.window.update(game=self)
 
     def run(self):
         """
@@ -353,6 +374,7 @@ class Game:
             # Calculates the change in time
             self.dt = (time.time() - self.last_time)
             self.last_time = time.time()
+            self.time += self.dt
             self.multi = self.dt * 60
             if not self.paused and not self.game_over:
                 if len(self.tutorial) != 0:

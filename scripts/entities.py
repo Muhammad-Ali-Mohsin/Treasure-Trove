@@ -33,6 +33,7 @@ class Entity:
         self.knockback_timer = 0
         self.knockback_velocity = [0, 0]
         self.health = health
+        self.glow_timer = random.uniform(0, 2 * math.pi)
 
     def get_center(self):
         """
@@ -97,6 +98,8 @@ class Entity:
                     feet_rect.top = rect.bottom
                 self.pos[1] = feet_rect.bottom - self.size[1]
 
+        self.glow_timer = (self.glow_timer + self.game.dt * 2) % (2 * math.pi)
+
     def draw(self):
         """
         Draws the entity onto the display
@@ -105,7 +108,7 @@ class Entity:
         center = self.get_center()
         pos = (center[0] - (img.get_width() // 2) - self.game.camera_displacement[0], center[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
         self.game.display.blit(img, pos)
-
+        self.game.glow(center, (205, 205, 255), max(self.size) + 8 + round(3 * math.sin(self.glow_timer)))
 
 class Player(Entity):
     def __init__(self, game, loc, size, speed, health):
