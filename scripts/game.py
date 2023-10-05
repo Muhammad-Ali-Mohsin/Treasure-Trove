@@ -149,7 +149,7 @@ class Game:
         # Time
         self.dt = 0
         self.last_time = time.time()
-        self.time = 0
+        self.time = 90 # Midday
 
     def glow(self, pos, color, radius):
         if (color, radius) not in self.light_images:
@@ -188,6 +188,8 @@ class Game:
                         self.end_transition = True
                 if event.key == pygame.K_x:
                     if self.player.animation.current_animation != "death": self.player.attack()
+                if event.key == pygame.K_z:
+                    if self.player.animation.current_animation != "death": self.player.dash()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = False
@@ -311,6 +313,36 @@ class Game:
                         save_data(data)
                     self.tutorial.remove(tutorial)
 
+    def get_daylight(self):
+        """
+        Returns a color scale for the time of day
+        """
+        # Defines the color scales for different times
+        morning_color = pygame.Vector3(1.0, 0.9, 0.8);
+        noon_color = pygame.Vector3(1.0, 1.0, 1.0);
+        evening_color = pygame.Vector3(0.9, 0.4, 0.2);
+        sunset_color = pygame.Vector3(0.2, 0.2, 0.2);
+        night_color = pygame.Vector3(0.1, 0.1, 0.2);
+
+        daytime = (self.time / 180) % 1
+        
+        # Interpolates between colors based on time of day
+        daylight = 0
+        if daytime < 0.2:
+            daylight = night_color
+        elif daytime < 0.35:
+            daylight = ((daytime - 0.2) * (morning_color - night_color) / (0.35 - 0.2)) + night_color
+        elif daytime < 0.7:
+            daylight = ((daytime - 0.35) * (noon_color - morning_color) / (0.7 - 0.35)) + morning_color
+        elif daytime < 0.75:
+            daylight = ((daytime - 0.7) * (evening_color - noon_color) / (0.75 - 0.7)) + noon_color
+        elif daytime < 0.8:
+            daylight = ((daytime - 0.75) * (sunset_color - evening_color) / (0.8 - 0.75)) + evening_color
+        else:
+            daylight = ((daytime - 0.8) * (night_color - sunset_color) / (1.0 - 0.8)) + sunset_color
+        
+        return daylight
+
     def update_display(self):
         """
         Calls all functions to update the display
@@ -363,8 +395,14 @@ class Game:
         if self.screen_shake[1] > 0:
             screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0])
             self.display.blit(self.display, screen_shake)
-            
-        self.window.update(game=self)
+
+        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
+        self.larger_display.blit(fps_text, (10, 10))
+
+        self.window.update(uniforms={
+            'screen_texture': self.display, 'ldisplay_texture': self.larger_display, 'light_map': self.light_map, 
+            'time': self.time, 'daylight': self.get_daylight(), 'screen': 0
+            })
 
     def run(self):
         """

@@ -84,9 +84,7 @@ class Menu:
             textbox = self.selected_textbox
             pygame.draw.rect(self.display, (255, 255, 255), (textbox['rect'].centerx + (textbox['text_surf'].get_width() // 2) + 5, textbox['rect'].centery - 13, 3, 26))
 
-        # Ouputs the display in the user resolution
-        self.window.blit(pygame.transform.scale(self.display, self.window.get_size()), (0, 0))
-        self.window.update()
+        self.window.update(uniforms={'screen_texture': self.display, 'screen': 1})
 
     def handle_events(self):
         """

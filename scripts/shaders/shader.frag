@@ -1,13 +1,12 @@
 #version 330 core
 
-uniform int screen;  // The input texture
+uniform int screen;  // The input screen
 uniform sampler2D screen_texture;  // The input texture
 uniform sampler2D ldisplay_texture;  // The texture for the ui such as the compass
 uniform sampler2D noise_texture; // The noise texture used for the shadowy border
 uniform sampler2D light_map;    // The light map texture
 uniform float time;
 uniform vec3 daylight;   // Time of day (0.0 to 1.0)
-
 
 in vec2 uv;
 out vec4 f_color;
@@ -29,11 +28,12 @@ void main()
         vec2 px_uv = vec2(floor(uv.x * 1920) / 1920, floor(uv.y * 1080) / 1080);
         vec2 px_uv2 = vec2(floor(uv.x * 1920) / 1920, floor(uv.y * 1080) / 1080);
 
+        float intensity = (1 - (daylight.r + daylight.g + daylight.b) / 3) * 0.5;
         float center_dis = distance(px_uv, vec2(0.5, 0.5));
-        float noise_val = center_dis + texture(noise_texture, vec2(px_uv2.x * 1.52 * 2 + time * 0.05, px_uv2.y * 2 - time * 0.1)).r * (1 - (daylight.r + daylight.g + daylight.b) / 3) * 0.5;
+        float noise_val = center_dis + texture(noise_texture, vec2(px_uv2.x * 1.52 * 2 + time * 0.05, px_uv2.y * 2 - time * 0.1)).r * intensity;
         vec4 dark = vec4(0.0, 0.0, 0.0, 1.0);
         float darkness = max(0, noise_val - 0.7) * 10;
-        float vignette = max(0, center_dis * center_dis - 0.1) * 7 * (1 - (daylight.r + daylight.g + daylight.b) / 3) * 0.5;
+        float vignette = max(0, center_dis * center_dis - 0.1) * 7 * intensity;
         darkness += vignette;
         f_color = (1 - darkness) * f_color;
 
