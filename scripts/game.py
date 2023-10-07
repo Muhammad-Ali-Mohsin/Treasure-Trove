@@ -66,7 +66,8 @@ class Game:
             'slime_particle': {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)},
             'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)},
             'gold': {'default': load_animation("assets/particles/gold", (10, 10), True)},
-            'bee': {'default': load_animation("assets/particles/bee", (0.1, 0.1, 0.1), True)}
+            'bee': {'default': load_animation("assets/particles/bee", (0.1, 0.1, 0.1), True)},
+            'player_dashing': {'default': load_animation("assets/particles/player_dashing", (0.05, 0.05, 0.05, 0.05), False)}
         }
 
         # Image rescaling
@@ -85,6 +86,7 @@ class Game:
         self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=25)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
         self.enemies = []
+        self.spikes = []
         self.treasure = Treasure(self)
         self.gold = 0
         self.wave = 0
@@ -364,6 +366,10 @@ class Game:
         for enemy in self.enemies:
             enemy.draw()
 
+        # Draws all spikes
+        for spike in self.spikes:
+            spike.draw()
+
         # Draws the tutorial
         if len(self.tutorial) != 0:
             pos = scale_coord_to_new_res((self.player.pos[0] + self.player.size[0] // 2 - self.camera_displacement[0], self.player.pos[1] - self.camera_displacement[1] - 5), self.display.get_size(), self.larger_display.get_size())
@@ -447,10 +453,15 @@ class Game:
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
 
+                # Moves spikes
+                for spike in self.spikes:
+                    spike.update()
+                    if spike.speed <= 0:
+                        self.spikes.remove(spike)
+
                 # Updates the player and the enemies if the player isn't dead
                 if not self.player.animation.current_animation == "death":
                     self.player.update()
-
                     for enemy in self.enemies:
                         enemy.update()
 

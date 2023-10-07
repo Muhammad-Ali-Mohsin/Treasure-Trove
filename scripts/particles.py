@@ -93,6 +93,11 @@ class Dirt(Particle):
         super().__init__(game, pos)
         self.animation.change_animation_library(self.game.animations['dirt'])
 
+class PlayerDashing(Particle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos)
+        self.animation.change_animation_library(self.game.animations['player_dashing'])
+
 
 class Leaf(Particle):
     def __init__(self, game, pos, kwargs):
@@ -159,7 +164,7 @@ class Bee(Particle):
 
 class ParticleHandler:
     particles = []
-    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold, 'bee': Bee}
+    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold, 'bee': Bee, 'player_dashing': PlayerDashing}
 
     def update():
         """

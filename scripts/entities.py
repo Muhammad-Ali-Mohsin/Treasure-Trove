@@ -6,6 +6,7 @@ import pygame
 from scripts.animations import AnimationHandler
 from scripts.particles import ParticleHandler
 from scripts.utils import AudioPlayer, get_vector
+from scripts.spikes import Spike
 
 # This is the maximum distance from the center of a tile that an enemy can be for it to be considered in the center of that tile
 MAX_DISTANCE = 2
@@ -19,6 +20,10 @@ PLAYER_ATTACK_RANGE = 8
 ENEMY_ATTACK_RANGE = 4
 # This is the height of the rect used to detect collisions
 FEET_HEIGHT = 4
+# This is the speed of the player when dashing (keep as float)
+DASHING_VELOCITY = 6.0
+# This is how long the player dashes for
+DASHING_TIMER = 0.2
 
 class Entity:
     def __init__(self, game, loc, size, speed, health):
@@ -70,6 +75,9 @@ class Entity:
             x_displacement = self.knockback_velocity[0] * (self.knockback_timer / KNOCKBACK_TIME) * self.game.multi
             y_displacement = self.knockback_velocity[1] * (self.knockback_timer / KNOCKBACK_TIME) * self.game.multi
             self.knockback_timer -= self.game.dt
+        elif self.animation.current_animation == "dashing":
+            x_displacement = self.dashing['vel'][0] * self.game.multi
+            y_displacement = self.dashing['vel'][1] * self.game.multi
         else:
             # Changes the displacement if the entity is not being knocked back based on the direction they are moving
             x_displacement = ((self.moving['right'] * self.speed) - (self.moving['left'] * self.speed)) * self.game.multi * (0.75 if "attack" in self.animation.current_animation else 1)
@@ -110,12 +118,34 @@ class Entity:
         self.game.display.blit(img, pos)
         self.game.glow(center, (205, 205, 255), max(self.size) + 8 + round(3 * math.sin(self.glow_timer)))
 
+
 class Player(Entity):
     def __init__(self, game, loc, size, speed, health):
         super().__init__(game, loc, size, speed, health)
         self.animation.change_animation_library(self.game.animations['player'])
         self.animation.change_animation("idle_forwards")
         self.has_hit = False
+        self.dashing = {'timer': 0, 'vel': None, 'last_animation': None, 'particle_timer': 0}
+
+    def dash(self):
+        """
+        Makes the player dash forwards
+        """
+        if self.dashing['timer'] <= 0 and "attack" not in self.animation.current_animation:
+            center = self.get_center()
+            if "forwards" in self.animation.current_animation:
+                destination = (center[0], center[1] + 1)
+            elif "backwards" in self.animation.current_animation:
+                destination = (center[0], center[1] - 1)
+            elif self.animation.flip:
+                destination = (center[0] - 1, center[1])
+            else:
+                destination = (center[0] + 1, center[1])
+            self.dashing['vel'] = get_vector((destination, center), DASHING_VELOCITY)
+            self.dashing['last_animation'] = self.animation.current_animation
+            self.animation.change_animation("dashing")
+            self.dashing['timer'] = DASHING_TIMER
+            self.dashing['particle_timer'] = 0
 
     def get_attack_rect(self):
         """
@@ -130,13 +160,17 @@ class Player(Entity):
             rect = pygame.Rect(self.pos[0], self.pos[1] - PLAYER_ATTACK_RANGE, self.size[0], PLAYER_ATTACK_RANGE)
         elif "forwards" in self.animation.current_animation: 
             rect = pygame.Rect(self.pos[0], self.pos[1] + self.size[1], self.size[0], PLAYER_ATTACK_RANGE)
+        else:
+            center = self.get_center()
+            rect = pygame.Rect(0, 0, self.size[0] + 5, self.size[1] + 5)
+            rect.center = center
         return rect
 
     def attack(self):
         """
         Changes the player's animation to attack
         """
-        if "attack" not in self.animation.current_animation:
+        if "attack" not in self.animation.current_animation and "dashing" not in self.animation.current_animation:
             self.has_hit = False
             # Creates a bunch of dirt particles at the player's feet to signal the attack
             center = self.get_center()
@@ -167,8 +201,8 @@ class Player(Entity):
         Updates the player's movement, attack, animation and particles
         """
         super().update()
-        if "attack" in self.animation.current_animation:
-            if not self.has_hit:
+        if "attack" in self.animation.current_animation or self.animation.current_animation == "dashing":
+            if not self.has_hit or self.animation.current_animation == "dashing":
                 # Checks whether there are enemies within the player's attack rect and hits them if so
                 attack_rect = self.get_attack_rect()
                 for enemy in self.game.enemies:
@@ -185,9 +219,21 @@ class Player(Entity):
                         self.game.treasure.open()
 
             # Checks whether the attack animation is over and if so, changes the player to an idle animation
-            if self.animation.done:
+            if self.animation.done and self.animation.current_animation != "dashing":
                 self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
                 self.animation.done = False
+
+        # Updates the player's dashing status
+        if self.animation.current_animation == "dashing":
+            self.dashing['timer'] = max(self.dashing['timer'] - self.game.dt, 0)
+            self.dashing['particle_timer'] = max(self.dashing['particle_timer'] - self.game.dt, 0)
+            if self.dashing['particle_timer'] == 0:
+                ParticleHandler.create_particle("player_dashing", self.game, self.get_center())
+                self.dashing['particle_timer'] = 0.02
+            if self.dashing['timer'] == 0:
+                for i in range(10):
+                    self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), 2, (20, 16, 32)))
+                self.animation.change_animation(self.dashing['last_animation'])
 
         # Kills the player after their knockback timer is over
         if self.health <= 0 and self.knockback_timer <= 0 and self.animation.current_animation != "death":
@@ -195,7 +241,7 @@ class Player(Entity):
             AudioPlayer.play_sound("player_death")
 
         # Changes the player's animations 
-        if "attack" not in self.animation.current_animation and self.animation.current_animation != "death":
+        if "attack" not in self.animation.current_animation and self.animation.current_animation != "death" and self.animation.current_animation != "dashing":
             if self.moving['right'] or self.moving['left']:
                 self.animation.change_animation("running_sideways")
             elif self.moving['up']:
@@ -207,9 +253,9 @@ class Player(Entity):
 
         # Creates dirt particles under the player's feet if they are running
         self.dirt_timer += self.game.dt
-        if "running" in self.animation.current_animation and self.dirt_timer > 0.07:
+        if "running" in self.animation.current_animation and self.dirt_timer > 0.07 and self.animation.current_animation != "dashing":
             self.dirt_timer = 0
-            pos = [self.pos[0] + (self.size[0] // 2), self.pos[1] + self.size[1]]
+            pos = [self.pos[0] + (self.size[0] // 2), self.pos[1] + self.size[1] - 5]
             if self.moving['right']: pos[0] -= 5
             if self.moving['left']: pos[0] += 5
             if self.moving['up']: pos[1] += 5

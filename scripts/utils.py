@@ -115,8 +115,8 @@ def get_vector(coords, speed):
     Returns a vector with a certain magnitude between two points
     """
     displacement = (coords[0][0] - coords[1][0], coords[0][1] - coords[1][1])
-    if displacement[0] == 0 or displacement[1] == 0:
-        displacement = (random.choice(-1, 1), random.choice(-1, 1))
+    if displacement[0] == 0 and displacement[1] == 0:
+        displacement = (random.choice((-1, 1)), random.choice((-1, 1)))
 
     magnitude = math.sqrt((displacement[0] ** 2) + (displacement[1] ** 2))
 
