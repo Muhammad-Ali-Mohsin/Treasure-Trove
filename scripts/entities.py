@@ -116,7 +116,7 @@ class Entity:
         center = self.get_center()
         pos = (center[0] - (img.get_width() // 2) - self.game.camera_displacement[0], center[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
         self.game.display.blit(img, pos)
-        self.game.glow(center, (205, 205, 255), max(self.size) + 8 + round(3 * math.sin(self.glow_timer)))
+        self.game.glow(center, (205, 205, 255), max(self.size) + 8 + round(5 * math.sin(self.glow_timer) + random.random()))
 
 
 class Player(Entity):

@@ -59,6 +59,7 @@ class StatParticle(Particle):
         img = self.animation.get_img()
         pos = (self.pos[0] - (img.get_width() // 2), self.pos[1] - (img.get_height() // 2))
         self.game.display.blit(img, pos)
+        self.game.glow((self.pos[0] + self.game.camera_displacement[0], self.pos[1] + self.game.camera_displacement[1]), (205, 205, 255), 10)
 
 
 class Experience(StatParticle):
@@ -159,6 +160,9 @@ class Bee(Particle):
         if self.timer < 5:
             img.set_alpha(self.timer / 5 * 255)
         pos = (self.pos[0] - (img.get_width() // 2) - self.game.camera_displacement[0], self.pos[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
+        intensity = math.sin(self.timer / 20 * math.pi)
+        self.game.glow(self.pos, (round(205 * intensity), round(205 * intensity), round(255 * intensity)), 20)
+        self.game.glow(self.pos, (round(255 * intensity), round(255 * intensity), round(255 * intensity)), 8)
         self.game.display.blit(img, pos)
 
 
