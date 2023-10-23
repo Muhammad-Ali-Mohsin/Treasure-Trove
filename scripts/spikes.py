@@ -6,18 +6,27 @@ WIDTH_MULTI = 0.75
 HEIGHT_MULTI = 3
 
 class Spike:
-    def __init__(self, game, pos, angle, speed, color):
+    def __init__(self, game, pos, angle, speed, color, can_damage=False):
         self.game = game
         self.pos = list(pos)
         self.timer = None
         self.angle = angle
         self.speed = speed
         self.color = color
+        self.can_damage = can_damage
+
+    def get_rect(self):
+        return pygame.Rect(*self.pos, self.speed * HEIGHT_MULTI, self.speed * HEIGHT_MULTI)
 
     def update(self):
         self.pos[0] += math.cos(self.angle) * self.speed * self.game.multi
         self.pos[1] += math.sin(self.angle) * self.speed * self.game.multi
         self.speed -= self.game.dt * 3
+        if self.can_damage:
+            rect = self.get_rect()
+            for enemy in self.game.enemies:
+                if rect.colliderect(enemy.get_rect()):
+                    enemy.hit()
 
     def draw(self):
         """
