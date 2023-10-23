@@ -24,6 +24,8 @@ FEET_HEIGHT = 4
 DASHING_VELOCITY = 6.0
 # This is how long the player dashes for
 DASHING_TIMER = 0.2
+# This is how long the player explodes for
+EXPLOSION_TIMER = 0.75
 
 class Entity:
     def __init__(self, game, loc, size, speed, health):
@@ -39,6 +41,7 @@ class Entity:
         self.knockback_velocity = [0, 0]
         self.health = health
         self.glow_timer = random.uniform(0, 2 * math.pi)
+        self.special_attack = {'name': None}
 
     def get_center(self):
         """
@@ -75,9 +78,9 @@ class Entity:
             x_displacement = self.knockback_velocity[0] * (self.knockback_timer / KNOCKBACK_TIME) * self.game.multi
             y_displacement = self.knockback_velocity[1] * (self.knockback_timer / KNOCKBACK_TIME) * self.game.multi
             self.knockback_timer -= self.game.dt
-        elif self.animation.current_animation == "dashing":
-            x_displacement = self.dashing['vel'][0] * self.game.multi
-            y_displacement = self.dashing['vel'][1] * self.game.multi
+        elif self.special_attack['name'] != None:
+            x_displacement = self.special_attack['vel'][0] * self.game.multi
+            y_displacement = self.special_attack['vel'][1] * self.game.multi
         else:
             # Changes the displacement if the entity is not being knocked back based on the direction they are moving
             x_displacement = ((self.moving['right'] * self.speed) - (self.moving['left'] * self.speed)) * self.game.multi * (0.75 if "attack" in self.animation.current_animation else 1)
@@ -125,13 +128,12 @@ class Player(Entity):
         self.animation.change_animation_library(self.game.animations['player'])
         self.animation.change_animation("idle_forwards")
         self.has_hit = False
-        self.dashing = {'timer': 0, 'vel': None, 'last_animation': None, 'particle_timer': 0}
 
     def dash(self):
         """
         Makes the player dash forwards
         """
-        if self.dashing['timer'] <= 0 and "attack" not in self.animation.current_animation:
+        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation:
             center = self.get_center()
             if "forwards" in self.animation.current_animation:
                 destination = (center[0], center[1] + 1)
@@ -141,11 +143,23 @@ class Player(Entity):
                 destination = (center[0] - 1, center[1])
             else:
                 destination = (center[0] + 1, center[1])
-            self.dashing['vel'] = get_vector((destination, center), DASHING_VELOCITY)
-            self.dashing['last_animation'] = self.animation.current_animation
+            self.special_attack['name'] = "dashing"
+            self.special_attack['vel'] = get_vector((destination, center), DASHING_VELOCITY)
+            self.special_attack['last_animation'] = self.animation.current_animation
+            self.special_attack['timer'] = DASHING_TIMER
+            self.special_attack['particle_timer'] = 0
             self.animation.change_animation("dashing")
-            self.dashing['timer'] = DASHING_TIMER
-            self.dashing['particle_timer'] = 0
+
+    def explode(self):
+        """
+        Makes the player do the explosion attack
+        """
+        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation:
+            self.special_attack['name'] = "explosion"
+            self.special_attack['vel'] = [0, 0]
+            self.special_attack['timer'] = EXPLOSION_TIMER
+            self.special_attack['spike_timer'] = 0
+            self.special_attack['explosions'] = 0
 
     def get_attack_rect(self):
         """
@@ -170,7 +184,7 @@ class Player(Entity):
         """
         Changes the player's animation to attack
         """
-        if "attack" not in self.animation.current_animation and "dashing" not in self.animation.current_animation:
+        if "attack" not in self.animation.current_animation and self.special_attack['name'] == None:
             self.has_hit = False
             # Creates a bunch of dirt particles at the player's feet to signal the attack
             center = self.get_center()
@@ -201,8 +215,8 @@ class Player(Entity):
         Updates the player's movement, attack, animation and particles
         """
         super().update()
-        if "attack" in self.animation.current_animation or self.animation.current_animation == "dashing":
-            if not self.has_hit or self.animation.current_animation == "dashing":
+        if "attack" in self.animation.current_animation or self.special_attack['name'] == "dashing":
+            if not self.has_hit or self.special_attack['name'] == "dashing":
                 # Checks whether there are enemies within the player's attack rect and hits them if so
                 attack_rect = self.get_attack_rect()
                 for enemy in self.game.enemies:
@@ -214,26 +228,41 @@ class Player(Entity):
                 if attack_rect.colliderect(self.game.treasure.get_rect()) and self.game.treasure.animation.current_animation != "open":
                     # Creates dust particles which fly off the player to show they've hit the treasure
                     center = self.get_center()
-                    for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
-                        ParticleHandler.create_particle("dust", self.game, center, speed=random.random() * 2, angle=angle * random.random())
+                    for i in range(8):
+                        ParticleHandler.create_particle("dust", self.game, center, speed=random.random() * 2, angle=math.pi * (i + 1)/4  * random.random())
                         self.game.treasure.open()
 
             # Checks whether the attack animation is over and if so, changes the player to an idle animation
-            if self.animation.done and self.animation.current_animation != "dashing":
+            if self.animation.done and self.special_attack['name'] != "dashing":
                 self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
                 self.animation.done = False
 
-        # Updates the player's dashing status
-        if self.animation.current_animation == "dashing":
-            self.dashing['timer'] = max(self.dashing['timer'] - self.game.dt, 0)
-            self.dashing['particle_timer'] = max(self.dashing['particle_timer'] - self.game.dt, 0)
-            if self.dashing['particle_timer'] == 0:
-                ParticleHandler.create_particle("player_dashing", self.game, self.get_center())
-                self.dashing['particle_timer'] = 0.02
-            if self.dashing['timer'] == 0:
-                for i in range(10):
-                    self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), 2, (20, 16, 32)))
-                self.animation.change_animation(self.dashing['last_animation'])
+        # Updates the player's special attack
+        if self.special_attack['name'] != None:
+            self.special_attack['timer'] = max(self.special_attack['timer'] - self.game.dt, 0)
+
+            # Creates particles if the special attack is dashing
+            if self.special_attack['name'] == "dashing":
+                self.special_attack['particle_timer'] = max(self.special_attack['particle_timer'] - self.game.dt, 0)
+                if self.special_attack['particle_timer'] == 0:
+                    ParticleHandler.create_particle("player_dashing", self.game, self.get_center())
+                    self.special_attack['particle_timer'] = 0.02
+
+            # Creates spikes if the special attack is explosion
+            if self.special_attack['name'] == "explosion":
+                self.special_attack['spike_timer'] = max(self.special_attack['spike_timer'] - self.game.dt, 0)
+                if self.special_attack['spike_timer'] == 0:
+                    for i in range(25):
+                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(2.5, 3.5), (140, 0, 0), can_damage=True))
+                    self.special_attack['spike_timer'] = 0.25
+
+            # Ends the player's special attack if time has run out
+            if self.special_attack['timer'] == 0:
+                if self.special_attack['name'] == "dashing":
+                    self.animation.change_animation(self.special_attack['last_animation'])
+                    for i in range(10):
+                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), 2, (20, 16, 32)))
+                self.special_attack['name'] = None
 
         # Kills the player after their knockback timer is over
         if self.health <= 0 and self.knockback_timer <= 0 and self.animation.current_animation != "death":
@@ -241,7 +270,7 @@ class Player(Entity):
             AudioPlayer.play_sound("player_death")
 
         # Changes the player's animations 
-        if "attack" not in self.animation.current_animation and self.animation.current_animation != "death" and self.animation.current_animation != "dashing":
+        if "attack" not in self.animation.current_animation and self.animation.current_animation != "death" and self.special_attack['name'] == None:
             if self.moving['right'] or self.moving['left']:
                 self.animation.change_animation("running_sideways")
             elif self.moving['up']:
@@ -253,7 +282,7 @@ class Player(Entity):
 
         # Creates dirt particles under the player's feet if they are running
         self.dirt_timer += self.game.dt
-        if "running" in self.animation.current_animation and self.dirt_timer > 0.07 and self.animation.current_animation != "dashing":
+        if "running" in self.animation.current_animation and self.dirt_timer > 0.07 and self.special_attack['name'] == None:
             self.dirt_timer = 0
             pos = [self.pos[0] + (self.size[0] // 2), self.pos[1] + self.size[1] - 5]
             if self.moving['right']: pos[0] -= 5
@@ -326,7 +355,8 @@ class Enemy(Entity):
         while True:
             # Checks if the node list is empty as if the node list is empty and target has not been found, there must be no possible path to the target
             if len(node_list) == 0:
-                raise Exception("No path from enemy to player")
+                self.kill()
+                return
             
             # Removes the node from the front of the node list
             node = node_list.pop(0)

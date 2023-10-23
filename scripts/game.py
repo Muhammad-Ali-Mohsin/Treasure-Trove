@@ -192,6 +192,8 @@ class Game:
                     if self.player.animation.current_animation != "death": self.player.attack()
                 if event.key == pygame.K_z:
                     if self.player.animation.current_animation != "death": self.player.dash()
+                if event.key == pygame.K_c:
+                    if self.player.animation.current_animation != "death": self.player.explode()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = False
