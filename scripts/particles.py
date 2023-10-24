@@ -116,7 +116,7 @@ class Slime(Particle):
         super().__init__(game, pos)
         self.parent = kwargs['parent']
         self.variance = list(kwargs['variance'])
-        self.animation.change_animation_library(self.game.animations['slime_particle'])
+        self.animation.change_animation_library(self.game.animations[kwargs['color'] + '_slime_particle'])
 
     def move(self):
         self.pos = (self.parent.pos[0] + (self.parent.size[0] // 2) + self.variance[0], self.parent.pos[1] + self.variance[1])

@@ -60,17 +60,34 @@ class Game:
         # Loads all the animations in
         self.animations = {
             'player': load_animation_library("assets/animations/player"),
-            'slime': load_animation_library("assets/animations/slime"),
+            'blue_slime': load_animation_library("assets/animations/slime"),
             'treasure': load_animation_library("assets/animations/treasure"),
             'dirt': {'default': load_animation("assets/particles/dirt", (0.1, 0.1, 0.1), False)},
             'leaves': {'default': load_animation("assets/particles/leaves", (0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2), False)},
             'experience': {'default': load_animation("assets/particles/experience", (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), True)},
-            'slime_particle': {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)},
+            'blue_slime_particle': {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)},
             'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)},
             'gold': {'default': load_animation("assets/particles/gold", (10, 10), True)},
             'bee': {'default': load_animation("assets/particles/bee", (0.1, 0.1, 0.1), True)},
             'player_dashing': {'default': load_animation("assets/particles/player_dashing", (0.05, 0.05, 0.05, 0.05), False)}
         }
+
+        # Creates new_animations for the slime variants
+        colors = {
+            'red': ((80, 0, 0), (135, 0, 0), (185, 0, 0), (200, 45, 45), (200, 45, 45), (200, 45, 45)),
+            'purple': ((25, 9, 53), (96, 36, 128), (122, 47, 149), (154, 71, 151), (85, 21, 108), (128, 16, 40))
+            }
+        for color in colors:
+            self.animations[color + "_slime"] = load_animation_library("assets/animations/slime")
+            self.animations[color + '_slime_particle'] = {'default': load_animation("assets/particles/slime", (0.1, 0.1, 0.1, 0.1), False)}
+            for animation in self.animations[color + "_slime"]:
+                for img in self.animations[color + "_slime"][animation]['images'] + self.animations[color + '_slime_particle']['default']['images']:
+                    pygame.transform.threshold(dest_surface=img, surface=img, search_color=(29, 35, 93), set_color=colors[color][0], inverse_set=True) # Border color
+                    pygame.transform.threshold(dest_surface=img, surface=img, search_color=(66, 91, 158), set_color=colors[color][1], inverse_set=True) # First layer
+                    pygame.transform.threshold(dest_surface=img, surface=img, search_color=(77, 138, 179), set_color=colors[color][2], inverse_set=True) # Second layer
+                    pygame.transform.threshold(dest_surface=img, surface=img, search_color=(101, 177, 184), set_color=colors[color][3], inverse_set=True) # Primary color
+                    pygame.transform.threshold(dest_surface=img, surface=img, search_color=(51, 65, 138), set_color=colors[color][4], inverse_set=True) # Mouth
+                    pygame.transform.threshold(dest_surface=img, surface=img, search_color=(158, 46, 70), set_color=colors[color][5], inverse_set=True) # Tongue
 
         # Image rescaling
         self.images['compass_spinner'] = pygame.transform.scale(self.images['compass_spinner'], (self.images['compass_spinner'].get_width() * 3, self.images['compass_spinner'].get_height() * 3))
@@ -224,7 +241,12 @@ class Game:
         top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
         bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
         loc = self.maze.get_random_loc("path", (top_left_loc, bottom_right_loc), 'outside')
-        self.enemies.append(Enemy(self, loc, (16, 16), random.uniform(1, 2), 30))
+
+        colors = {'red': 0, 'blue': 0, 'purple': 0}
+        for enemy in self.enemies:
+            colors[enemy.color] += 1
+
+        self.enemies.append(Enemy(self, loc, (16, 16), random.uniform(1, 2), 30, sorted(list(colors), key=lambda color: colors[color])[0]))
 
     def spawn_enemies(self):
         """

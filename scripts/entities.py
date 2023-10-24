@@ -296,9 +296,10 @@ class Player(Entity):
 
 
 class Enemy(Entity):
-    def __init__(self, game, pos, size, speed, health):
+    def __init__(self, game, pos, size, speed, health, color):
         super().__init__(game, pos, size, speed, health)
-        self.animation.change_animation_library(self.game.animations['slime'])
+        self.color = color
+        self.animation.change_animation_library(self.game.animations[self.color + '_slime'])
         self.animation.change_animation("idle")
         self.dirt_timer = 0
         self.path = []
@@ -462,7 +463,7 @@ class Enemy(Entity):
         self.slime_particle_timer += self.game.multi
         if "running" in self.animation.current_animation and self.slime_particle_timer > 5:
             self.slime_particle_timer = 0
-            ParticleHandler.create_particle("slime", self.game, self.get_center(), parent=self, variance=(random.randint(-10, 10), random.randint(-3, 3)))
+            ParticleHandler.create_particle("slime", self.game, self.get_center(), parent=self, variance=(random.randint(-10, 10), random.randint(-3, 3)), color=self.color)
         
     def kill(self):
         """
