@@ -93,6 +93,7 @@ class Game:
         self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=25)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
         self.enemies = []
+        self.spawn_timer = 0
         self.spikes = []
         self.treasure = Treasure(self)
         self.gold = 0
@@ -469,9 +470,15 @@ class Game:
                     loc = self.maze.get_random_loc("hedge", (top_left_loc, bottom_right_loc))
                     if random.random() < 0.1:
                         ParticleHandler.create_particle("bee", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.5))
-                    else:
-                        ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.9))
+                    ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.9))
                 
+                # Randomly spawns enemies
+                self.spawn_timer = max(self.spawn_timer - self.dt, 0)
+                if self.spawn_timer == 0:
+                    if len(self.enemies) - 1 < self.wave:
+                        self.create_enemy()
+                        self.spawn_timer = 5
+
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
 
