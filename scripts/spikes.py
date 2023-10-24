@@ -39,3 +39,4 @@ class Spike:
             (pos[0] + math.cos(self.angle + math.pi) * self.speed * HEIGHT_MULTI, pos[1] + math.sin(self.angle + math.pi) * self.speed * HEIGHT_MULTI),
             (pos[0] + math.cos(self.angle - math.pi * 0.5) * self.speed * WIDTH_MULTI, pos[1] + math.sin(self.angle - math.pi * 0.5) * self.speed * WIDTH_MULTI),
         ])
+        self.game.glow(self.pos, (205, 205, 255), 7.5 * self.speed)
