@@ -160,6 +160,7 @@ class Player(Entity):
             self.special_attack['timer'] = EXPLOSION_TIMER
             self.special_attack['spike_timer'] = 0
             self.special_attack['explosions'] = 0
+            self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
 
     def get_attack_rect(self):
         """
