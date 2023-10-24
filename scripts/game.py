@@ -53,6 +53,8 @@ class Game:
             'x_key': load_image("assets/images/keys/x_key.png"),
             'textbox': load_image("assets/images/textbox.png"),
             'light': load_image("assets/images/light.png"),
+            'dash_icon': load_image("assets/images/dash_icon.png"),
+            'explode_icon': load_image("assets/images/explode_icon.png"),
         }
 
         # Loads all the animations in
@@ -81,6 +83,11 @@ class Game:
         for img in self.animations['dirt']['default']['images']:
             img.set_alpha(150)
         self.images['grey_screen'].set_alpha(175)
+
+        # Loads in numbers
+        self.number_images = []
+        for i in range(6):
+            self.number_images.append(get_text_surf(size=45, text=str(i), colour=(70, 50, 10)))
 
         # Variables about the game
         self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=25)
@@ -245,6 +252,17 @@ class Game:
         self.larger_display.blit(self.images['gold_pouch'], (15, 105))
         self.larger_display.blit(gold_text, (self.images['gold_pouch'].get_width() + 30, 96 + (gold_text.get_height() // 2)))
 
+    def draw_special_attacks(self):
+        """
+        Draws the special attack icons on to the screen
+        """
+        x = 25
+        self.larger_display.blit(self.images['dash_icon'], (x, self.larger_display.get_height() - 25 - self.images['dash_icon'].get_height()))
+        self.larger_display.blit(self.number_images[5], (x + 77 - self.number_images[5].get_width() // 2, self.larger_display.get_height() - 25 - self.images['dash_icon'].get_height()))
+        x += 15 + self.images['explode_icon'].get_width()
+        self.larger_display.blit(self.images['explode_icon'], (x, self.larger_display.get_height() - 25 - self.images['explode_icon'].get_height()))
+
+
     def draw_screen(self, text):
         """
         Draws a screen with a given text as the center (Used for the pause screen and game over screen)
@@ -385,6 +403,7 @@ class Game:
         self.draw_healthbar()
         self.draw_gold()
         self.compass.draw()
+        self.draw_special_attacks()
 
         # Draws the game over and paused screens
         if self.game_over:
@@ -427,7 +446,7 @@ class Game:
                     self.update_tutorial()
 
                 # Plays the running sound if the player is running
-                if self.player.moving['right'] or self.player.moving['left'] or self.player.moving['up'] or self.player.moving['down']:
+                if (self.player.moving['right'] or self.player.moving['left'] or self.player.moving['up'] or self.player.moving['down']) and self.player.special_attack['name'] == None:
                     AudioPlayer.play_sound("running")
 
                 # Sets the text to not updated as the game is not paused
