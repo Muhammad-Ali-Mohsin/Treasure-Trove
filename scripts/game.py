@@ -48,7 +48,7 @@ class Game:
             'compass_base': load_image("assets/images/compass_base.png"),
             'compass_spinner': load_image("assets/images/compass_spinner.png"),
             'box': load_image("assets/images/box.png"),
-            'grey_screen': pygame.Surface(self.larger_display.get_size()).convert_alpha(),
+            'grey_screen': pygame.Surface(self.display.get_size()).convert_alpha(),
             'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
             'x_key': load_image("assets/images/keys/x_key.png"),
             'textbox': load_image("assets/images/textbox.png"),
@@ -269,7 +269,7 @@ class Game:
         Draws a screen with a given text as the center (Used for the pause screen and game over screen)
         """
         # Draws the grey screen, the box, the return to menu text and the title text
-        self.larger_display.blit(self.images['grey_screen'], (0, 0))
+        self.display.blit(self.images['grey_screen'], (0, 0))
         box_pos = ((self.larger_display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.images['box'].get_height() // 2))
         self.larger_display.blit(self.images['box'], box_pos)
         self.larger_display.blit(text, ((self.larger_display.get_width() // 2) - (text.get_width() // 2), (self.larger_display.get_height() // 2) - (text.get_height() // 2) - 80))
