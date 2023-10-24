@@ -133,7 +133,7 @@ class Player(Entity):
         """
         Makes the player dash forwards
         """
-        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation:
+        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[0] != 0:
             center = self.get_center()
             if "forwards" in self.animation.current_animation:
                 destination = (center[0], center[1] + 1)
@@ -149,18 +149,20 @@ class Player(Entity):
             self.special_attack['timer'] = DASHING_TIMER
             self.special_attack['particle_timer'] = 0
             self.animation.change_animation("dashing")
+            self.game.special_attacks[0] -= 1
 
     def explode(self):
         """
         Makes the player do the explosion attack
         """
-        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation:
+        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[1] != 0:
             self.special_attack['name'] = "explosion"
             self.special_attack['vel'] = [0, 0]
             self.special_attack['timer'] = EXPLOSION_TIMER
             self.special_attack['spike_timer'] = 0
             self.special_attack['explosions'] = 0
             self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
+            self.game.special_attacks[1] -= 1
 
     def get_attack_rect(self):
         """

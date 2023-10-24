@@ -100,6 +100,7 @@ class Game:
         self.killed = 0
         self.paused = False
         self.game_over = False
+        self.special_attacks = [3, 3, 3]
 
         # Variables about the tutorial
         self.tutorial_text_timer = 0
@@ -257,10 +258,10 @@ class Game:
         Draws the special attack icons on to the screen
         """
         x = 25
-        self.larger_display.blit(self.images['dash_icon'], (x, self.larger_display.get_height() - 25 - self.images['dash_icon'].get_height()))
-        self.larger_display.blit(self.number_images[5], (x + 77 - self.number_images[5].get_width() // 2, self.larger_display.get_height() - 25 - self.images['dash_icon'].get_height()))
-        x += 15 + self.images['explode_icon'].get_width()
-        self.larger_display.blit(self.images['explode_icon'], (x, self.larger_display.get_height() - 25 - self.images['explode_icon'].get_height()))
+        for i, icon in enumerate(('dash_icon', 'explode_icon')):
+            self.larger_display.blit(self.images[icon], (x, self.larger_display.get_height() - 25 - self.images[icon].get_height()))
+            self.larger_display.blit(self.number_images[self.special_attacks[i]], (x + 77 - self.number_images[self.special_attacks[i]].get_width() // 2, self.larger_display.get_height() - 25 - self.images[icon].get_height()))
+            x += 15 + self.images[icon].get_width()
 
 
     def draw_screen(self, text):
