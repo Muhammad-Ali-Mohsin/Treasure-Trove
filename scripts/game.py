@@ -55,6 +55,7 @@ class Game:
             'light': load_image("assets/images/light.png"),
             'dash_icon': load_image("assets/images/dash_icon.png"),
             'explode_icon': load_image("assets/images/explode_icon.png"),
+            'spiral_icon': load_image("assets/images/spiral_icon.png"),
         }
 
         # Loads all the animations in
@@ -214,12 +215,14 @@ class Game:
                     if self.paused or self.game_over: 
                         self.transition_timer = -TRANSITION_DURATION
                         self.end_transition = True
-                if event.key == pygame.K_x:
+                if event.key == pygame.K_SPACE:
                     if self.player.animation.current_animation != "death": self.player.attack()
                 if event.key == pygame.K_z:
                     if self.player.animation.current_animation != "death": self.player.dash()
                 if event.key == pygame.K_c:
                     if self.player.animation.current_animation != "death": self.player.explode()
+                if event.key == pygame.K_x:
+                    if self.player.animation.current_animation != "death": self.player.spiral()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = False
@@ -281,7 +284,7 @@ class Game:
         Draws the special attack icons on to the screen
         """
         x = 25
-        for i, icon in enumerate(('dash_icon', 'explode_icon')):
+        for i, icon in enumerate(('dash_icon', 'spiral_icon', 'explode_icon')):
             self.larger_display.blit(self.images[icon], (x, self.larger_display.get_height() - 25 - self.images[icon].get_height()))
             self.larger_display.blit(self.number_images[self.special_attacks[i]], (x + 77 - self.number_images[self.special_attacks[i]].get_width() // 2, self.larger_display.get_height() - 25 - self.images[icon].get_height()))
             x += 15 + self.images[icon].get_width()

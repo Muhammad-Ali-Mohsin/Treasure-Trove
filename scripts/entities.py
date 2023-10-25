@@ -26,6 +26,8 @@ DASHING_VELOCITY = 6.0
 DASHING_TIMER = 0.2
 # This is how long the player explodes for
 EXPLOSION_TIMER = 0.75
+# This is how long the player sweeps for
+SPIRAL_TIMER = 0.75
 
 class Entity:
     def __init__(self, game, loc, size, speed, health):
@@ -143,7 +145,7 @@ class Player(Entity):
                 destination = (center[0] - 1, center[1])
             else:
                 destination = (center[0] + 1, center[1])
-            self.special_attack['name'] = "dashing"
+            self.special_attack['name'] = "dash"
             self.special_attack['vel'] = get_vector((destination, center), DASHING_VELOCITY)
             self.special_attack['last_animation'] = self.animation.current_animation
             self.special_attack['timer'] = DASHING_TIMER
@@ -151,18 +153,30 @@ class Player(Entity):
             self.animation.change_animation("dashing")
             self.game.special_attacks[0] -= 1
 
+    def spiral(self):
+        """
+        Makes the player do the spiral attack
+        """
+        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[1] != 0:
+            self.special_attack['name'] = "spiral"
+            self.special_attack['vel'] = [0, 0]
+            self.special_attack['timer'] = SPIRAL_TIMER
+            self.special_attack['spike_timer'] = 0
+            self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
+            self.game.special_attacks[1] -= 1
+
     def explode(self):
         """
         Makes the player do the explosion attack
         """
-        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[1] != 0:
-            self.special_attack['name'] = "explosion"
+        if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[2] != 0:
+            self.special_attack['name'] = "explode"
             self.special_attack['vel'] = [0, 0]
             self.special_attack['timer'] = EXPLOSION_TIMER
             self.special_attack['spike_timer'] = 0
             self.special_attack['explosions'] = 0
             self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
-            self.game.special_attacks[1] -= 1
+            self.game.special_attacks[2] -= 1
 
     def get_attack_rect(self):
         """
@@ -218,8 +232,8 @@ class Player(Entity):
         Updates the player's movement, attack, animation and particles
         """
         super().update()
-        if "attack" in self.animation.current_animation or self.special_attack['name'] == "dashing":
-            if not self.has_hit or self.special_attack['name'] == "dashing":
+        if "attack" in self.animation.current_animation or self.special_attack['name'] == "dash":
+            if not self.has_hit or self.special_attack['name'] == "dash":
                 # Checks whether there are enemies within the player's attack rect and hits them if so
                 attack_rect = self.get_attack_rect()
                 for enemy in self.game.enemies:
@@ -236,7 +250,7 @@ class Player(Entity):
                         self.game.treasure.open()
 
             # Checks whether the attack animation is over and if so, changes the player to an idle animation
-            if self.animation.done and self.special_attack['name'] != "dashing":
+            if self.animation.done and self.special_attack['name'] != "dash":
                 self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
                 self.animation.done = False
 
@@ -244,24 +258,38 @@ class Player(Entity):
         if self.special_attack['name'] != None:
             self.special_attack['timer'] = max(self.special_attack['timer'] - self.game.dt, 0)
 
-            # Creates particles if the special attack is dashing
-            if self.special_attack['name'] == "dashing":
+            # Creates particles if the special attack is dash
+            if self.special_attack['name'] == "dash":
                 self.special_attack['particle_timer'] = max(self.special_attack['particle_timer'] - self.game.dt, 0)
                 if self.special_attack['particle_timer'] == 0:
                     ParticleHandler.create_particle("player_dashing", self.game, self.get_center())
                     self.special_attack['particle_timer'] = 0.02
 
-            # Creates spikes if the special attack is explosion
-            if self.special_attack['name'] == "explosion":
+            # Creates spikes if the special attack is explode
+            if self.special_attack['name'] == "explode":
                 self.special_attack['spike_timer'] = max(self.special_attack['spike_timer'] - self.game.dt, 0)
                 if self.special_attack['spike_timer'] == 0:
                     for i in range(25):
                         self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(2.5, 3.5), (140, 0, 0), can_damage=True))
                     self.special_attack['spike_timer'] = 0.25
 
+            # Creates spikes if the special attack is spiral
+            if self.special_attack['name'] == "spiral":
+                self.special_attack['spike_timer'] = max(self.special_attack['spike_timer'] - self.game.dt, 0)
+                angle = (self.special_attack['timer'] / SPIRAL_TIMER) * 2 * math.pi
+                angle2 = (angle + math.pi) % (2 * math.pi)
+                if self.special_attack['spike_timer'] == 0:
+                    center = self.get_center()
+                    pos = (center[0] + math.cos(angle) * 20, center[1] + math.sin(angle) * 20)
+                    pos2 = (center[0] + math.cos(angle2) * 20, center[1] + math.sin(angle2) * 20)
+                    self.game.spikes.append(Spike(self.game, pos2, angle2 + random.uniform(-0.5, 0.5), random.uniform(2.5, 3.5), (50, 125, 140), can_damage=True))
+                    self.game.spikes.append(Spike(self.game, pos, angle + random.uniform(-0.5, 0.5), random.uniform(2.5, 3.5), (50, 125, 140), can_damage=True))
+                    self.special_attack['spike_timer'] = 0.01
+
+
             # Ends the player's special attack if time has run out
             if self.special_attack['timer'] == 0:
-                if self.special_attack['name'] == "dashing":
+                if self.special_attack['name'] == "dash":
                     self.animation.change_animation(self.special_attack['last_animation'])
                     for i in range(10):
                         self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), 2, (20, 16, 32)))

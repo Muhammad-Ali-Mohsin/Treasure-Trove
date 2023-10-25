@@ -46,7 +46,7 @@ class Treasure:
             self.reset()
             self.released_gold = False
             self.game.wave += 1
-            self.game.special_attacks = [5, 5]
+            self.game.special_attacks = [5, 5, 5]
 
     def draw(self):
         img = self.animation.get_img()
