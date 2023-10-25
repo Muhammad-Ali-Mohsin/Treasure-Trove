@@ -181,6 +181,7 @@ class Game:
         self.time = 90 # Midday
 
     def glow(self, pos, color, radius):
+        radius = round(radius)
         if (color, radius) not in self.light_images:
             img = pygame.transform.scale(self.images['light'].copy(), (radius * 2, radius * 2))
             img.set_colorkey((0, 0, 0))
