@@ -9,6 +9,7 @@ COMPASS_PADDING = 30
 class HUD:
     def __init__(self, game):
         self.game = game
+        self.compass_angle = 0
         self.text_updated = False
         self.text = {
             'paused': get_text_surf(size=70, text="Paused", colour=(172, 116, 27)), 
@@ -46,7 +47,7 @@ class HUD:
         displacement = (player_loc[0] - self.game.treasure.loc[0], player_loc[1] - self.game.treasure.loc[1])
 
         if player_loc == self.game.treasure.loc:
-            angle = (self.angle + round(10 * self.game.multi)) % 360
+            angle = (self.compass_angle + round(10 * self.game.multi)) % 360
         elif displacement[0] == 0:
             angle = 180 if displacement[1] < 0 else 0
         elif displacement[1] == 0:
@@ -65,6 +66,8 @@ class HUD:
                     angle = 90 - angle
                 else: # This means the player is above the treasure
                     angle = 90 + angle
+        
+        self.compass_angle = angle
 
         self.game.larger_display.blit(self.game.images['compass_base'], (self.game.larger_display.get_width() - self.game.images['compass_base'].get_width() - COMPASS_PADDING, COMPASS_PADDING))
         # Rotates the spinner image by the angle towards treasure and subtracts 45 from angle as the spinner is already rotated 45 degrees clockwise in the image
