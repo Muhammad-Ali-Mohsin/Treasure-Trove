@@ -4,10 +4,10 @@ import random
 import pygame
 
 from scripts.animations import AnimationHandler, load_animation, load_animation_library
-from scripts.compass import Compass
+from scripts.hud import HUD
 from scripts.entities import Player, Enemy
 from scripts.maze import generate_maze
-from scripts.particles import ParticleHandler
+from scripts.effects import ParticleHandler
 from scripts.treasure import Treasure
 from scripts.utils import AudioPlayer, load_image, load_images, load_data, save_data, get_text_surf, scale_coord_to_new_res, format_num, update_scores
 
@@ -136,19 +136,8 @@ class Game:
         self.tutorial = [] if 'completed_tutorial' in data['accounts'][data['logged_in']] else tutorial
 
         # Graphical variables
-        self.compass = Compass(self)
+        self.hud = HUD(self)
         self.wind_intensity = random.uniform(-1, 1)
-        self.text_updated = False
-        self.text = {
-            'paused': get_text_surf(size=70, text="Paused", colour=(172, 116, 27)), 
-            'game_over': get_text_surf(size=70, text="Game Over", colour=(172, 116, 27)),
-            'return': get_text_surf(size=20, text="Press Backspace to return to Main Menu", colour=(172, 116, 27)),
-            'wave_label': get_text_surf(size=30, text=f"Wave:", colour=(172, 116, 27)),
-            'killed_label': get_text_surf(size=30, text=f"Enemies Killed:", colour=(172, 116, 27)),
-            'remaining_label': get_text_surf(size=30, text=f"Enemies Remaining:", colour=(172, 116, 27)),
-            'gold_label': get_text_surf(size=30, text=f"Gold collected:", colour=(172, 116, 27))
-            }
-        self.update_text()
 
         # Loads the background music and ambience and plays it on a loop
         music = pygame.mixer.Sound("assets/sfx/music.wav")
@@ -265,57 +254,6 @@ class Game:
         """
         self.screen_shake = [magnitude, duration]
 
-    def draw_healthbar(self):
-        """
-        Draws the healthbar image as as well as the player's health
-        """
-        pygame.draw.rect(self.larger_display, (255, 0, 0), (84, 42, (self.player.health / 100) * 231, 18))
-        self.larger_display.blit(self.images['healthbar'], (15, 15))
-
-    def draw_gold(self):
-        """
-        Draws the player's gold onto the screen
-        """
-        gold_text = get_text_surf(size=45, text=f"{format_num(self.gold)} gold", colour=(255, 202, 24))
-        self.larger_display.blit(self.images['gold_pouch'], (15, 105))
-        self.larger_display.blit(gold_text, (self.images['gold_pouch'].get_width() + 30, 96 + (gold_text.get_height() // 2)))
-
-    def draw_special_attacks(self):
-        """
-        Draws the special attack icons on to the screen
-        """
-        x = 25
-        for i, icon in enumerate(('dash_icon', 'spiral_icon', 'explode_icon')):
-            self.larger_display.blit(self.images[icon], (x, self.larger_display.get_height() - 25 - self.images[icon].get_height()))
-            self.larger_display.blit(self.number_images[self.special_attacks[i]], (x + 77 - self.number_images[self.special_attacks[i]].get_width() // 2, self.larger_display.get_height() - 25 - self.images[icon].get_height()))
-            x += 15 + self.images[icon].get_width()
-
-
-    def draw_screen(self, text):
-        """
-        Draws a screen with a given text as the center (Used for the pause screen and game over screen)
-        """
-        # Draws the grey screen, the box, the return to menu text and the title text
-        self.display.blit(self.images['grey_screen'], (0, 0))
-        box_pos = ((self.larger_display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.images['box'].get_height() // 2))
-        self.larger_display.blit(self.images['box'], box_pos)
-        self.larger_display.blit(text, ((self.larger_display.get_width() // 2) - (text.get_width() // 2), (self.larger_display.get_height() // 2) - (text.get_height() // 2) - 80))
-        self.larger_display.blit(self.text['return'], ((self.larger_display.get_width() // 2) - (self.text['return'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.text['return'].get_height() // 2) + 120))
-
-        # Draws the metrics onto the screen
-        for i, metric in enumerate(('wave', 'killed', 'remaining', 'gold')):
-            self.larger_display.blit(self.text[metric + '_label'], (box_pos[0] + 100, (self.larger_display.get_height() // 2) - (self.text[metric + '_label'].get_height() // 2) + (i * 30) - 20))
-            self.larger_display.blit(self.text[metric], (box_pos[0] + self.images['box'].get_width() - (self.text[metric].get_width() // 2) - 100, (self.larger_display.get_height() // 2) - (self.text[metric].get_height() // 2) + (i * 30) - 20))
-
-    def update_text(self):
-        """
-        Updates the text surfaces that are drawn during the pause and game over screens
-        """
-        self.text['wave'] = get_text_surf(size=30, text=str(self.wave), colour=(172, 116, 27))
-        self.text['killed'] = get_text_surf(size=30, text=str(self.killed), colour=(172, 116, 27))
-        self.text['remaining'] = get_text_surf(size=30, text=str(len(self.enemies)), colour=(172, 116, 27))
-        self.text['gold'] = get_text_surf(size=30, text=format_num(self.gold), colour=(172, 116, 27))
-
     def update_tutorial(self):
         """
         Updates the tutorial by updating the text and the stage of the tutorial
@@ -418,6 +356,9 @@ class Game:
         for spike in self.spikes:
             spike.draw()
 
+        # Draws the HUD
+        self.hud.update()
+
         # Draws the tutorial
         if len(self.tutorial) != 0:
             pos = scale_coord_to_new_res((self.player.pos[0] + self.player.size[0] // 2 - self.camera_displacement[0], self.player.pos[1] - self.camera_displacement[1] - 5), self.display.get_size(), self.larger_display.get_size())
@@ -426,18 +367,6 @@ class Game:
                 self.larger_display.blit(self.tutorial[0]['text_surf'], (self.larger_display.get_width() // 2 - self.tutorial[0]['text_surf'].get_width() // 2, self.larger_display.get_height() - 80))
             if 'img' in self.tutorial[0]:
                 self.larger_display.blit(self.images[self.tutorial[0]['img']], (pos[0] - self.images[self.tutorial[0]['img']].get_width() // 2, pos[1] - self.images[self.tutorial[0]['img']].get_height()))
-
-        # Draws the HUD
-        self.draw_healthbar()
-        self.draw_gold()
-        self.compass.draw()
-        self.draw_special_attacks()
-
-        # Draws the game over and paused screens
-        if self.game_over:
-            self.draw_screen(self.text['game_over'])
-        elif self.paused:
-            self.draw_screen(self.text['paused'])
 
         # Draws the transition
         if self.transition_timer != TRANSITION_DURATION:
@@ -476,9 +405,6 @@ class Game:
                 # Plays the running sound if the player is running
                 if (self.player.moving['right'] or self.player.moving['left'] or self.player.moving['up'] or self.player.moving['down']) and self.player.special_attack['name'] == None:
                     AudioPlayer.play_sound("running")
-
-                # Sets the text to not updated as the game is not paused
-                if self.text_updated: self.text_updated = False
 
                 # Counts down the screen shake
                 self.screen_shake[1] = max(self.screen_shake[1] - self.dt, 0)
@@ -528,16 +454,10 @@ class Game:
                     update_scores((data['logged_in'], self.gold))
 
                 self.treasure.update()
-                self.compass.update()
 
                 # Calculates the camera displacement
                 self.camera_displacement[0] = int(self.player.pos[0] - (self.display.get_width() // 2))
                 self.camera_displacement[1] = int(self.player.pos[1] - (self.display.get_height() // 2))
-
-            # Runs after the game ends or the game is paused and updates the text
-            elif not self.text_updated:
-                self.update_text()
-                self.text_updated = True
 
             # Decrements the transition timer and draws the transition   
             self.transition_timer = min(self.transition_timer + self.dt, TRANSITION_DURATION)

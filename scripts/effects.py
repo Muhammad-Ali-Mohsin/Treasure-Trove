@@ -1,12 +1,18 @@
 import math
 import random
+import pygame
 
 from scripts.animations import AnimationHandler
 from scripts.utils import AudioPlayer, get_vector
 
+# Particle Constants
 EXPERIENCE_TARGET_POINT = (17, 10)
 GOLD_TARGET_POINT = (15, 40)
 DISTANCE_FROM_TARGET = 2
+
+# Spikes Constants
+SPIKE_WIDTH_MULTI = 0.75
+SPIKE_HEIGHT_MULTI = 3
 
 class Particle:
     def __init__(self, game, pos):
@@ -201,3 +207,40 @@ class ParticleHandler:
         """
         AnimationHandler.kill_animation(particle.animation)
         ParticleHandler.particles.remove(particle)
+
+
+class Spike:
+    def __init__(self, game, pos, angle, speed, color, can_damage=False):
+        self.game = game
+        self.pos = list(pos)
+        self.timer = None
+        self.angle = angle
+        self.speed = speed
+        self.color = color
+        self.can_damage = can_damage
+
+    def get_rect(self):
+        return pygame.Rect(*self.pos, self.speed * SPIKE_HEIGHT_MULTI, self.speed * SPIKE_HEIGHT_MULTI)
+
+    def update(self):
+        self.pos[0] += math.cos(self.angle) * self.speed * self.game.multi
+        self.pos[1] += math.sin(self.angle) * self.speed * self.game.multi
+        self.speed -= self.game.dt * 3
+        if self.can_damage:
+            rect = self.get_rect()
+            for enemy in self.game.enemies:
+                if rect.colliderect(enemy.get_rect()):
+                    enemy.hit()
+
+    def draw(self):
+        """
+        Draws the spike onto the display
+        """
+        pos = (self.pos[0] - self.game.camera_displacement[0], self.pos[1] - self.game.camera_displacement[1])
+        pygame.draw.polygon(self.game.display, self.color, [
+            (pos[0] + math.cos(self.angle) * self.speed * SPIKE_HEIGHT_MULTI, pos[1] + math.sin(self.angle) * self.speed * SPIKE_HEIGHT_MULTI),
+            (pos[0] + math.cos(self.angle + math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI, pos[1] + math.sin(self.angle + math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI),
+            (pos[0] + math.cos(self.angle + math.pi) * self.speed * SPIKE_HEIGHT_MULTI, pos[1] + math.sin(self.angle + math.pi) * self.speed * SPIKE_HEIGHT_MULTI),
+            (pos[0] + math.cos(self.angle - math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI, pos[1] + math.sin(self.angle - math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI),
+        ])
+        self.game.glow(self.pos, (205, 205, 255), 7.5 * self.speed)

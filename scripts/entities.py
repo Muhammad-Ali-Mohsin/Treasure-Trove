@@ -4,9 +4,8 @@ import math
 import pygame
 
 from scripts.animations import AnimationHandler
-from scripts.particles import ParticleHandler
+from scripts.effects import ParticleHandler, Spike
 from scripts.utils import AudioPlayer, get_vector
-from scripts.spikes import Spike
 
 # This is the maximum distance from the center of a tile that an enemy can be for it to be considered in the center of that tile
 MAX_DISTANCE = 2

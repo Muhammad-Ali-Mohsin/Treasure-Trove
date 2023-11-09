@@ -4,7 +4,7 @@ import math
 import pygame
 
 from scripts.animations import AnimationHandler
-from scripts.particles import ParticleHandler
+from scripts.effects import ParticleHandler
 from scripts.utils import AudioPlayer
 
 class Treasure:
