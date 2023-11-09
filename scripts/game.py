@@ -308,7 +308,7 @@ class Game:
         # Defines the color scales for different times
         morning_color = pygame.Vector3(1.0, 0.9, 0.8);
         noon_color = pygame.Vector3(1.0, 1.0, 1.0);
-        evening_color = pygame.Vector3(0.9, 0.4, 0.2);
+        evening_color = pygame.Vector3(0.6, 0.4, 0.2);
         sunset_color = pygame.Vector3(0.2, 0.2, 0.2);
         night_color = pygame.Vector3(0.1, 0.1, 0.2);
 
