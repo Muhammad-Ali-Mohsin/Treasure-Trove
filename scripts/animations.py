@@ -54,7 +54,7 @@ class AnimationHandler:
         """
         Returns a new animation
         """
-        animation = Animation()
+        animation = AnimationManager()
         AnimationHandler.animations.append(animation)
         return animation
 
@@ -65,7 +65,7 @@ class AnimationHandler:
         AnimationHandler.animations.remove(animation)
 
 
-class Animation:
+class AnimationManager:
     def __init__(self):
         self.timer = 0
         self.frame = 0
