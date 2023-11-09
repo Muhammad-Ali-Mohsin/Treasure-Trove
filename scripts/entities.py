@@ -269,7 +269,7 @@ class Player(Entity):
                 self.special_attack['spike_timer'] = max(self.special_attack['spike_timer'] - self.game.dt, 0)
                 if self.special_attack['spike_timer'] == 0:
                     for i in range(25):
-                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(2.5, 3.5), (140, 0, 0), can_damage=True))
+                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(1.5, 2.5), (140, 0, 0), can_damage=True))
                     self.special_attack['spike_timer'] = 0.25
 
             # Creates spikes if the special attack is spiral
@@ -281,8 +281,8 @@ class Player(Entity):
                     center = self.get_center()
                     pos = (center[0] + math.cos(angle) * 20, center[1] + math.sin(angle) * 20)
                     pos2 = (center[0] + math.cos(angle2) * 20, center[1] + math.sin(angle2) * 20)
-                    self.game.spikes.append(Spike(self.game, pos2, angle2 + random.uniform(-0.5, 0.5), random.uniform(2.5, 3.5), (50, 125, 140), can_damage=True))
-                    self.game.spikes.append(Spike(self.game, pos, angle + random.uniform(-0.5, 0.5), random.uniform(2.5, 3.5), (50, 125, 140), can_damage=True))
+                    self.game.spikes.append(Spike(self.game, pos2, angle2 + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), (50, 125, 140), can_damage=True))
+                    self.game.spikes.append(Spike(self.game, pos, angle + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), (50, 125, 140), can_damage=True))
                     self.special_attack['spike_timer'] = 0.01
 
 
