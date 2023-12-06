@@ -328,9 +328,7 @@ class Enemy(Entity):
         self.color = color
         self.animation.change_animation_library(self.game.animations[self.color + '_slime'])
         self.animation.change_animation("idle")
-        self.dirt_timer = 0
         self.path = []
-        self.attacking = 0
         self.stunned_timer = 0
         self.slime_particle_timer = 0
 
