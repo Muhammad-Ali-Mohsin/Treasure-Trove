@@ -26,7 +26,7 @@ class AudioPlayer:
         sounds_list = os.listdir(path)
         sounds = []
         for filename in sounds_list:
-            sound = pygame.mixer.Sound(path + '/' + filename)
+            sound = pygame.mixer.Sound(os.path.join(path, filename))
             sound.set_volume(volume)
             sounds.append(sound)
         AudioPlayer.sounds[name] = {'sounds': tuple(sounds), 'shuffle': shuffle, 'current': 0}
@@ -140,13 +140,13 @@ def load_images(path):
     """
     Loads all the image within a specified folder
     """
-    img_count = len([*filter(lambda filename: filename[-4:] == ".png", os.listdir(path))])
-    filenames = os.listdir(path)
+    filenames = [*filter(lambda filename: filename[-4:] == ".png", os.listdir(path))]
+    img_count = len(filenames)
     images = []
     for i in range(img_count):
         filename = f"{IMG_NAME}_{i}.png"
         if filename in filenames:
-            img = load_image(f"{path}/{filename}")
+            img = load_image(os.path.join(path, filename))
             images.append(img)
     return images
 
