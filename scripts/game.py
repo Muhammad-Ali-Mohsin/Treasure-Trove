@@ -4,6 +4,8 @@ import math
 
 import pygame
 
+from sympy import symbols, Eq, solve, simplify
+
 from scripts.animations import AnimationHandler, load_animation, load_animation_library
 from scripts.hud import HUD
 from scripts.entities import Player, Enemy
@@ -12,6 +14,26 @@ from scripts.effects import ParticleHandler
 from scripts.utils import AudioPlayer, load_image, load_images, load_data, save_data, get_text_surf, scale_coord_to_new_res, format_num, update_scores
 
 TRANSITION_DURATION = 1
+
+class Maths:
+    def generate_algebra():
+        x = symbols('x')
+        a = random.randint(1, 10)
+        b = random.randint(1, 10)
+        c = random.randint(1, 10)
+        equation = Eq(a * x + b, c)
+        solution = solve(equation, x)
+        return "Solve for x", f"{a}x + {b} = {c}", solution[0]
+    
+    def generate_fraction():
+        fraction = f"{random.randint(1, 100)} / {random.randint(1, 100)}"
+        return "Simplify the following", fraction, simplify(fraction)
+    
+    def generate_arithmetic():
+        expression = str(random.randint(1, 100))
+        for i in range(random.randint(1, 3)):
+            expression += f" {random.choice(['+', '-'])} {random.randint(1, 100)}"
+        return "Simplify the following", expression, eval(expression)
 
 class Treasure:
     def __init__(self, game):
@@ -116,7 +138,8 @@ class Game:
             'dust': {'default': load_animation("assets/particles/dust", (0.1, 0.1, 0.1, 0.1), False)},
             'gold': {'default': load_animation("assets/particles/gold", (10, 10), True)},
             'bee': {'default': load_animation("assets/particles/bee", (0.1, 0.1, 0.1), True)},
-            'player_dashing': {'default': load_animation("assets/particles/player_dashing", (0.05, 0.05, 0.05, 0.05), False)}
+            'player_dashing': {'default': load_animation("assets/particles/player_dashing", (0.05, 0.05, 0.05, 0.05), False)},
+            'plus_one': {'default': load_animation("assets/particles/plus_one", (0.1, 0.1), False)}
         }
 
         # Creates new_animations for the slime variants
@@ -165,7 +188,9 @@ class Game:
         self.killed = 0
         self.paused = False
         self.game_over = False
+        self.maths_popup = False
         self.special_attacks = [3, 3, 3]
+        self.maths_question = {'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255)), 'cursor_timer': 0}
 
         # Variables about the tutorial
         self.tutorial_text_timer = 0
@@ -213,7 +238,7 @@ class Game:
         # Time
         self.dt = 0
         self.last_time = time.time()
-        self.time = 90 # Midday
+        self.time = 115 # Midday
 
     def glow(self, pos, color, radius):
         radius = round(radius)
@@ -247,6 +272,9 @@ class Game:
                     self.player.moving['down'] = True
                 if event.key == pygame.K_ESCAPE:
                     self.paused = not self.paused
+                if event.key == pygame.K_h:
+                    self.maths_popup = not self.maths_popup
+                    self.generate_maths_question()
                 if event.key == pygame.K_BACKSPACE:
                     if self.paused or self.game_over: 
                         self.transition_timer = -TRANSITION_DURATION
@@ -259,6 +287,8 @@ class Game:
                     if self.player.animation.current_animation != "death": self.player.explode()
                 if event.key == pygame.K_x:
                     if self.player.animation.current_animation != "death": self.player.spiral()
+                if self.maths_popup:
+                    self.maths_textbox_update(event)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = False
@@ -353,29 +383,77 @@ class Game:
         """
         # Defines the color scales for different times
         morning_color = pygame.Vector3(1.0, 0.9, 0.8);
-        noon_color = pygame.Vector3(1.0, 1.0, 1.0);
-        evening_color = pygame.Vector3(0.6, 0.4, 0.2);
-        sunset_color = pygame.Vector3(0.2, 0.2, 0.2);
-        night_color = pygame.Vector3(0.1, 0.1, 0.2);
+        midday_color = pygame.Vector3(1.0, 1.0, 1.0);
+        evening_color = pygame.Vector3(0.55, 0.4, 0.3);
+        night_color = pygame.Vector3(0.2, 0.15, 0.15);
 
         daytime = (self.time / 180) % 1
-        
-        # Interpolates between colors based on time of day
-        daylight = 0
-        if daytime < 0.2:
-            daylight = night_color
-        elif daytime < 0.35:
-            daylight = ((daytime - 0.2) * (morning_color - night_color) / (0.35 - 0.2)) + night_color
-        elif daytime < 0.7:
-            daylight = ((daytime - 0.35) * (noon_color - morning_color) / (0.7 - 0.35)) + morning_color
-        elif daytime < 0.75:
-            daylight = ((daytime - 0.7) * (evening_color - noon_color) / (0.75 - 0.7)) + noon_color
-        elif daytime < 0.8:
-            daylight = ((daytime - 0.75) * (sunset_color - evening_color) / (0.8 - 0.75)) + evening_color
-        else:
-            daylight = ((daytime - 0.8) * (night_color - sunset_color) / (1.0 - 0.8)) + sunset_color
-        
+        ranges = ((0, 0.2), (0.2, 0.25), (0.25, 0.5), (0.5, 0.7), (0.7, 0.8), (0.8, 0.85), (0.85, 1))
+        colors = ((night_color, night_color), (night_color, morning_color), (morning_color, midday_color), (midday_color, midday_color), (midday_color, evening_color), (evening_color, night_color), (night_color, night_color))
+
+        for i, range in enumerate(ranges):
+            if daytime >= range[0] and daytime <= range[1]:
+                daylight = ((daytime - range[0]) / (range[1] - range[0]) * (colors[i][1] - colors[i][0])) + colors[i][0]
+                break
+
         return daylight
+    
+    def generate_maths_question(self):
+        types = [Maths.generate_algebra, Maths.generate_arithmetic, Maths.generate_fraction]
+        question = random.choice(types)()
+        font = pygame.font.SysFont(None, 30)
+        self.maths_question = {
+            'text': "", 
+            'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255)), 
+            'cursor_timer': 0,
+            'instruction_surf': get_text_surf(size=45, text=question[0], colour=(172, 116, 27)),
+            'question_surf': get_text_surf(size=35, text=question[1], colour=(172, 116, 27), font=font),
+            'answer_surf': get_text_surf(size=30, text=str(question[2]), colour=(172, 116, 27)),
+            'answer': question[2]
+            }
+        
+    def draw_maths_popup(self):
+        """
+        Draws a screen with a given text as the center (Used for the pause screen and game over screen)
+        """
+        # Draws the grey screen, the box, the return to menu text and the title text
+        self.display.blit(self.images['grey_screen'], (0, 0))
+        box_pos = ((self.larger_display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.images['box'].get_height() // 2))
+        self.larger_display.blit(self.images['box'], box_pos)
+        self.larger_display.blit(self.maths_question['instruction_surf'], ((self.larger_display.get_width() // 2) - (self.maths_question['instruction_surf'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.maths_question['instruction_surf'].get_height() // 2) - 60))
+        self.larger_display.blit(self.maths_question['question_surf'], ((self.larger_display.get_width() // 2) - (self.maths_question['question_surf'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.maths_question['question_surf'].get_height() // 2) - 20))
+        
+        rect = pygame.Rect((self.larger_display.get_width() // 2) - 150, (self.larger_display.get_height() // 2) + 50, 300, 40)
+        outline_rect = pygame.Rect((self.larger_display.get_width() // 2) - 155, (self.larger_display.get_height() // 2) + 45, 310, 50)
+        pygame.draw.rect(self.larger_display, (110, 74, 17), outline_rect)
+        pygame.draw.rect(self.larger_display, (172, 116, 27), rect)
+        self.larger_display.blit(self.maths_question['text_surf'], (rect.centerx - (self.maths_question['text_surf'].get_width() // 2), rect.centery - (self.maths_question['text_surf'].get_height() // 2)))
+
+        
+        self.maths_question['cursor_timer'] += self.dt
+        if self.maths_question['cursor_timer'] >= 1:
+            self.maths_question['cursor_timer'] = 0
+        if self.maths_question['cursor_timer'] <= 0.5:
+            pygame.draw.rect(self.larger_display, (110, 74, 17), (rect.centerx + (self.maths_question['text_surf'].get_width() // 2) + 5, rect.centery - 13, 3, 26))
+
+    def maths_textbox_update(self, event):
+        """
+        Runs when the maths textbox is updated
+        """
+        if event.key == pygame.K_BACKSPACE:
+            self.maths_question['text'] = self.maths_question['text'][:-1]
+        elif event.key == pygame.K_RETURN:
+            if eval(f"{self.maths_question['text']} - {self.maths_question['answer']}") == 0:
+                self.maths_popup = False
+                for i in range(3):
+                    ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (i / 2), random.uniform(-4, -2)), attack_type=i)
+            else:
+                self.generate_maths_question()
+        elif event.unicode.lower() in "0123456789/-":
+            if len(self.maths_question['text']) <= 10:
+                self.maths_question['text'] = self.maths_question['text'] + event.unicode
+        font = pygame.font.SysFont(None, 30)
+        self.maths_question['text_surf'] = get_text_surf(size=30, text=self.maths_question['text'], colour=(240, 230, 190), font=font)
 
     def update_display(self):
         """
@@ -404,6 +482,10 @@ class Game:
 
         # Draws the HUD
         self.hud.update()
+
+        # Draws the maths popup
+        if self.maths_popup and not (self.paused or self.game_over):
+            self.draw_maths_popup()
 
         # Draws the tutorial
         if len(self.tutorial) != 0:
@@ -444,7 +526,7 @@ class Game:
             self.last_time = time.time()
             self.time += self.dt
             self.multi = self.dt * 60
-            if not self.paused and not self.game_over:
+            if not self.paused and not self.game_over and not self.maths_popup:
                 if len(self.tutorial) != 0:
                     self.update_tutorial()
 

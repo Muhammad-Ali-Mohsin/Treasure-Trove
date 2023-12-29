@@ -8,6 +8,9 @@ from scripts.utils import AudioPlayer, get_vector
 # Particle Constants
 EXPERIENCE_TARGET_POINT = (17, 10)
 GOLD_TARGET_POINT = (15, 40)
+DASH_TARGET_POINT = (25, 210)
+SPIRAL_TARGET_POINT = (68, 200)
+EXPLOSION_TARGET_POINT = (105, 200)
 DISTANCE_FROM_TARGET = 2
 
 # Spikes Constants
@@ -95,6 +98,20 @@ class Gold(StatParticle):
         AudioPlayer.play_sound("gold")
 
 
+class PlusOne(StatParticle):
+    def __init__(self, game, pos, kwargs):
+        super().__init__(game, pos, kwargs)
+        self.attack_type = kwargs['attack_type']
+        self.target = (DASH_TARGET_POINT, SPIRAL_TARGET_POINT, EXPLOSION_TARGET_POINT)[self.attack_type]
+        self.animation.change_animation_library(self.game.animations['plus_one'])
+        AudioPlayer.play_sound("treasure")
+
+    def target_reached(self):
+        super().target_reached()
+        self.game.special_attacks[self.attack_type] = min(5, self.game.special_attacks[self.attack_type] + 1)
+        AudioPlayer.play_sound("gold")
+
+
 class Dirt(Particle):
     def __init__(self, game, pos, kwargs):
         super().__init__(game, pos)
@@ -174,7 +191,7 @@ class Bee(Particle):
 
 class ParticleHandler:
     particles = []
-    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold, 'bee': Bee, 'player_dashing': PlayerDashing}
+    particle_types = {'dirt': Dirt, 'leaf': Leaf, 'experience': Experience, 'slime': Slime, 'dust': Dust, 'gold': Gold, 'bee': Bee, 'player_dashing': PlayerDashing, 'plus_one': PlusOne}
 
     def update():
         """
