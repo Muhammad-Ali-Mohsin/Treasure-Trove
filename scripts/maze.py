@@ -29,15 +29,17 @@ class Maze:
         neighbours = []
         loc = tile['loc']
 
+        # Gets the neighbours to the left and right
         for x in (1, -1):
             if (loc[0] + x, loc[1]) in self.tiles:
                 neighbours.append(self.tiles[(loc[0] + x, loc[1])])
         
+        # Gets the neighbours on the top and bottom
         for y in (1, -1):
             if (loc[0], loc[1] + y) in self.tiles:
                 neighbours.append(self.tiles[(loc[0], loc[1] + y)])
 
-
+        # Retrieves the diagonal neighbours
         if diagonals:
             for x in (1, -1):
                 for y in (1, -1):
@@ -116,8 +118,10 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
     """
     Uses a Randomised depth first search algorithm to generate a maze
     """
+    # Creates the maze object
     maze = Maze(game, tile_size, maze_resolution)
 
+    # Fills in the maze with hedges
     for x in range(maze_resolution[0]):
         for y in range(maze_resolution[1]):
             maze.tiles[(x, y)] = {
@@ -125,24 +129,6 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
                 'type': "hedge",
                 'img_index': 0
             }
-
-    def get_neighbours(tile):
-        """
-        Returns the neighbours which are 2 steps in either direction as well as the tile 1 step in that direction
-        This represents the neighbouring tile and the wall to get to that tile
-        """
-        neighbours = []
-        loc = tile["loc"]
-
-        for x in (2, -2):
-            if (loc[0] + x, loc[1]) in maze.tiles:
-                neighbours.append((maze.tiles[(loc[0] + x, loc[1])], maze.tiles[(loc[0] + (x / 2), loc[1])]))
-
-        for y in (2, -2):
-            if (loc[0], loc[1] + y) in maze.tiles:
-                neighbours.append((maze.tiles[(loc[0], loc[1] + y)], maze.tiles[(loc[0], loc[1] + (y / 2))]))
-
-        return neighbours
 
     # Picks a random starting tile and adds it to the stack
     starting_tile = maze.tiles[random.choice(list(maze.tiles))]
@@ -153,9 +139,18 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
 
         # Pops a tile off the stack
         current_tile = maze_stack.pop()
+        neighbours = []
+        loc = current_tile["loc"]
 
-        # Gets the neighbours of the current tile and filters out any tiles which have been made into a path
-        neighbours = list(filter(lambda neighbour: neighbour[0]['type'] != "path", get_neighbours(current_tile)))
+        # Adds the neighbours to the left and right of the tile
+        for x in (2, -2):
+            if (loc[0] + x, loc[1]) in maze.tiles and maze.tiles[(loc[0] + x, loc[1])]['type'] != "path":
+                neighbours.append((maze.tiles[(loc[0] + x, loc[1])], maze.tiles[(loc[0] + (x / 2), loc[1])]))
+
+        # Adds the neighbours to the top and bottom of the tile
+        for y in (2, -2):
+            if (loc[0], loc[1] + y) in maze.tiles and maze.tiles[(loc[0], loc[1] + y)]['type'] != "path":
+                neighbours.append((maze.tiles[(loc[0], loc[1] + y)], maze.tiles[(loc[0], loc[1] + (y / 2))]))
 
         if len(neighbours) != 0:
             # Adds the current tile back to the stack so it can be backtracked along
@@ -196,7 +191,7 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
         for y in (-1, maze_resolution[1]):
             maze.tiles[(x - 1, y)] = {'loc': (x - 1, y), 'type': "hedge", 'img_index': 0}
 
-    # Changes the variant of the tile based on it's surrounding tiles
+    # Changes the variant of the tile based on its surrounding tiles
     # This is a list of the possible combinations that can be had with surrounding walls
     combinations = (
         ['right', 'left', 'bottom', 'top'],
