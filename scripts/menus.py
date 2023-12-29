@@ -63,13 +63,17 @@ class Menu:
         # Draws the buttons onto the screen
         for _id in self.buttons:
             button = self.buttons[_id]
-            pygame.draw.rect(self.display, (255, 202, 24) if self.selected == button['id'] else (255, 0, 0), button['rect'])
+            pygame.draw.rect(self.display, (255, 202, 24) if self.selected == button['id'] else (101, 67, 33), button['rect'])
             self.display.blit(button['label'], (button['rect'].centerx - (button['label'].get_width() // 2), button['rect'].centery - (button['label'].get_height() // 2)))
 
         # Draws the textboxes onto the screen
         for _id in self.textboxes:
             textbox = self.textboxes[_id]
-            pygame.draw.rect(self.display, (255, 0, 0), textbox['rect'])
+            if self.selected_textbox != None:
+                color = (255, 202, 24) if self.selected_textbox['id'] == textbox['id'] else (101, 67, 33)
+            else:
+                color = (101, 67, 33)
+            pygame.draw.rect(self.display, color, textbox['rect'])
             self.display.blit(textbox['text_surf'], (textbox['rect'].centerx - (textbox['text_surf'].get_width() // 2), textbox['rect'].centery - (textbox['text_surf'].get_height() // 2)))
 
         # Draws the error message
@@ -125,8 +129,6 @@ class Menu:
                 self.selected = selected
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.kill_screen = True
                 if self.selected_textbox != None:
                     self.textbox_update(event)
 
@@ -164,9 +166,7 @@ class Menu:
         while not self.kill_screen:
             self.dt = (time.time() - self.last_time)
             self.last_time = time.time()
-            self.cursor_timer += self.dt
-            if self.cursor_timer >= 1:
-                self.cursor_timer = 0
+            self.cursor_timer = (self.cursor_timer + self.dt) % 1
             # Calls functions
             self.handle_events()
             self.update_display()
@@ -181,7 +181,7 @@ class MainMenu(Menu):
         super().__init__(window, fps)
         pygame.display.set_caption("Treasure Trove - Main Menu")
 
-        #self.images['bg'] = load_image("assets/images/main_menu.png")
+        self.images['bg'] = load_image("assets/images/main_menu.png")
 
         #Loads all the buttons in
         self.buttons = {}
@@ -189,7 +189,7 @@ class MainMenu(Menu):
             self.buttons[data[1]] = {
                 'label': get_text_surf(size=40, text=data[0], colour=(255, 255, 255)), 
                 'id': data[1],
-                'rect': pygame.Rect(100, (i * 60) + 350, 300, 50)
+                'rect': pygame.Rect(135, (i * 60) + 350, 300, 50)
             }
         
         self.buttons['sign_out'] = {
@@ -207,8 +207,8 @@ class MainMenu(Menu):
             {'surf': get_text_surf(size=20, text=f"Logged in as {current_user}", colour=(255, 255, 255)), 'pos': None}
         ]
 
-        self.text[0]['pos'] = (250 - (self.text[0]['surf'].get_width() // 2), 100)
-        self.text[1]['pos'] = (250 - (self.text[1]['surf'].get_width() // 2), 175)
+        self.text[0]['pos'] = (285 - (self.text[0]['surf'].get_width() // 2), 100)
+        self.text[1]['pos'] = (285 - (self.text[1]['surf'].get_width() // 2), 175)
         self.text[2]['pos'] = (1170 - self.text[2]['surf'].get_width(), self.buttons['sign_out']['rect'].centery - (self.text[2]['surf'].get_height() // 2))
 
     def button_press(self, button):
