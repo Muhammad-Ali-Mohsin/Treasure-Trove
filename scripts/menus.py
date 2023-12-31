@@ -54,7 +54,7 @@ class Menu:
         if "bg" in self.images:
             self.display.blit(pygame.transform.scale(self.images['bg'], self.display.get_size()), (0, 0))
         else:
-            self.display.fill((0, 0, 0))
+            self.display.fill((25, 55, 10))
 
         # Draws the text onto the screen
         for text in self.text:
