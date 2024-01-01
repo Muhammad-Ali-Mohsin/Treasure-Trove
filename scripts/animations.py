@@ -22,10 +22,10 @@ def load_animation_library(animations_path):
     # Loads each animation with their corresponding times
     for animation in animations:
         # Loads the animation times
-        with open(f"{animations_path}/{animation}/data.txt") as f:
+        with open(os.path.join(animations_path, animation, "data.txt"), 'r') as f:
             times = tuple(map(lambda time: float(time), f.readline().split(", ")))
             looped = bool(int(f.readline()))
-        library[animation] = load_animation(f"{animations_path}/{animation}", times, looped)
+        library[animation] = load_animation(os.path.join(animations_path, animation), times, looped)
     
     return library
 
