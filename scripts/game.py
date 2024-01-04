@@ -42,6 +42,7 @@ class Treasure:
         self.animation = AnimationHandler.create_animation()
         self.animation.change_animation_library(self.game.animations['treasure'])
         self.released_gold = False
+        self.popup = False
         self.reset()
     
     def get_rect(self):
@@ -62,10 +63,16 @@ class Treasure:
         AudioPlayer.play_sound("chest")
 
     def update(self):
+        if self.animation.current_animation == "open" and self.animation.frame == len(self.animation.animation_library[self.animation.current_animation]['images']) - 2 and not self.popup:
+            self.game.question_flags['popup'] = True
+            self.game.generate_maths_question()
+            self.popup = True
+
         if self.animation.current_animation == "open" and self.animation.frame == len(self.animation.animation_library[self.animation.current_animation]['images']) - 1 and not self.released_gold:
             for i in range(10):
                 ParticleHandler.create_particle("gold", self.game, ((self.loc[0] * self.game.maze.tile_size) + 8 + random.randint(-5, 5), (self.loc[1] * self.game.maze.tile_size) + 8 + random.randint(-5, 5)), velocity=(random.uniform(2, -2), random.uniform(-4, -2)))
             self.released_gold = True
+
         if self.animation.current_animation == "open" and self.animation.done:
             # Creates dust particles which fly off the treasure to show it's disappearing
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
@@ -73,12 +80,12 @@ class Treasure:
  
             self.reset()
             self.released_gold = False
+            self.popup = False
             self.game.wave += 1
-            self.game.special_attacks = [5, 5, 5]
 
     def draw(self):
         img = self.animation.get_img()
-        pos = ((self.loc[0] * self.game.maze.tile_size) - self.game.camera_displacement[0], (self.loc[1] * self.game.maze.tile_size) - self.game.camera_displacement[1])
+        pos = [(self.loc[i] * self.game.maze.tile_size) - self.game.camera_displacement[i] for i in range(2)]
         self.game.display.blit(img, pos)
 
 class Game:
@@ -188,9 +195,9 @@ class Game:
         self.killed = 0
         self.paused = False
         self.game_over = False
-        self.maths_popup = False
         self.special_attacks = [3, 3, 3]
         self.maths_question = {'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255)), 'cursor_timer': 0}
+        self.question_flags = {'popup': False, 'correct': [False, False, False], 'last_question': -1}
 
         # Variables about the tutorial
         self.tutorial_text_timer = 0
@@ -262,10 +269,8 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = True
-                    if self.player.animation.current_animation != "death": self.player.animation.flip = True
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                     self.player.moving['right'] = True
-                    if self.player.animation.current_animation != "death": self.player.animation.flip = False
                 if event.key == pygame.K_UP or event.key == pygame.K_w:
                     self.player.moving['up'] = True
                 if event.key == pygame.K_DOWN or event.key == pygame.K_s:
@@ -287,7 +292,7 @@ class Game:
                     if self.player.animation.current_animation != "death": self.player.explode()
                 if event.key == pygame.K_x:
                     if self.player.animation.current_animation != "death": self.player.spiral()
-                if self.maths_popup:
+                if self.question_flags['popup']:
                     self.maths_textbox_update(event)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
@@ -400,7 +405,9 @@ class Game:
     
     def generate_maths_question(self):
         types = [Maths.generate_algebra, Maths.generate_arithmetic, Maths.generate_fraction]
-        question = random.choice(types)()
+        self.question_flags['last_question'] = (self.question_flags['last_question'] + 1) % 3
+        print(self.question_flags['last_question'])
+        question = types[self.question_flags['last_question']]()
         font = pygame.font.SysFont(None, 30)
         self.maths_question = {
             'text': "", 
@@ -408,7 +415,6 @@ class Game:
             'cursor_timer': 0,
             'instruction_surf': get_text_surf(size=45, text=question[0], colour=(172, 116, 27)),
             'question_surf': get_text_surf(size=35, text=question[1], colour=(172, 116, 27), font=font),
-            'answer_surf': get_text_surf(size=30, text=str(question[2]), colour=(172, 116, 27)),
             'answer': question[2]
             }
         
@@ -429,7 +435,6 @@ class Game:
         pygame.draw.rect(self.larger_display, (172, 116, 27), rect)
         self.larger_display.blit(self.maths_question['text_surf'], (rect.centerx - (self.maths_question['text_surf'].get_width() // 2), rect.centery - (self.maths_question['text_surf'].get_height() // 2)))
 
-        
         self.maths_question['cursor_timer'] += self.dt
         if self.maths_question['cursor_timer'] >= 1:
             self.maths_question['cursor_timer'] = 0
@@ -444,11 +449,12 @@ class Game:
             self.maths_question['text'] = self.maths_question['text'][:-1]
         elif event.key == pygame.K_RETURN:
             if eval(f"{self.maths_question['text']} - {self.maths_question['answer']}") == 0:
-                self.maths_popup = False
-                for i in range(3):
-                    ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (i / 2), random.uniform(-4, -2)), attack_type=i)
+                ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (self.question_flags['last_question'] / 2), random.uniform(-4, -2)), attack_type=self.question_flags['last_question'])
+            if self.question_flags['last_question'] == 2:
+                self.question_flags['popup'] = False
             else:
                 self.generate_maths_question()
+
         elif event.unicode.lower() in "0123456789/-":
             if len(self.maths_question['text']) <= 10:
                 self.maths_question['text'] = self.maths_question['text'] + event.unicode
@@ -484,7 +490,7 @@ class Game:
         self.hud.update()
 
         # Draws the maths popup
-        if self.maths_popup and not (self.paused or self.game_over):
+        if self.question_flags['popup'] and not (self.paused or self.game_over):
             self.draw_maths_popup()
 
         # Draws the tutorial
@@ -501,7 +507,7 @@ class Game:
             self.transition_surf.fill((0, 0, 0))
             pygame.draw.circle(self.transition_surf, (255, 255, 255), (self.transition_surf.get_width() // 2, self.transition_surf.get_height() // 2), ((self.transition_surf.get_width() * 3/4) * (abs(self.transition_timer) / TRANSITION_DURATION)))
 
-            # Blits the transition surface onto the larger surf and then both surfaces onto the window
+            # Blits the transition surface onto the larger display
             self.larger_display.blit(self.transition_surf, (0, 0))
 
         if self.screen_shake[1] > 0:
@@ -509,7 +515,7 @@ class Game:
             self.display.blit(self.display, screen_shake)
 
         fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        self.larger_display.blit(fps_text, (10, 10))
+        #self.larger_display.blit(fps_text, (10, 10))
 
         self.window.update(uniforms={
             'screen_texture': self.display, 'ldisplay_texture': self.larger_display, 'light_map': self.light_map, 
@@ -526,7 +532,7 @@ class Game:
             self.last_time = time.time()
             self.time += self.dt
             self.multi = self.dt * 60
-            if not self.paused and not self.game_over and not self.maths_popup:
+            if not self.paused and not self.game_over and not self.question_flags['popup']:
                 if len(self.tutorial) != 0:
                     self.update_tutorial()
 
