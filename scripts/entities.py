@@ -30,9 +30,9 @@ SPIRAL_TIMER = 0.75
 
 class Entity:
     def __init__(self, game, loc, size, speed, health):
-        pos = ((loc[0] * game.maze.tile_size) + (game.maze.tile_size // 2) - (size[0] // 2), (loc[1] * game.maze.tile_size) + (game.maze.tile_size // 2) - (size[1] // 2))
+        pos = [(loc[0] * game.maze.tile_size) + (game.maze.tile_size // 2) - (size[0] // 2), (loc[1] * game.maze.tile_size) + (game.maze.tile_size // 2) - (size[1] // 2)]
         self.game = game
-        self.pos = list(pos)
+        self.pos = pos
         self.size = size
         self.speed = speed
         self.moving = {'left': False, 'right': False, 'up': False, 'down': False}
@@ -109,6 +109,9 @@ class Entity:
                 else:
                     feet_rect.top = rect.bottom
                 self.pos[1] = feet_rect.bottom - self.size[1]
+
+        if self.moving['right'] and self.animation.current_animation != "death": self.animation.flip = False
+        if self.moving['left'] and self.animation.current_animation != "death": self.animation.flip = True
 
         self.glow_timer = (self.glow_timer + self.game.dt * 2) % (2 * math.pi)
 
@@ -471,8 +474,6 @@ class Enemy(Entity):
         if not self.animation.current_animation == "death":
             if self.moving['right'] or self.moving['left'] or self.moving['up'] or self.moving['down']:
                 self.animation.change_animation("running")
-                if self.moving['right']: self.animation.flip = False
-                if self.moving['left']: self.animation.flip = True
             else:
                 self.animation.change_animation("idle")
         elif self.animation.done:
