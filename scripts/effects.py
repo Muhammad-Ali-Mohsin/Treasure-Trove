@@ -104,12 +104,12 @@ class PlusOne(StatParticle):
         self.attack_type = kwargs['attack_type']
         self.target = (DASH_TARGET_POINT, SPIRAL_TARGET_POINT, EXPLOSION_TARGET_POINT)[self.attack_type]
         self.animation.change_animation_library(self.game.animations['plus_one'])
-        AudioPlayer.play_sound("treasure")
+        AudioPlayer.play_sound("plus_one_spawn")
 
     def target_reached(self):
         super().target_reached()
         self.game.special_attacks[self.attack_type] = min(5, self.game.special_attacks[self.attack_type] + 1)
-        AudioPlayer.play_sound("gold")
+        AudioPlayer.play_sound("plus_one")
 
 
 class Dirt(Particle):
