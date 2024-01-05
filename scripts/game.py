@@ -237,6 +237,8 @@ class Game:
         AudioPlayer.load_sound("gold", "assets/sfx/gold.wav", 0.7)
         AudioPlayer.load_sound("experience", "assets/sfx/experience.wav", 0.3)
         AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.1)
+        AudioPlayer.load_sound("plus_one", "assets/sfx/plus_one.wav", 1)
+        AudioPlayer.load_sound("plus_one_spawn", "assets/sfx/plus_one_spawn.wav", 1)
 
         AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
         AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
@@ -406,7 +408,6 @@ class Game:
     def generate_maths_question(self):
         types = [Maths.generate_algebra, Maths.generate_arithmetic, Maths.generate_fraction]
         self.question_flags['last_question'] = (self.question_flags['last_question'] + 1) % 3
-        print(self.question_flags['last_question'])
         question = types[self.question_flags['last_question']]()
         font = pygame.font.SysFont(None, 30)
         self.maths_question = {
@@ -447,17 +448,24 @@ class Game:
         """
         if event.key == pygame.K_BACKSPACE:
             self.maths_question['text'] = self.maths_question['text'][:-1]
+
         elif event.key == pygame.K_RETURN:
-            if eval(f"{self.maths_question['text']} - {self.maths_question['answer']}") == 0:
-                ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (self.question_flags['last_question'] / 2), random.uniform(-4, -2)), attack_type=self.question_flags['last_question'])
+            if str(self.maths_question['text']) == str(self.maths_question['answer']):
+                self.question_flags['correct'][self.question_flags['last_question']] = True
+            
             if self.question_flags['last_question'] == 2:
                 self.question_flags['popup'] = False
+                for i in range(len(self.question_flags['correct'])):
+                    if self.question_flags['correct'][i]:
+                        ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (i / 2), random.uniform(-4, -2)), attack_type=i)
+                self.question_flags['correct'] = [False, False, False]
             else:
                 self.generate_maths_question()
 
         elif event.unicode.lower() in "0123456789/-":
             if len(self.maths_question['text']) <= 10:
                 self.maths_question['text'] = self.maths_question['text'] + event.unicode
+
         font = pygame.font.SysFont(None, 30)
         self.maths_question['text_surf'] = get_text_surf(size=30, text=self.maths_question['text'], colour=(240, 230, 190), font=font)
 
