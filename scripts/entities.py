@@ -373,35 +373,36 @@ class Enemy(Entity):
 
     def calculate_path(self):
         """
-        Uses a Breadth First Search to find the shortest path from the enemy to the player
-        Each node is formatted as [tile location, parent tile location]
+        Uses an A* search to find the shortest path from the enemy to the player
+        Each node is formatted as [tile location, parent tile location, cost, Manhattan distance + cost]
         """
         # Finds the starting tile the enemy is in and the destination tile which the player is in
         starting_tile_loc = self.game.maze.get_loc(self.get_center())
         destination = self.game.maze.get_loc((self.game.player.pos[0] + self.game.player.size[0] // 2, self.game.player.pos[1] + self.game.player.size[1] - (FEET_HEIGHT // 2)))
 
-        # Initialises tile list to starting position
-        node_list = [(starting_tile_loc, None)]
+        # Initialises frontier to starting position
+        frontier = {(starting_tile_loc, None, 0, 0)}
         explored_tiles = set()
 
         while True:
-            # Checks if the node list is empty as if the node list is empty and target has not been found, there must be no possible path to the target
-            if len(node_list) == 0:
+            # Checks if the frontier is empty as if the frontier is empty and target has not been found, there must be no possible path to the target
+            if len(frontier) == 0:
                 self.kill()
                 return
             
-            # Removes the node from the front of the node list
-            node = node_list.pop(0)
+            # Calculates which node has the lowest cost
+            node = min(frontier, key=lambda node: node[3])
+            frontier.remove(node)
             explored_tiles.add(node[0])
 
             # Checks whether the node is the target node
             if node[0] == destination:
                 break
             else:
-                # Adds the node tile's neighbours to the node list if the tile is a path and it hasn't been explored
+                # Adds the node tile's neighbours to the frontier if the tile is a path and it hasn't been explored
                 for neighbour in self.game.maze.get_neighbours(self.game.maze.tiles[node[0]], diagonals=False):
-                    if neighbour['type'] == "path" and neighbour['loc'] not in explored_tiles and not any(tile_loc[0] == node[0] for tile_loc in node_list):
-                        node_list.append((neighbour['loc'], node))
+                    if neighbour['type'] == "path" and neighbour['loc'] not in explored_tiles:
+                        frontier.add((neighbour['loc'], node, node[2] + 1, node[2] + 1 + abs(neighbour['loc'][0] - destination[0]) + abs(neighbour['loc'][1] - destination[1])))
 
         # Backtracks using the parent of each node to find the shortest path
         shortest_path = []
@@ -435,10 +436,6 @@ class Enemy(Entity):
                 displacement = self.get_displacement_from_center(self.path[0])
                 if abs(displacement[0]) <= MAX_DISTANCE and abs(displacement[1]) <= MAX_DISTANCE:
                     self.path.remove(self.path[0])
-            else:
-                # Moves the enemy directly towards the player as they must be on the same tile
-                displacement = self.get_displacement_from_center(self.game.maze.get_loc(self.game.player.pos))
-
 
             # Gets the displacement from the center of the tile
             if len(self.path) != 0:
