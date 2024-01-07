@@ -18,19 +18,18 @@ class HUD:
             'remaining_label': get_text_surf(size=30, text=f"Enemies Remaining:", colour=(172, 116, 27)),
             'gold_label': get_text_surf(size=30, text=f"Gold collected:", colour=(172, 116, 27))
             }
-        self.update_text()
 
     def update(self):
-        if self.game.game_over:
-            self.draw_screen(self.text['game_over'])
-        elif self.game.paused:
-            self.draw_screen(self.text['paused'])
-        
         if (self.game.game_over or self.game.paused) and not self.text_updated:
             self.update_text()
             self.text_updated = True
         else:
             self.text_updated = False
+
+        if self.game.game_over:
+            self.draw_screen(self.text['game_over'])
+        elif self.game.paused:
+            self.draw_screen(self.text['paused'])
 
         self.draw_healthbar()
         self.draw_gold()
