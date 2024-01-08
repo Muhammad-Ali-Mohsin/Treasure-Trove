@@ -226,14 +226,17 @@ class ParticleHandler:
         ParticleHandler.particles.remove(particle)
 
 
+colors = {'blue': (50, 125, 140), 'red': (140, 0, 0), 'purple': (20, 16, 32)}
+
 class Spike:
-    def __init__(self, game, pos, angle, speed, color, can_damage=False):
+    def __init__(self, game, pos, angle, speed, color_id, can_damage=False):
         self.game = game
         self.pos = list(pos)
         self.timer = None
         self.angle = angle
         self.speed = speed
-        self.color = color
+        self.color_id = color_id
+        self.color = colors[color_id]
         self.can_damage = can_damage
 
     def get_rect(self):
@@ -247,7 +250,7 @@ class Spike:
             rect = self.get_rect()
             for enemy in self.game.enemies:
                 if rect.colliderect(enemy.get_rect()):
-                    enemy.hit()
+                    enemy.hit(self.color_id)
 
     def draw(self):
         """

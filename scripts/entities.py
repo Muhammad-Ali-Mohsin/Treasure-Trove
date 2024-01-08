@@ -240,7 +240,7 @@ class Player(Entity):
                 attack_rect = self.get_attack_rect()
                 for enemy in self.game.enemies:
                     if attack_rect.colliderect(enemy.get_rect()):
-                        enemy.hit()
+                        enemy.hit(color="purple" if self.special_attack['name'] == "dash" else None)
                         self.has_hit = True
 
                 # Checks whether the enemy is hitting the treasure and opens it if so
@@ -272,7 +272,7 @@ class Player(Entity):
                 self.special_attack['spike_timer'] = max(self.special_attack['spike_timer'] - self.game.dt, 0)
                 if self.special_attack['spike_timer'] == 0:
                     for i in range(25):
-                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(1.5, 2.5), (140, 0, 0), can_damage=True))
+                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(1.5, 2.5), "red", can_damage=True))
                     self.special_attack['spike_timer'] = 0.25
 
             # Creates spikes if the special attack is spiral
@@ -284,8 +284,8 @@ class Player(Entity):
                     center = self.get_center()
                     pos = (center[0] + math.cos(angle) * 20, center[1] + math.sin(angle) * 20)
                     pos2 = (center[0] + math.cos(angle2) * 20, center[1] + math.sin(angle2) * 20)
-                    self.game.spikes.append(Spike(self.game, pos2, angle2 + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), (50, 125, 140), can_damage=True))
-                    self.game.spikes.append(Spike(self.game, pos, angle + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), (50, 125, 140), can_damage=True))
+                    self.game.spikes.append(Spike(self.game, pos2, angle2 + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), "blue", can_damage=True))
+                    self.game.spikes.append(Spike(self.game, pos, angle + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), "blue", can_damage=True))
                     self.special_attack['spike_timer'] = 0.01
 
 
@@ -294,7 +294,7 @@ class Player(Entity):
                 if self.special_attack['name'] == "dash":
                     self.animation.change_animation(self.special_attack['last_animation'])
                     for i in range(10):
-                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), 2, (20, 16, 32)))
+                        self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), 2, "purple"))
                 self.special_attack['name'] = None
 
         # Kills the player after their knockback timer is over
@@ -341,13 +341,13 @@ class Enemy(Entity):
         """
         return pygame.Rect(self.pos[0] - ENEMY_ATTACK_RANGE, self.pos[1] - ENEMY_ATTACK_RANGE, ENEMY_ATTACK_RANGE * 2 + self.size[0], ENEMY_ATTACK_RANGE * 2 + self.size[1])
 
-    def hit(self):
+    def hit(self, color=None):
         """
         Hits the enemy. Called in the player class when they hit the enemy
         """
         # Checks whether they aren't being knocked back and removes their health. This gives the enemy invulnerability when they are being knocked back
         if self.knockback_timer <= 0:
-            self.health -= 10
+            self.health -= 30 if color == self.color else 5
             # Checks whether they have died and changes their animation as well as spawns a bunch of experience
             if self.health <= 0:
                 self.animation.change_animation("death")
@@ -360,16 +360,10 @@ class Enemy(Entity):
                 ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
             
             # Knocks the enemy back, shakes the screen and plays a sound
-            self.knockback(self.game.player.get_center(), 3)
+            self.knockback(self.game.player.get_center(), 3 if color == self.color else 1)
+            self.stunned_timer = STUN_TIME * (1 if color == self.color else 0.5)
             self.game.shake_screen(10, 0.2)
             AudioPlayer.play_sound("hit")
-
-    def knockback(self, point, velocity):
-        """
-        Knocks the entity backwards from a point
-        """
-        super().knockback(point, velocity)
-        self.stunned_timer = STUN_TIME
 
     def calculate_path(self):
         """
