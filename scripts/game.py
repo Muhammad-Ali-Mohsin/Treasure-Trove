@@ -123,6 +123,7 @@ class Game:
             'compass_base': load_image("assets/images/compass_base.png"),
             'compass_spinner': load_image("assets/images/compass_spinner.png"),
             'box': load_image("assets/images/box.png"),
+            'box_2': load_image("assets/images/box_2.png"),
             'grey_screen': pygame.Surface(self.display.get_size()).convert_alpha(),
             'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
             'x_key': load_image("assets/images/keys/x_key.png"),
@@ -172,6 +173,7 @@ class Game:
         self.images['gold_pouch'] = pygame.transform.scale(self.images['gold_pouch'], (self.images['gold_pouch'].get_width() * 3, self.images['gold_pouch'].get_height() * 3))
         self.images['healthbar'] = pygame.transform.scale(self.images['healthbar'], (self.images['healthbar'].get_width() * 3, self.images['healthbar'].get_height() * 3))
         self.images['box'] = pygame.transform.scale(self.images['box'], (self.images['box'].get_width() * 3, self.images['box'].get_height() * 3))
+        self.images['box_2'] = pygame.transform.scale(self.images['box_2'], (self.images['box_2'].get_width() * 3, self.images['box_2'].get_height() * 3))
 
         # Changes transparency
         for img in self.animations['dirt']['default']['images']:
@@ -197,7 +199,7 @@ class Game:
         self.game_over = False
         self.special_attacks = [3, 3, 3]
         self.maths_question = {'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255)), 'cursor_timer': 0}
-        self.question_flags = {'popup': False, 'correct': [False, False, False], 'last_question': -1}
+        self.question_flags = {'popup': False, 'correct': [False, False, False], 'last_question': -1, 'correct_timer': 0, 'close_timer': 0, 'close_popup': False}
 
         # Variables about the tutorial
         self.tutorial_text_timer = 0
@@ -243,6 +245,8 @@ class Game:
         AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
         AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
         AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.1, True, True)
+        AudioPlayer.load_sound("correct", "assets/sfx/correct.wav", 1)
+        AudioPlayer.load_sound("wrong", "assets/sfx/wrong.wav", 1)
 
         # Time
         self.dt = 0
@@ -328,7 +332,7 @@ class Game:
         """
         Spawns a bunch of enemies based on the current wave
         """
-        for i in range(round(self.wave)):
+        for i in range(round(self.wave * 2)):
             self.create_enemy()
 
     def shake_screen(self, magnitude, duration):
@@ -416,26 +420,44 @@ class Game:
             'cursor_timer': 0,
             'instruction_surf': get_text_surf(size=45, text=question[0], colour=(172, 116, 27)),
             'question_surf': get_text_surf(size=35, text=question[1], colour=(172, 116, 27), font=font),
-            'answer': question[2]
+            'answer': str(question[2])
             }
         
     def draw_maths_popup(self):
         """
         Draws a screen with a given text as the center (Used for the pause screen and game over screen)
         """
-        # Draws the grey screen, the box, the return to menu text and the title text
+        # Closes the popup if all questions have been answered
+        self.question_flags['correct_timer'] = max(0, self.question_flags['correct_timer'] - self.dt)
+        self.question_flags['close_timer'] = max(0, self.question_flags['close_timer'] - self.dt)
+        if self.question_flags['close_timer'] == 0 and self.question_flags['close_popup'] and self.question_flags['correct_timer'] == 0:
+            self.question_flags['popup'] = False
+            self.question_flags['close_popup'] = False
+            for i in range(len(self.question_flags['correct'])):
+                if self.question_flags['correct'][i]:
+                    ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (i / 2), random.uniform(-4, -2)), attack_type=i)
+            self.question_flags['correct'] = [False, False, False]
+
+        # Draws the grey screen, and the red and green background 
         self.display.blit(self.images['grey_screen'], (0, 0))
-        box_pos = ((self.larger_display.get_width() // 2) - (self.images['box'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.images['box'].get_height() // 2))
-        self.larger_display.blit(self.images['box'], box_pos)
+        correct = self.question_flags['correct'].count(True) - (self.question_flags['correct_timer'] / 0.5)
+        pygame.draw.rect(self.larger_display, (187, 37, 42), ((self.larger_display.get_width() // 2) - 258, (self.larger_display.get_height() // 2) - 138, 516, 276))
+        pygame.draw.rect(self.larger_display, (87, 165, 42), ((self.larger_display.get_width() // 2) - 258, (self.larger_display.get_height() // 2) - 138 + (276 * (1 - (correct / 3))), 516, 276 * correct / 3))
+
+        # Draws the box and the question
+        box_pos = ((self.larger_display.get_width() // 2) - (self.images['box_2'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.images['box_2'].get_height() // 2))
+        self.larger_display.blit(self.images['box_2'], box_pos)
         self.larger_display.blit(self.maths_question['instruction_surf'], ((self.larger_display.get_width() // 2) - (self.maths_question['instruction_surf'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.maths_question['instruction_surf'].get_height() // 2) - 60))
         self.larger_display.blit(self.maths_question['question_surf'], ((self.larger_display.get_width() // 2) - (self.maths_question['question_surf'].get_width() // 2), (self.larger_display.get_height() // 2) - (self.maths_question['question_surf'].get_height() // 2) - 20))
         
+        # Draws the textbox
         rect = pygame.Rect((self.larger_display.get_width() // 2) - 150, (self.larger_display.get_height() // 2) + 50, 300, 40)
         outline_rect = pygame.Rect((self.larger_display.get_width() // 2) - 155, (self.larger_display.get_height() // 2) + 45, 310, 50)
         pygame.draw.rect(self.larger_display, (110, 74, 17), outline_rect)
         pygame.draw.rect(self.larger_display, (172, 116, 27), rect)
         self.larger_display.blit(self.maths_question['text_surf'], (rect.centerx - (self.maths_question['text_surf'].get_width() // 2), rect.centery - (self.maths_question['text_surf'].get_height() // 2)))
 
+        # Draws the cursor on the textbox
         self.maths_question['cursor_timer'] += self.dt
         if self.maths_question['cursor_timer'] >= 1:
             self.maths_question['cursor_timer'] = 0
@@ -450,17 +472,18 @@ class Game:
             self.maths_question['text'] = self.maths_question['text'][:-1]
 
         elif event.key == pygame.K_RETURN:
-            if str(self.maths_question['text']) == str(self.maths_question['answer']):
+            if self.maths_question['text'] == self.maths_question['answer']:
                 self.question_flags['correct'][self.question_flags['last_question']] = True
-            
-            if self.question_flags['last_question'] == 2:
-                self.question_flags['popup'] = False
-                for i in range(len(self.question_flags['correct'])):
-                    if self.question_flags['correct'][i]:
-                        ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (i / 2), random.uniform(-4, -2)), attack_type=i)
-                self.question_flags['correct'] = [False, False, False]
+                self.question_flags['correct_timer'] = 0.5
+                AudioPlayer.play_sound("correct")
             else:
+                AudioPlayer.play_sound("wrong")
+            
+            if self.question_flags['last_question'] != 2:
                 self.generate_maths_question()
+            else:
+                self.question_flags['close_popup'] = True
+                self.question_flags['close_timer'] = 1
 
         elif event.unicode.lower() in "0123456789/-":
             if len(self.maths_question['text']) <= 10:
@@ -569,9 +592,11 @@ class Game:
                 # Randomly spawns enemies
                 self.spawn_timer = max(self.spawn_timer - self.dt, 0)
                 if self.spawn_timer == 0:
-                    if len(self.enemies) - 1 < self.wave:
+                    if len(self.enemies) - 1 < 2 * self.wave:
                         self.create_enemy()
                         self.spawn_timer = 5
+                elif len(self.enemies) < (2 * self.wave) - 5:
+                    self.create_enemy()
 
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
