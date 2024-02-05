@@ -82,6 +82,7 @@ class Treasure:
             self.released_gold = False
             self.popup = False
             self.game.wave += 1
+            self.game.spawn_enemies()
 
     def draw(self):
         img = self.animation.get_img()
@@ -189,14 +190,13 @@ class Game:
         self.maze = generate_maze(self, tile_size=32, maze_resolution=(25, 25), removed_tiles=25)
         self.player = Player(self, self.maze.get_random_loc("path"), (14, 20), 2, 100)
         self.enemies = []
-        self.spawn_timer = 0
         self.spikes = []
-        self.treasure = Treasure(self)
         self.gold = 0
         self.wave = 0
         self.killed = 0
         self.paused = False
         self.game_over = False
+        self.treasure = Treasure(self)
         self.special_attacks = [3, 3, 3]
         self.maths_question = {'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255)), 'cursor_timer': 0}
         self.question_flags = {'popup': False, 'correct': [False, False, False], 'last_question': -1, 'correct_timer': 0, 'close_timer': 0, 'close_popup': False}
@@ -332,7 +332,7 @@ class Game:
         """
         Spawns a bunch of enemies based on the current wave
         """
-        for i in range(round(self.wave * 2)):
+        for i in range(round(math.log(self.wave, 1.3))):
             self.create_enemy()
 
     def shake_screen(self, magnitude, duration):
@@ -588,15 +588,6 @@ class Game:
                     if random.random() < 0.1:
                         ParticleHandler.create_particle("bee", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.5))
                     ParticleHandler.create_particle("leaf", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.9))
-                
-                # Randomly spawns enemies
-                self.spawn_timer = max(self.spawn_timer - self.dt, 0)
-                if self.spawn_timer == 0:
-                    if len(self.enemies) - 1 < 2 * self.wave:
-                        self.create_enemy()
-                        self.spawn_timer = 5
-                elif len(self.enemies) < (2 * self.wave) - 5:
-                    self.create_enemy()
 
                 # Updates all animations. This isn't done in update display as some logic relies on the animation states
                 AnimationHandler.update(self.dt)
