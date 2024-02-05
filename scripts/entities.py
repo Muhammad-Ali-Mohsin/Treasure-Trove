@@ -360,9 +360,9 @@ class Enemy(Entity):
                 ParticleHandler.create_particle("dust", self.game, self.get_center(), speed=random.random() * 2, angle=angle * random.random())
             
             # Knocks the enemy back, shakes the screen and plays a sound
-            self.knockback(self.game.player.get_center(), 3 if color == self.color else 1)
-            self.stunned_timer = STUN_TIME * (1 if color == self.color else 0.5)
-            self.game.shake_screen(10, 0.2)
+            self.knockback(self.game.player.get_center(), 3.5 if color == self.color else 2.5)
+            self.stunned_timer = STUN_TIME
+            self.game.shake_screen(15 if color == self.color else 10, 0.25)
             AudioPlayer.play_sound("hit")
 
     def calculate_path(self):
