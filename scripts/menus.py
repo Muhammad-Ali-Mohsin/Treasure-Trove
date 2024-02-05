@@ -151,7 +151,10 @@ class Menu:
             if len(self.selected_textbox['text']) <= 35:
                 self.selected_textbox['text'] = self.selected_textbox['text'] + event.unicode
         font = pygame.font.SysFont(None, 25)
-        self.selected_textbox['text_surf'] = get_text_surf(size=25, text=self.selected_textbox['text'], colour=(255, 255, 255), font=font)
+        if "password" in self.selected_textbox['id']:
+            self.selected_textbox['text_surf'] = get_text_surf(size=25, text=len(self.selected_textbox['text']) * '*', colour=(255, 255, 255), font=font)
+        else:
+            self.selected_textbox['text_surf'] = get_text_surf(size=25, text=self.selected_textbox['text'], colour=(255, 255, 255), font=font)
 
     def change_error_message(self, text):
         """
@@ -434,13 +437,6 @@ class SignUpMenu(Menu):
             if not validated:
                 AudioPlayer.play_sound("error")
 
-    def textbox_update(self, event):
-        super().textbox_update(event)
-        # Replaces all text in the password fields with an asterisk '*'
-        if "password" in self.selected_textbox['id']:
-            font = pygame.font.SysFont(None, 25)
-            self.selected_textbox['text_surf'] = get_text_surf(size=25, text=len(self.selected_textbox['text']) * '*', colour=(255, 255, 255), font=font)
-
 
 class LoginMenu(Menu):
     def __init__(self, window, fps):
@@ -498,13 +494,6 @@ class LoginMenu(Menu):
             # Plays an error sound if validation was failed
             if not validated:
                 AudioPlayer.play_sound("error")
-
-    def textbox_update(self, event):
-        super().textbox_update(event)
-        # Replaces all text in the password fields with an asterisk '*'
-        if "password" in self.selected_textbox['id']:
-            font = pygame.font.SysFont(None, 25)
-            self.selected_textbox['text_surf'] = get_text_surf(size=25, text=len(self.selected_textbox['text']) * '*', colour=(255, 255, 255), font=font)
 
 
 class SelectionMenu(Menu):
