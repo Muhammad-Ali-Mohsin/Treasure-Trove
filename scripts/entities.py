@@ -48,7 +48,7 @@ class Entity:
         """
         Returns the center of an entity
         """
-        return (self.pos[0] + self.size[0] // 2, self.pos[1] + self.size[0] // 2)
+        return (self.pos[0] + self.size[0] // 2, self.pos[1] + self.size[1] // 2)
 
     def get_rect(self):
         """
