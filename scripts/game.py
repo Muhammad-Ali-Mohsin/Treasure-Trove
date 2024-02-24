@@ -43,6 +43,7 @@ class Treasure:
         self.animation.change_animation_library(self.game.animations['treasure'])
         self.released_gold = False
         self.popup = False
+        self.glow_timer = 0
         self.reset()
     
     def get_rect(self):
@@ -84,10 +85,15 @@ class Treasure:
             self.game.wave += 1
             self.game.spawn_enemies()
 
+        self.glow_timer = (self.glow_timer + self.game.dt * 2) % (2 * math.pi)
+
     def draw(self):
         img = self.animation.get_img()
         pos = [(self.loc[i] * self.game.maze.tile_size) - self.game.camera_displacement[i] for i in range(2)]
         self.game.display.blit(img, pos)
+        center = [(self.loc[i] * self.game.maze.tile_size) + self.game.maze.tile_size // 2 for i in range(2)]
+        self.game.glow(center, (255, 255, 100), 30 + round(5 * math.sin(self.glow_timer) + random.random()))
+        self.game.glow(center, (255, 255, 255), 15 + round(3 * math.sin(self.glow_timer) + random.random()))
 
 class Game:
     def __init__(self, window, fps):
@@ -127,7 +133,10 @@ class Game:
             'box_2': load_image("assets/images/box_2.png"),
             'grey_screen': pygame.Surface(self.display.get_size()).convert_alpha(),
             'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
+            'z_key': load_image("assets/images/keys/z_key.png"),
             'x_key': load_image("assets/images/keys/x_key.png"),
+            'c_key': load_image("assets/images/keys/c_key.png"),
+            'spacebar': load_image("assets/images/keys/spacebar.png"),
             'textbox': load_image("assets/images/textbox.png"),
             'light': load_image("assets/images/light.png"),
             'dash_icon': load_image("assets/images/dash_icon.png"),
@@ -205,15 +214,27 @@ class Game:
         self.tutorial_text_timer = 0
         tutorial = [
             {'name': "movement", 'img': "arrow_keys", 'text': "Use the arrow keys to move around", 'directions': set()},
-            {'name': "treasure", 'text': "Use the compass to find the treasure"},
-            {'name': "attack", 'img': "x_key", 'text': "Press X to attack"},
-            {'name': "end_0", 'text': "Slimes will spawn in waves", 'timer': 2},
-            {'name': "end_1", 'text': "Waves will get progressively larger", 'timer': 2},
-            {'name': "end_2", 'text': "Lets see how much gold you can collect!", 'timer': 2},
-            {'name': "end_3", 'text': "(Hint: Defeat a wave before opening the next chest)", 'timer': 3}
+            {'name': "treasure", 'text': "Follow the red hand of the compass to find the treasure", 'timer': 3, 'font_size': 23},
+            {'name': "treasure_open - timed", 'text': "Attack the treasure chest to open it", 'timer': 2},
+            {'name': "attack", 'img': "spacebar", 'text': "Press SPACE to attack the treasure"},
+            {'name': "maths_question_0 - timed", 'text': "Solve the maths question to gain a special ability", 'timer': 3, 'font_size': 25},
+            {'name': "maths_question_1", 'text': "Each question will give a different ability"},
+            {'name': "slimes_0 - timed", 'text': "Slimes will spawn in waves", 'timer': 2},
+            {'name': "slimes_1 - timed", 'text': "Slimes can be defeated using special abilities", 'timer': 2},
+            {'name': "slimes_2 - timed", 'text': "You can see how many abilities you have in the bottom left", 'timer': 2, 'font_size': 22},
+            {'name': "slimes_3 - timed", 'text': "Match the colours of the ability and the slime to defeat them", 'timer': 2, 'font_size': 22},
+            {'name': "dash_attack", 'img': "z_key", 'text': "Find a purple enemy and use Z to dash into them", 'font_size': 27},
+            {'name': "spiral_attack", 'img': "x_key", 'text': "Find a blue enemy and use X to spiral attack", 'font_size': 27},
+            {'name': "explosion_attack", 'img': "c_key", 'text': "Find a red enemy and use C to explode attack", 'font_size': 27},
+            {'name': "end_0 - timed", 'text': "You have a limited number of special attacks", 'timer': 2},
+            {'name': "end_1 - timed", 'text': "Replenish attacks by solving maths questions", 'timer': 2},
+            {'name': "end_2 - timed", 'text': "Every time you open a chest, you will collect gold", 'timer': 2, 'font_size': 27},
+            {'name': "end_3 - timed", 'text': "Let's see how much gold you can collect!", 'timer': 2},
+            {'name': "end_4 - timed", 'text': "(Hint: Open a chest to spawn the next wave)", 'timer': 5, 'font_size': 20}
         ]
         data = load_data()
         self.tutorial = [] if 'completed_tutorial' in data['accounts'][data['logged_in']] else tutorial
+        self.tutorial = tutorial
 
         # Graphical variables
         self.hud = HUD(self)
@@ -283,9 +304,6 @@ class Game:
                     self.player.moving['down'] = True
                 if event.key == pygame.K_ESCAPE:
                     self.paused = not self.paused
-                if event.key == pygame.K_h:
-                    self.maths_popup = not self.maths_popup
-                    self.generate_maths_question()
                 if event.key == pygame.K_BACKSPACE:
                     if self.paused or self.game_over: 
                         self.transition_timer = -TRANSITION_DURATION
@@ -312,7 +330,7 @@ class Game:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self.player.animation.current_animation != "death": self.player.attack()
 
-    def create_enemy(self):
+    def create_enemy(self, color=None):
         """
         Spawns an enemy in a random location
         """
@@ -326,7 +344,9 @@ class Game:
         for enemy in self.enemies:
             colors[enemy.color] += 1
 
-        self.enemies.append(Enemy(self, loc, (16, 16), random.uniform(1, 2), 30, sorted(list(colors), key=lambda color: colors[color])[0]))
+        color = sorted(list(colors), key=lambda color: colors[color])[0] if color == None else color
+
+        self.enemies.append(Enemy(self, loc, (16, 16), random.uniform(1, 2), 30, color))
 
     def spawn_enemies(self):
         """
@@ -346,16 +366,21 @@ class Game:
         Updates the tutorial by updating the text and the stage of the tutorial
         """
         tutorial = self.tutorial[0]
+
         # Adds the completed text as an empty string to the dictionary 
         if 'completed_text' not in tutorial:
             tutorial['completed_text'] = ""
+
+        # Updates the timer of the tutorial
+        if 'timer' in tutorial and tutorial['completed_text'] == True:
+            tutorial['timer'] -= self.dt
 
         # Updates the text surface to show the typing animation
         if tutorial['completed_text'] != True:
             self.tutorial_text_timer += self.dt
             if self.tutorial_text_timer > 0.05:
                 tutorial['completed_text'] = tutorial['text'][:len(tutorial['completed_text']) + 1]
-                tutorial['text_surf'] = get_text_surf(20 if tutorial['name'] == "end_3" else 30, tutorial['completed_text'], (110, 74, 17))
+                tutorial['text_surf'] = get_text_surf(tutorial['font_size'] if 'font_size' in tutorial else 30, tutorial['completed_text'], (110, 74, 17))
                 self.tutorial_text_timer = 0
                 AudioPlayer.play_sound("key_press")
                 if tutorial['completed_text'] == tutorial['text']:
@@ -371,22 +396,32 @@ class Game:
                 self.tutorial.remove(tutorial)
 
         elif tutorial['name'] == "attack":
-            if "attack" in self.player.animation.current_animation and self.player.animation.frame == len(self.player.animation.animation_library[self.player.animation.current_animation]['images']) - 1:
+            if self.question_flags['popup']:
+                self.tutorial.remove(tutorial)
+        elif tutorial['name'] == "maths_question_1":
+            if not self.question_flags['popup']:
                 self.tutorial.remove(tutorial)
 
         elif tutorial['name'] == "treasure":
-            if self.maze.get_loc((self.player.pos[0] + self.player.size[0] // 2, self.player.pos[1] + self.player.size[1] // 2)) == self.treasure.loc:
+            if self.maze.tiles[self.maze.get_loc(self.player.get_center())] in self.maze.get_neighbours(self.maze.tiles[self.treasure.loc], diagonals=True):
                 self.tutorial.remove(tutorial)
 
-        elif "end" in tutorial['name']:
-            if tutorial['completed_text'] == True:
-                tutorial['timer'] -= self.dt
-                if tutorial['timer'] <= 0:
-                    if tutorial['name'] == "end_3":
-                        data = load_data()
-                        data['accounts'][data['logged_in']]['completed_tutorial'] = True
-                        save_data(data)
-                    self.tutorial.remove(tutorial)
+        elif tutorial['name'] in ["dash_attack", "spiral_attack", "explosion_attack"]:
+            if 'has_spawned' not in tutorial:
+                self.create_enemy({'dash_attack': 'purple', 'spiral_attack': 'blue', 'explosion_attack': 'red'}[tutorial['name']])
+                tutorial['has_spawned'] = True
+            if len(self.enemies) == 0:
+                self.tutorial.remove(tutorial)
+
+        elif "timed" in tutorial['name']:
+            if tutorial['timer'] <= 0:
+                self.tutorial.remove(tutorial)
+
+        # Marks the tutorial as completed
+        if len(self.tutorial) == 0:
+            data = load_data()
+            data['accounts'][data['logged_in']]['completed_tutorial'] = True
+            save_data(data)
 
     def get_daylight(self):
         """
@@ -525,11 +560,11 @@ class Game:
             self.draw_maths_popup()
 
         # Draws the tutorial
-        if len(self.tutorial) != 0:
+        if len(self.tutorial) != 0 and not (self.paused or self.game_over):
             pos = scale_coord_to_new_res((self.player.pos[0] + self.player.size[0] // 2 - self.camera_displacement[0], self.player.pos[1] - self.camera_displacement[1] - 5), self.display.get_size(), self.larger_display.get_size())
-            self.larger_display.blit(self.images['textbox'], (self.larger_display.get_width() // 2 - self.images['textbox'].get_width() // 2, self.larger_display.get_height() - 100))
+            self.larger_display.blit(self.images['textbox'], (self.larger_display.get_width() // 2 - self.images['textbox'].get_width() // 2 + 100, self.larger_display.get_height() - 100))
             if 'text_surf' in self.tutorial[0]:
-                self.larger_display.blit(self.tutorial[0]['text_surf'], (self.larger_display.get_width() // 2 - self.tutorial[0]['text_surf'].get_width() // 2, self.larger_display.get_height() - 80))
+                self.larger_display.blit(self.tutorial[0]['text_surf'], (self.larger_display.get_width() // 2 - self.tutorial[0]['text_surf'].get_width() // 2 + 100, self.larger_display.get_height() - 80))
             if 'img' in self.tutorial[0]:
                 self.larger_display.blit(self.images[self.tutorial[0]['img']], (pos[0] - self.images[self.tutorial[0]['img']].get_width() // 2, pos[1] - self.images[self.tutorial[0]['img']].get_height()))
 
@@ -546,7 +581,7 @@ class Game:
             self.display.blit(self.display, screen_shake)
 
         fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        #self.larger_display.blit(fps_text, (10, 10))
+        self.larger_display.blit(fps_text, (10, 10))
 
         self.window.update(uniforms={
             'screen_texture': self.display, 'ldisplay_texture': self.larger_display, 'light_map': self.light_map, 
@@ -563,9 +598,9 @@ class Game:
             self.last_time = time.time()
             self.time += self.dt
             self.multi = self.dt * 60
+            if len(self.tutorial) != 0:
+                self.update_tutorial()
             if not self.paused and not self.game_over and not self.question_flags['popup']:
-                if len(self.tutorial) != 0:
-                    self.update_tutorial()
 
                 # Plays the running sound if the player is running
                 if (self.player.moving['right'] or self.player.moving['left'] or self.player.moving['up'] or self.player.moving['down']) and self.player.special_attack['name'] == None:
