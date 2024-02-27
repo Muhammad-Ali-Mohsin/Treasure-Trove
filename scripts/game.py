@@ -59,6 +59,8 @@ class Treasure:
         self.animation.change_animation("closed")
 
     def open(self):
+        if len(self.game.tutorial) != 0 and "treasure" not in self.game.tutorial[0]['name']:
+            return
         self.game.shake_screen(10, 0.3)
         self.animation.change_animation("open")
         AudioPlayer.play_sound("chest")
@@ -215,8 +217,7 @@ class Game:
         tutorial = [
             {'name': "movement", 'img': "arrow_keys", 'text': "Use the arrow keys to move around", 'directions': set()},
             {'name': "treasure", 'text': "Follow the red hand of the compass to find the treasure", 'timer': 3, 'font_size': 23},
-            {'name': "treasure_open - timed", 'text': "Attack the treasure chest to open it", 'timer': 2},
-            {'name': "attack", 'img': "spacebar", 'text': "Press SPACE to attack the treasure"},
+            {'name': "attack_treasure", 'img': "spacebar", 'text': "Press SPACE to attack the treasure chest and open it", 'font_size': 23},
             {'name': "maths_question_0 - timed", 'text': "Solve the maths question to gain a special ability", 'timer': 3, 'font_size': 25},
             {'name': "maths_question_1", 'text': "Each question will give a different ability"},
             {'name': "slimes_0 - timed", 'text': "Slimes will spawn in waves", 'timer': 2},
@@ -230,7 +231,7 @@ class Game:
             {'name': "end_1 - timed", 'text': "Replenish attacks by solving maths questions", 'timer': 2},
             {'name': "end_2 - timed", 'text': "Every time you open a chest, you will collect gold", 'timer': 2, 'font_size': 27},
             {'name': "end_3 - timed", 'text': "Let's see how much gold you can collect!", 'timer': 2},
-            {'name': "end_4 - timed", 'text': "(Hint: Open a chest to spawn the next wave)", 'timer': 5, 'font_size': 20}
+            {'name': "end_4 - timed (treasure)", 'text': "(Hint: Open a chest to spawn the next wave)", 'timer': 5, 'font_size': 20}
         ]
         data = load_data()
         self.tutorial = [] if 'completed_tutorial' in data['accounts'][data['logged_in']] else tutorial
@@ -366,6 +367,7 @@ class Game:
         Updates the tutorial by updating the text and the stage of the tutorial
         """
         tutorial = self.tutorial[0]
+        self.special_attacks = [3, 3, 3]
 
         # Adds the completed text as an empty string to the dictionary 
         if 'completed_text' not in tutorial:
@@ -395,7 +397,7 @@ class Game:
             if len(tutorial['directions']) == 4:
                 self.tutorial.remove(tutorial)
 
-        elif tutorial['name'] == "attack":
+        elif tutorial['name'] == "attack_treasure":
             if self.question_flags['popup']:
                 self.tutorial.remove(tutorial)
         elif tutorial['name'] == "maths_question_1":
