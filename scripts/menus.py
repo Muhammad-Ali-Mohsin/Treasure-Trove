@@ -21,7 +21,9 @@ class Menu:
         self.images = {
             'cursor_0': load_image("assets/images/cursor_0.png"),
             'cursor_1': load_image("assets/images/cursor_1.png"),
+            'bg': load_image("assets/images/menu_bg.png")
         }
+
         self.buttons = {}
         self.textboxes = {}
         self.enter_button = None
@@ -50,11 +52,8 @@ class Menu:
         """
         Updates the screen
         """
-        # Clears the screen
-        if "bg" in self.images:
-            self.display.blit(pygame.transform.scale(self.images['bg'], self.display.get_size()), (0, 0))
-        else:
-            self.display.fill((25, 55, 10))
+        # Draws the background
+        self.display.blit(pygame.transform.scale(self.images['bg'], self.display.get_size()), (0, 0))
 
         # Draws the text onto the screen
         for text in self.text:
@@ -233,10 +232,10 @@ class OptionsMenu(Menu):
 
         # Loads the buttons in
         self.buttons = {
-            'decrease_res': {'label': get_text_surf(size=60, text="<", colour=(255, 255, 255)), 'id': 'decrease_res', 'rect': pygame.Rect((800, 250, 75, 75))},
-            'increase_res': {'label': get_text_surf(size=60, text=">", colour=(255, 255, 255)), 'id': 'increase_res', 'rect': pygame.Rect((1100, 250, 75, 75))},
-            'decrease_fps': {'label': get_text_surf(size=60, text="<", colour=(255, 255, 255)), 'id': 'decrease_fps', 'rect': pygame.Rect((800, 350, 75, 75))},
-            'increase_fps': {'label': get_text_surf(size=60, text=">", colour=(255, 255, 255)), 'id': 'increase_fps', 'rect': pygame.Rect((1100, 350, 75, 75))},
+            'decrease_res': {'label': get_text_surf(size=60, text="<", colour=(255, 255, 255)), 'id': 'decrease_res', 'rect': pygame.Rect((750, 250, 75, 75))},
+            'increase_res': {'label': get_text_surf(size=60, text=">", colour=(255, 255, 255)), 'id': 'increase_res', 'rect': pygame.Rect((1050, 250, 75, 75))},
+            'decrease_fps': {'label': get_text_surf(size=60, text="<", colour=(255, 255, 255)), 'id': 'decrease_fps', 'rect': pygame.Rect((750, 350, 75, 75))},
+            'increase_fps': {'label': get_text_surf(size=60, text=">", colour=(255, 255, 255)), 'id': 'increase_fps', 'rect': pygame.Rect((1050, 350, 75, 75))},
             'main_menu': {'label': get_text_surf(size=40, text="Return to Main Menu", colour=(255, 255, 255)), 'id': 'main_menu', 'rect': pygame.Rect((self.display.get_width() // 2) - 200, self.display.get_height() - 125, 400, 50)}
         }
 
@@ -250,10 +249,10 @@ class OptionsMenu(Menu):
         ]
 
         self.text[0]['pos'] = ((self.display.get_width() // 2) - (self.text[0]['surf'].get_width() // 2), 50)
-        self.text[1]['pos'] = (100, 250 + (self.text[1]['surf'].get_height() // 2))
-        self.text[2]['pos'] = (100, 350 + (self.text[2]['surf'].get_height() // 2))
-        self.text[3]['pos'] = (990 - (self.text[3]['surf'].get_width() // 2), 250 + (self.text[3]['surf'].get_height() // 2))
-        self.text[4]['pos'] = (990 - (self.text[4]['surf'].get_width() // 2), 350 + (self.text[4]['surf'].get_height() // 2))
+        self.text[1]['pos'] = (150, 250 + (self.text[1]['surf'].get_height() // 2))
+        self.text[2]['pos'] = (150, 350 + (self.text[2]['surf'].get_height() // 2))
+        self.text[3]['pos'] = (940 - (self.text[3]['surf'].get_width() // 2), 250 + (self.text[3]['surf'].get_height() // 2))
+        self.text[4]['pos'] = (940 - (self.text[4]['surf'].get_width() // 2), 350 + (self.text[4]['surf'].get_height() // 2))
 
     def button_press(self, button):
         super().button_press(button)
@@ -501,11 +500,22 @@ class SelectionMenu(Menu):
         super().__init__(window, fps)
         pygame.display.set_caption("Treasure Trove - Login/Signup")
 
-        # Loads all the buttons in
+        self.images['bg'] = load_image("assets/images/main_menu.png")
+
+        # Loads the text in
+        self.text = [
+            {'surf': get_text_surf(size=100, text="Treasure", colour=(255, 202, 24)), 'pos': None},
+            {'surf': get_text_surf(size=100, text="Trove", colour=(255, 202, 24)), 'pos': None},
+        ]
+
+        self.text[0]['pos'] = (285 - (self.text[0]['surf'].get_width() // 2), 100)
+        self.text[1]['pos'] = (285 - (self.text[1]['surf'].get_width() // 2), 175)
+
+        # Loads all the buttons in pygame.Rect(135, (i * 60) + 350, 300, 50)
         self.buttons = {
-            'signup': {'label': get_text_surf(size=40, text="Sign Up", colour=(255, 255, 255)), 'id': 'signup', 'rect': pygame.Rect(((self.display.get_width() // 2) - 225, self.display.get_height() // 2 - 25, 200, 50))},
-            'login': {'label': get_text_surf(size=40, text="Login", colour=(255, 255, 255)), 'id': 'login', 'rect': pygame.Rect(((self.display.get_width() // 2) + 25, self.display.get_height() // 2 - 25, 200, 50))},
-            'exit': {'label': get_text_surf(size=40, text="Exit to Desktop", colour=(255, 255, 255)), 'id': 'exit', 'rect': pygame.Rect((self.display.get_width() // 2) - 150, 500, 300, 40)}
+            'signup': {'label': get_text_surf(size=40, text="Sign Up", colour=(255, 255, 255)), 'id': 'signup', 'rect': pygame.Rect(135, 350, 300, 60)},
+            'login': {'label': get_text_surf(size=40, text="Login", colour=(255, 255, 255)), 'id': 'login', 'rect': pygame.Rect(135, 430, 300, 60)},
+            'exit': {'label': get_text_surf(size=40, text="Exit to Desktop", colour=(255, 255, 255)), 'id': 'exit', 'rect': pygame.Rect(135, 600, 300, 60)}
         }
 
     def button_press(self, button):

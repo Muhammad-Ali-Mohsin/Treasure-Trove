@@ -235,7 +235,6 @@ class Game:
         ]
         data = load_data()
         self.tutorial = [] if 'completed_tutorial' in data['accounts'][data['logged_in']] else tutorial
-        self.tutorial = tutorial
 
         # Graphical variables
         self.hud = HUD(self)
