@@ -312,7 +312,11 @@ class CreditsMenu(Menu):
             "https://opengameart.org/content/sack-of-gold",
             "https://opengameart.org/content/menu-music",
             "https://opengameart.org/content/game-over-bad-chest-sfx",
-            "https://opengameart.org/content/single-key-press-sounds"
+            "https://opengameart.org/content/single-key-press-sounds",
+            "https://opengameart.org/content/spell-4-fire",
+            "https://opengameart.org/content/spell-sounds-starter-pack",
+            "",
+            "|As of March 2024"
         ]
 
         # Creates text objects for all the credits
@@ -326,10 +330,10 @@ class CreditsMenu(Menu):
                 colour = (58, 148, 186)
             else:
                 colour = (255, 255, 255)
-            surf = get_text_surf(size=20, text=text, colour=colour)
+            surf = get_text_surf(size=16, text=text, colour=colour)
             self.text.append({
                 'surf': surf, 
-                'pos': ((self.display.get_width() // 2) - (surf.get_width() // 2), 150 + (i * 20))
+                'pos': ((self.display.get_width() // 2) - (surf.get_width() // 2), 150 + (i * 16))
             })
 
     def button_press(self, button):
