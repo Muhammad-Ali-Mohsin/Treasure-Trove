@@ -250,6 +250,9 @@ class Game:
         # Loads all sfx sounds
         AudioPlayer.load_sounds("running", "assets/sfx/running", 0.2, True)
         AudioPlayer.load_sound("player_attack", "assets/sfx/player_attack.wav", 0.8)
+        AudioPlayer.load_sound("dash_attack", "assets/sfx/dash_attack.wav", 0.5)
+        AudioPlayer.load_sound("spiral_attack", "assets/sfx/spiral_attack.wav", 0.5)
+        AudioPlayer.load_sound("explosion_attack", "assets/sfx/explosion_attack.wav", 0.5)
         AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
         AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
 

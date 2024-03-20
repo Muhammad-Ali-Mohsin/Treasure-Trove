@@ -154,6 +154,7 @@ class Player(Entity):
             self.special_attack['particle_timer'] = 0
             self.animation.change_animation("dashing")
             self.game.special_attacks[0] -= 1
+            AudioPlayer.play_sound("dash_attack")
 
     def spiral(self):
         """
@@ -166,6 +167,7 @@ class Player(Entity):
             self.special_attack['spike_timer'] = 0
             self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
             self.game.special_attacks[1] -= 1
+            AudioPlayer.play_sound("spiral_attack")
 
     def explode(self):
         """
@@ -273,6 +275,7 @@ class Player(Entity):
                     for i in range(25):
                         self.game.spikes.append(Spike(self.game, self.get_center(), math.pi * 2 * i/10 + random.uniform(-0.3, 0.3), random.uniform(1.5, 2.5), "red"))
                     self.special_attack['spike_timer'] = 0.25
+                    AudioPlayer.play_sound("explosion_attack")
 
             # Creates spikes if the special attack is spiral
             if self.special_attack['name'] == "spiral":
