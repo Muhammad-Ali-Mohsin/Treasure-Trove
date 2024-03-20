@@ -176,7 +176,6 @@ class Player(Entity):
             self.special_attack['vel'] = [0, 0]
             self.special_attack['timer'] = EXPLOSION_TIMER
             self.special_attack['spike_timer'] = 0
-            self.special_attack['explosions'] = 0
             self.animation.change_animation("idle_" + self.animation.current_animation.split("_")[1])
             self.game.special_attacks[2] -= 1
 
@@ -287,7 +286,6 @@ class Player(Entity):
                     self.game.spikes.append(Spike(self.game, pos2, angle2 + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), "blue"))
                     self.game.spikes.append(Spike(self.game, pos, angle + random.uniform(-0.5, 0.5), random.uniform(1.5, 2.5), "blue"))
                     self.special_attack['spike_timer'] = 0.01
-
 
             # Ends the player's special attack if time has run out
             if self.special_attack['timer'] == 0:
