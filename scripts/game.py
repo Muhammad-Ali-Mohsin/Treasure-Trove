@@ -133,6 +133,9 @@ class Game:
             'compass_spinner': load_image("assets/images/compass_spinner.png"),
             'box': load_image("assets/images/box.png"),
             'box_2': load_image("assets/images/box_2.png"),
+            'correct': load_image("assets/images/correct.png"),
+            'wrong': load_image("assets/images/wrong.png"),
+            'unanswered': load_image("assets/images/unanswered.png"),
             'grey_screen': pygame.Surface(self.display.get_size()).convert_alpha(),
             'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
             'z_key': load_image("assets/images/keys/z_key.png"),
@@ -210,7 +213,7 @@ class Game:
         self.treasure = Treasure(self)
         self.special_attacks = [3, 3, 3]
         self.maths_question = {'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255)), 'cursor_timer': 0}
-        self.question_flags = {'popup': False, 'correct': [False, False, False], 'last_question': -1, 'correct_timer': 0, 'close_timer': 0, 'close_popup': False}
+        self.question_flags = {'popup': False, 'correct': [None, None, None], 'current_question': 0, 'correct_timer': 0, 'close_timer': 0, 'close_popup': False}
 
         # Variables about the tutorial
         self.tutorial_text_timer = 0
@@ -450,8 +453,7 @@ class Game:
     
     def generate_maths_question(self):
         types = [Maths.generate_algebra, Maths.generate_arithmetic, Maths.generate_fraction]
-        self.question_flags['last_question'] = (self.question_flags['last_question'] + 1) % 3
-        question = types[self.question_flags['last_question']]()
+        question = types[self.question_flags['current_question']]()
         font = pygame.font.SysFont(None, 30)
         self.maths_question = {
             'text': "", 
@@ -475,7 +477,7 @@ class Game:
             for i in range(len(self.question_flags['correct'])):
                 if self.question_flags['correct'][i]:
                     ParticleHandler.create_particle("plus_one", self, self.player.pos, velocity=(-2 + (i / 2), random.uniform(-4, -2)), attack_type=i)
-            self.question_flags['correct'] = [False, False, False]
+            self.question_flags['correct'] = [None, None, None]
 
         # Draws the grey screen, and the red and green background 
         self.display.blit(self.images['grey_screen'], (0, 0))
@@ -503,6 +505,11 @@ class Game:
         if self.maths_question['cursor_timer'] <= 0.5:
             pygame.draw.rect(self.larger_display, (110, 74, 17), (rect.centerx + (self.maths_question['text_surf'].get_width() // 2) + 5, rect.centery - 13, 3, 26))
 
+        # Draws the correct/incorrect boxes
+        for i, x in enumerate((-120, -30, 60)):
+            img = 'correct' if self.question_flags['correct'][i] == True else 'wrong' if self.question_flags['correct'][i] == False else 'unanswered'
+            self.larger_display.blit(self.images[img], ((self.larger_display.get_width() // 2) + x, (self.larger_display.get_height() // 2) - 200))
+
     def maths_textbox_update(self, event):
         """
         Runs when the maths textbox is updated
@@ -512,13 +519,15 @@ class Game:
 
         elif event.key == pygame.K_RETURN:
             if self.maths_question['text'] == self.maths_question['answer']:
-                self.question_flags['correct'][self.question_flags['last_question']] = True
+                self.question_flags['correct'][self.question_flags['current_question']] = True
                 self.question_flags['correct_timer'] = 0.5
                 AudioPlayer.play_sound("correct")
             else:
                 AudioPlayer.play_sound("wrong")
+                self.question_flags['correct'][self.question_flags['current_question']] = False
+            self.question_flags['current_question'] = (self.question_flags['current_question'] + 1) % 3
             
-            if self.question_flags['last_question'] != 2:
+            if self.question_flags['current_question'] != 0:
                 self.generate_maths_question()
             else:
                 self.question_flags['close_popup'] = True
