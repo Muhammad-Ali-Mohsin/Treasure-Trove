@@ -14,6 +14,7 @@ from scripts.effects import ParticleHandler
 from scripts.utils import AudioPlayer, load_image, load_images, load_data, save_data, get_text_surf, scale_coord_to_new_res, format_num, update_scores
 
 TRANSITION_DURATION = 1
+DAY_DURATION = 180
 
 class Maths:
     def generate_algebra():
@@ -99,7 +100,6 @@ class Treasure:
 
 class Game:
     def __init__(self, window, fps):
-        random.seed(0)
         pygame.display.set_caption("Treasure Trove - Playing game")
         self.kill_screen = False
         self.fps = fps
@@ -216,22 +216,22 @@ class Game:
         self.tutorial_text_timer = 0
         tutorial = [
             {'name': "movement", 'img': "arrow_keys", 'text': "Use the arrow keys to move around", 'directions': set()},
-            {'name': "treasure", 'text': "Follow the red hand of the compass to find the treasure", 'timer': 3, 'font_size': 23},
+            {'name': "treasure", 'text': "Follow the red hand of the compass to find the treasure", 'font_size': 23},
             {'name': "attack_treasure", 'img': "spacebar", 'text': "Press SPACE to attack the treasure chest and open it", 'font_size': 23},
-            {'name': "maths_question_0 - timed", 'text': "Solve the maths question to gain a special ability", 'timer': 3, 'font_size': 25},
+            {'name': "maths_question_0", 'text': "Solve the maths question to gain a special ability", 'timer': 3, 'font_size': 25},
             {'name': "maths_question_1", 'text': "Each question will give a different ability"},
-            {'name': "slimes_0 - timed", 'text': "Slimes will spawn in waves", 'timer': 2},
-            {'name': "slimes_1 - timed", 'text': "Slimes can be defeated using special abilities", 'timer': 2},
-            {'name': "slimes_2 - timed", 'text': "You can see how many abilities you have in the bottom left", 'timer': 2, 'font_size': 22},
-            {'name': "slimes_3 - timed", 'text': "Match the colours of the ability and the slime to defeat them", 'timer': 2, 'font_size': 22},
+            {'name': "slimes_0", 'text': "Slimes will spawn in waves", 'timer': 2},
+            {'name': "slimes_1", 'text': "Slimes can be defeated using special abilities", 'timer': 2},
+            {'name': "slimes_2", 'text': "You can see how many abilities you have in the bottom left", 'timer': 2, 'font_size': 22},
+            {'name': "slimes_3", 'text': "Match the colours of the ability and the slime to defeat them", 'timer': 2, 'font_size': 22},
             {'name': "dash_attack", 'img': "z_key", 'text': "Find a purple enemy and use Z to dash into them", 'font_size': 27},
             {'name': "spiral_attack", 'img': "x_key", 'text': "Find a blue enemy and use X to spiral attack", 'font_size': 27},
             {'name': "explosion_attack", 'img': "c_key", 'text': "Find a red enemy and use C to explode attack", 'font_size': 27},
-            {'name': "end_0 - timed", 'text': "You have a limited number of special attacks", 'timer': 2},
-            {'name': "end_1 - timed", 'text': "Replenish attacks by solving maths questions", 'timer': 2},
-            {'name': "end_2 - timed", 'text': "Every time you open a chest, you will collect gold", 'timer': 2, 'font_size': 27},
-            {'name': "end_3 - timed", 'text': "Let's see how much gold you can collect!", 'timer': 2},
-            {'name': "end_4 - timed (treasure)", 'text': "(Hint: Open a chest to spawn the next wave)", 'timer': 5, 'font_size': 20}
+            {'name': "end_0", 'text': "You have a limited number of special attacks", 'timer': 2},
+            {'name': "end_1", 'text': "Replenish attacks by solving maths questions", 'timer': 2},
+            {'name': "end_2", 'text': "Every time you open a chest, you will collect gold", 'timer': 2, 'font_size': 27},
+            {'name': "end_3", 'text': "Let's see how much gold you can collect!", 'timer': 2},
+            {'name': "end_4 (treasure)", 'text': "(Hint: Open a chest to spawn the next wave)", 'timer': 5, 'font_size': 20}
         ]
         data = load_data()
         self.tutorial = [] if 'completed_tutorial' in data['accounts'][data['logged_in']] else tutorial
@@ -352,7 +352,8 @@ class Game:
         """
         Spawns a bunch of enemies based on the current wave
         """
-        for i in range(round(math.log(self.wave, 1.3))):
+        num = 0 if len(self.tutorial) != 0 else max(1, round(math.log(self.wave, 1.3)))
+        for i in range(num):
             self.create_enemy()
 
     def shake_screen(self, magnitude, duration):
@@ -375,6 +376,8 @@ class Game:
         # Updates the timer of the tutorial
         if 'timer' in tutorial and tutorial['completed_text'] == True:
             tutorial['timer'] -= self.dt
+            if tutorial['timer'] <= 0:
+                self.tutorial.remove(tutorial)
 
         # Updates the text surface to show the typing animation
         if tutorial['completed_text'] != True:
@@ -399,6 +402,7 @@ class Game:
         elif tutorial['name'] == "attack_treasure":
             if self.question_flags['popup']:
                 self.tutorial.remove(tutorial)
+                
         elif tutorial['name'] == "maths_question_1":
             if not self.question_flags['popup']:
                 self.tutorial.remove(tutorial)
@@ -412,10 +416,6 @@ class Game:
                 self.create_enemy({'dash_attack': 'purple', 'spiral_attack': 'blue', 'explosion_attack': 'red'}[tutorial['name']])
                 tutorial['has_spawned'] = True
             if len(self.enemies) == 0:
-                self.tutorial.remove(tutorial)
-
-        elif "timed" in tutorial['name']:
-            if tutorial['timer'] <= 0:
                 self.tutorial.remove(tutorial)
 
         # Marks the tutorial as completed
@@ -434,7 +434,7 @@ class Game:
         evening_color = pygame.Vector3(0.55, 0.4, 0.3);
         night_color = pygame.Vector3(0.2, 0.15, 0.15);
 
-        daytime = (self.time / 180) % 1
+        daytime = self.time / DAY_DURATION
         ranges = ((0, 0.2), (0.2, 0.25), (0.25, 0.5), (0.5, 0.7), (0.7, 0.8), (0.8, 0.85), (0.85, 1))
         colors = ((night_color, night_color), (night_color, morning_color), (morning_color, midday_color), (midday_color, midday_color), (midday_color, evening_color), (evening_color, night_color), (night_color, night_color))
 
@@ -577,12 +577,9 @@ class Game:
             # Blits the transition surface onto the larger display
             self.larger_display.blit(self.transition_surf, (0, 0))
 
-        if self.screen_shake[1] > 0:
+        if self.screen_shake[1] > 0 and not (self.paused or self.game_over or self.question_flags['popup']):
             screen_shake = (random.random() * self.screen_shake[0], random.random() * self.screen_shake[0])
             self.display.blit(self.display, screen_shake)
-
-        fps_text = get_text_surf(size=55, text=f"FPS: {round(self.clock.get_fps())}", colour=pygame.Color("white"))
-        self.larger_display.blit(fps_text, (10, 10))
 
         self.window.update(uniforms={
             'screen_texture': self.display, 'ldisplay_texture': self.larger_display, 'light_map': self.light_map, 
@@ -597,7 +594,7 @@ class Game:
             # Calculates the change in time
             self.dt = (time.time() - self.last_time)
             self.last_time = time.time()
-            self.time += self.dt
+            self.time = (self.time + self.dt) % 180
             self.multi = self.dt * 60
             if len(self.tutorial) != 0:
                 self.update_tutorial()
