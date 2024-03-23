@@ -358,10 +358,20 @@ class LeaderboardMenu(Menu):
         # Loads all the high scores in and creates text objects for them
         high_scores = load_data()['scores']
         for i, score in enumerate(high_scores):
-            surf = get_text_surf(size=35, text=f"{i + 1}) {score[0]} - {format_num(score[1])} Gold", colour=(255, 255, 255))
+            surf1 = get_text_surf(size=35, text=f"{i + 1}", colour=(255, 255, 255))
+            surf2 = get_text_surf(size=35, text=f"{score[0]}", colour=(255, 255, 255))
+            surf3 = get_text_surf(size=35, text=f"{format_num(score[1])} Gold", colour=(255, 255, 255))
             self.text.append({
-                'surf': surf, 
-                'pos': ((self.display.get_width() // 2) - (surf.get_width() // 2), 200 + (i * 30))
+                'surf': surf1, 
+                'pos': (200 - (surf1.get_width() // 2), 200 + (i * 30))
+            })
+            self.text.append({
+                'surf': surf2, 
+                'pos': ((self.display.get_width() // 2) - (surf2.get_width() // 2), 200 + (i * 30))
+            })
+            self.text.append({
+                'surf': surf3, 
+                'pos': (self.display.get_width() - 250 - (surf3.get_width() // 2), 200 + (i * 30))
             })
 
     def button_press(self, button):
