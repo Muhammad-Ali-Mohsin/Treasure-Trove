@@ -20,10 +20,12 @@ class HUD:
             }
 
     def update(self):
+        # Updates the text if the game is over or paused and hasn't been updated
         if (self.game.game_over or self.game.paused) and not self.text_updated:
             self.update_text()
             self.text_updated = True
         else:
+            # Sets the updated flag to false if the game is not over or paused
             self.text_updated = False
 
         if self.game.game_over:
@@ -40,9 +42,11 @@ class HUD:
         """
         Draws the compass
         """
+        # Retrieves the player location and calculates the displacement from the player to the treasure
         player_loc = self.game.maze.get_loc(self.game.player.get_center())
         displacement = (self.game.treasure.loc[0] - player_loc[0], self.game.treasure.loc[1] - player_loc[1])
 
+        # Spins the compass around if the player is standing over the treasure
         if player_loc == self.game.treasure.loc:
             angle = (self.compass_angle + round(10 * self.game.multi)) % 360
         else:
@@ -62,6 +66,7 @@ class HUD:
         """
         Draws the healthbar image as as well as the player's health
         """
+        # Draws a red rect to represent te health and then the healthbar image on top
         pygame.draw.rect(self.game.larger_display, (255, 0, 0), (84, 42, (self.game.player.health / 100) * 231, 18))
         self.game.larger_display.blit(self.game.images['healthbar'], (15, 15))
 

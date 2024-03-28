@@ -50,7 +50,7 @@ class Maze:
     
     def get_neighbour_rects(self, tile, diagonals=True):
         """
-        Returns rects for the neighbour's of a given tile
+        Returns rects for the hedge neighbours of a given tile
         """
         rects = []
         for neighbour in self.get_neighbours(tile, diagonals):
@@ -60,7 +60,7 @@ class Maze:
     
     def get_hedge_sides(self, tile):
         """
-        Returns a list of the sides of a given tile which have hedges
+        Returns a list of the sides of a given tile which are hedges
         """
         sides = []
         neighbours = self.get_neighbours(tile, diagonals=False)
@@ -84,16 +84,22 @@ class Maze:
         Returns a random tile location of a specified type
         Allows you to optionally define two border locations for where the tile should fit between
         """
+        # Sets default border limits to be the top left and bottom right of the screen
         if border_limits == None:
-            border_limits = ((0, 0), (self.resolution[0], self.resolution[1]))
+            border_limits = ((0, 0), self.resolution)
+
+        # Generates a random location within the limits and keeps finding new locations until one is found which matches the type
         if border_function == 'inside':
             loc = (random.randint(border_limits[0][0], border_limits[1][0]), random.randint(border_limits[0][1], border_limits[1][1]))
             while self.tiles[loc]['type'] != type:
                 loc = (random.randint(border_limits[0][0], border_limits[1][0]), random.randint(border_limits[0][1], border_limits[1][1]))
+
+        # Generates a random location on te screen and keeps finding new locations until one is found which matches the type and is outside of the limits
         elif border_function == 'outside':
             loc = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
             while self.tiles[loc]['type'] != type or (loc[0] > border_limits[0][0] and loc[0] < border_limits[1][0] and loc[1] > border_limits[0][1] and loc[1] < border_limits[1][1]):
                 loc = (random.randint(0, self.resolution[0] - 1), random.randint(0, self.resolution[0] - 1))
+
         return loc
                 
     
@@ -105,9 +111,13 @@ class Maze:
         for x in range(-1, self.game.display.get_width() // self.tile_size + 2):
             for y in range(-1, self.game.display.get_height() // self.tile_size + 2):
                 loc = (top_left_loc[0] + x, top_left_loc[1] + y)
+
+                # Checks if the tile exists and blits it to the screen if it does
                 if loc in self.tiles:
                     tile = self.tiles[loc]
                     self.game.display.blit(self.game.images[tile['type']][tile['img_index']], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
+                
+                # Checks if there's any flowers at that location and blits the flowers
                 if loc in self.flowers:
                     for flower_index in self.flowers[loc]:
                         self.game.display.blit(self.game.images['flowers'][flower_index], (loc[0] * self.tile_size - self.game.camera_displacement[0], loc[1] * self.tile_size - self.game.camera_displacement[1]))
@@ -174,10 +184,12 @@ def generate_maze(game, tile_size, maze_resolution, removed_tiles):
 
     # This generates a bunch of flowers within the maze
     for i in range(200):
-        # This finds a random tile which is a path and gives it a random flower
+        # This finds a random tile which is a path
         tile = maze.tiles[random.choice(list(maze.tiles))]
         while not tile['type'] == "path":
             tile = maze.tiles[random.choice(list(maze.tiles))]
+
+        # Checks whether the tile already has flowers and if it does, appends to the flowers list or creates a new flowers list if it doesn't
         if tile['loc'] in maze.flowers:
             maze.flowers[tile['loc']].append(random.randint(0, len(game.images['flowers']) - 1))
         else:

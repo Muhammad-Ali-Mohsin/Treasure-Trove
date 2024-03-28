@@ -1,4 +1,5 @@
 import time
+import sys
 
 import pygame
 
@@ -94,13 +95,17 @@ class Menu:
         Handles all input events such as key presses
         """
         for event in pygame.event.get():
+            # Quits pygame and closes the program if the X button is pressed
             if event.type == pygame.QUIT:
-                self.kill_screen = True
+                pygame.quit()
+                sys.exit()
 
+            # Checks whether the mouse is being pressed
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.clicked = True
 
+            # Checks whether any widgets have been clicked when the mouse is released and calls their respective methods
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.clicked = False
@@ -116,10 +121,12 @@ class Menu:
                             AudioPlayer.play_sound("click")
                             break
 
+            # Checks if the mouse has been moved and calculates its new position as well as whether it has hovered over any new widgets
             if event.type == pygame.MOUSEMOTION:
                 self.mouse_pos = scale_coord_to_new_res(pygame.mouse.get_pos(), self.window.get_size(), self.display.get_size())
                 selected = None
                 for _id in self.buttons:
+                    # Marks the button as selected if the mouse is colliding with it and it is not already selected
                     if self.buttons[_id]['rect'].collidepoint(self.mouse_pos): 
                         if _id != self.selected:
                             AudioPlayer.play_sound("hover")
@@ -127,6 +134,7 @@ class Menu:
                         break
                 self.selected = selected
 
+            # Adds to the textbox if a key is pressed and a textbox is selected
             if event.type == pygame.KEYDOWN:
                 if self.selected_textbox != None:
                     self.textbox_update(event)
@@ -141,19 +149,22 @@ class Menu:
         """
         Runs whenever a key is pressed and a textbox is selected
         """
+        # Removes a character from the text if backspace is pressed
         if event.key == pygame.K_BACKSPACE:
             self.selected_textbox['text'] = self.selected_textbox['text'][:-1]
+        # If the return key is pressed and an enter button is set, that button is triggered
         elif event.key == pygame.K_RETURN:
             if self.enter_button != None:
                 self.button_press(self.buttons[self.enter_button])
+        # Checks whether a valid character has been pressed and if it has. adds it to te text
         elif event.unicode.lower() in "abcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()_-+={[}]|\:;\"'<,>.?/":
             if len(self.selected_textbox['text']) <= 35:
                 self.selected_textbox['text'] = self.selected_textbox['text'] + event.unicode
+
+        # Creates a new text surface with the new text (or asterisks if there is a password)
         font = pygame.font.SysFont(None, 25)
-        if "password" in self.selected_textbox['id']:
-            self.selected_textbox['text_surf'] = get_text_surf(size=25, text=len(self.selected_textbox['text']) * '*', colour=(255, 255, 255), font=font)
-        else:
-            self.selected_textbox['text_surf'] = get_text_surf(size=25, text=self.selected_textbox['text'], colour=(255, 255, 255), font=font)
+        text = len(self.selected_textbox['text']) * '*' if "password" in self.selected_textbox['id'] else self.selected_textbox['text']
+        self.selected_textbox['text_surf'] = get_text_surf(size=25, text=text, colour=(255, 255, 255), font=font)
 
     def change_error_message(self, text):
         """
@@ -166,14 +177,17 @@ class Menu:
         Runs a frame of the main menu
         """
         while not self.kill_screen:
+            # Calculates all time based variable
             self.dt = (time.time() - self.last_time)
             self.last_time = time.time()
             self.cursor_timer = (self.cursor_timer + self.dt) % 1
+
             # Calls functions
             self.handle_events()
             self.update_display()
             self.clock.tick(self.fps)
 
+        # Stops the music and returns the name of the new screen
         self.music.stop()
         return self.selected_screen
     
@@ -209,12 +223,14 @@ class MainMenu(Menu):
             {'surf': get_text_surf(size=20, text=f"Logged in as {current_user}", colour=(255, 255, 255)), 'pos': None}
         ]
 
+        # Repositions the text
         self.text[0]['pos'] = (285 - (self.text[0]['surf'].get_width() // 2), 100)
         self.text[1]['pos'] = (285 - (self.text[1]['surf'].get_width() // 2), 175)
         self.text[2]['pos'] = (1170 - self.text[2]['surf'].get_width(), self.buttons['sign_out']['rect'].centery - (self.text[2]['surf'].get_height() // 2))
 
     def button_press(self, button):
         super().button_press(button)
+        # Removes the logged in flag from the user data if the sign out button is pressed
         if button['id'] == "sign_out":
             data = load_data()
             del data['logged_in']
@@ -248,6 +264,7 @@ class OptionsMenu(Menu):
             {'surf': get_text_surf(size=40, text=str(self.fps), colour=(255, 255, 255)), 'pos': (100, 350)}
         ]
 
+        # Repositions the text
         self.text[0]['pos'] = ((self.display.get_width() // 2) - (self.text[0]['surf'].get_width() // 2), 50)
         self.text[1]['pos'] = (150, 250 + (self.text[1]['surf'].get_height() // 2))
         self.text[2]['pos'] = (150, 350 + (self.text[2]['surf'].get_height() // 2))
@@ -256,6 +273,7 @@ class OptionsMenu(Menu):
 
     def button_press(self, button):
         super().button_press(button)
+        # Increases or decreases the fps if fps buttons are pressed and changes the user data to reflect this
         if "fps" in button['id']:
             self.fps += 1 if button['id'] == "increase_fps" else -1
             data = load_data()
@@ -263,14 +281,19 @@ class OptionsMenu(Menu):
             save_data(data)
             self.text[4]['surf'] = get_text_surf(size=40, text=str(self.fps), colour=(255, 255, 255))
 
+        # Changes the resolution of the game
         elif "res" in button['id']:
+            # Finds the next supported resolution by indexing the RESOLUTIONS list
             new_res = RESOLUTIONS[(RESOLUTIONS.index(self.window.get_size()) + (1 if button['id'] == "decrease_res" else -1)) % len(RESOLUTIONS)]
+            # Quits the old display and then creates a new window
             pygame.display.quit()
             self.window = create_window(new_res)
             pygame.display.set_caption("Treasure Trove - Options Menu")
+            # Saves the new resolution to the user data
             data = load_data()
             data['options']['res'] = new_res
             save_data(data)
+            # Creates text surface to show the new resolution
             self.text[3]['surf'] = get_text_surf(size=40, text=f"{new_res[0]}x{new_res[1]}", colour=(255, 255, 255))
 
         elif button['id'] == "main_menu":
@@ -356,6 +379,7 @@ class LeaderboardMenu(Menu):
         self.text[0]['pos'] = ((self.display.get_width() // 2) - (self.text[0]['surf'].get_width() // 2), 50)
 
         # Loads all the high scores in and creates text objects for them
+        # There are three text objects for each score formatted as index, username, score
         high_scores = load_data()['scores']
         for i, score in enumerate(high_scores):
             surf1 = get_text_surf(size=35, text=f"{i + 1}", colour=(255, 255, 255))
@@ -405,6 +429,8 @@ class SignUpMenu(Menu):
             {'surf': get_text_surf(size=40, text="Password", colour=(255, 202, 24)), 'pos': (300, 275)},
             {'surf': get_text_surf(size=40, text="Confirm Password", colour=(255, 202, 24)), 'pos': (300, 350)}
         ]
+
+        # Repositions the text
         self.text[0]['pos'] = ((self.display.get_width() // 2) - (self.text[0]['surf'].get_width() // 2), 50)
 
         # Loads all the textboxes in
@@ -412,7 +438,6 @@ class SignUpMenu(Menu):
             'username': {'id': 'username', 'rect': pygame.Rect(700, 200, 400, 40), 'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255))},
             'password': {'id': 'password', 'rect': pygame.Rect(700, 275, 400, 40), 'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255))},
             'confirm_password': {'id': 'confirm_password', 'rect': pygame.Rect(700, 350, 400, 40), 'text': "", 'text_surf': get_text_surf(size=20, text="", colour=(255, 255, 255))},
-
         }
 
     def button_press(self, button):
@@ -438,7 +463,9 @@ class SignUpMenu(Menu):
             elif self.textboxes['username']['text'] in self.accounts:
                 self.change_error_message("This username has been taken")
             else:
+                # Jasjes the password and adds a new account
                 self.accounts[self.textboxes['username']['text']] = {'password_hash': get_hash(self.textboxes['password']['text'])}
+                # Saves the account to the user data and marks te player as logged in
                 data = load_data()
                 data['accounts'] = self.accounts
                 data['logged_in'] = self.textboxes['username']['text']
@@ -474,6 +501,8 @@ class LoginMenu(Menu):
             {'surf': get_text_surf(size=40, text="Username", colour=(255, 202, 24)), 'pos': (300, 275)},
             {'surf': get_text_surf(size=40, text="Password", colour=(255, 202, 24)), 'pos': (300, 350)}
         ]
+
+        # Repositions the text
         self.text[0]['pos'] = ((self.display.get_width() // 2) - (self.text[0]['surf'].get_width() // 2), 50)
 
         # Loads all the textboxes in
@@ -495,9 +524,11 @@ class LoginMenu(Menu):
             # Checks whether the username has been taken
             elif self.textboxes['username']['text'] not in self.accounts:
                 self.change_error_message("Username not found")
+            # Checks whether te hash of the entered password matches the recorded password hash for that username
             elif get_hash(self.textboxes['password']['text']) != self.accounts[self.textboxes['username']['text']]['password_hash']:
                 self.change_error_message("Incorrect password")
             else: 
+                # Marks the player as logged in
                 data = load_data()
                 data['logged_in'] = self.textboxes['username']['text']
                 save_data(data)
@@ -522,6 +553,7 @@ class SelectionMenu(Menu):
             {'surf': get_text_surf(size=100, text="Trove", colour=(255, 202, 24)), 'pos': None},
         ]
 
+        # Repositions the text
         self.text[0]['pos'] = (285 - (self.text[0]['surf'].get_width() // 2), 100)
         self.text[1]['pos'] = (285 - (self.text[1]['surf'].get_width() // 2), 175)
 

@@ -23,7 +23,9 @@ running = True
 window = create_window(res)
 
 while running:
+    # Creates an instance of the current screen
     screen = screens[current_screen](window, fps)
+    # Calls the run method of the screen and takes the return value which is the next screen as current_screen
     current_screen = screen.run()
     window = screen.window
     fps = screen.fps

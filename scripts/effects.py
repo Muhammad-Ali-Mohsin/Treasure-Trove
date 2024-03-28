@@ -45,17 +45,24 @@ class StatParticle(Particle):
         self.target = None
 
     def move(self):
+        """
+        Moves the particle towards the target point on the screen
+        """
+        # Moves the particle according to its velocity
         self.pos[0] += self.velocity[0] * self.game.multi
         self.pos[1] += self.velocity[1] * self.game.multi
+
+        # Applies gravity to the particle
         if not self.travelling_up:
             self.velocity[1] = min(self.velocity[1] + (self.game.multi * 0.1), 5)
         
-        displacement = (self.target[0] - self.pos[0], self.target[1] - self.pos[1])
-
+        # Makes the particle start travelling to the target if it is sufficiently low on the screen
         if self.pos[1] > 220:
             self.velocity = get_vector((self.target, self.pos), 3)
             self.travelling_up = True
 
+        # Checks to see if the particle has arrived at the target
+        displacement = (self.target[0] - self.pos[0], self.target[1] - self.pos[1])
         if abs(displacement[0]) <= DISTANCE_FROM_TARGET and abs(displacement[1]) < DISTANCE_FROM_TARGET:
             if self.game.player.animation.current_animation != "death":
                 self.target_reached()
@@ -65,6 +72,9 @@ class StatParticle(Particle):
         pass
 
     def draw(self):
+        """
+        Blits the image onto the surface without camera displacement and adds a glow effect
+        """
         img = self.animation.get_img()
         pos = (self.pos[0] - (img.get_width() // 2), self.pos[1] - (img.get_height() // 2))
         self.game.display.blit(img, pos)
@@ -81,6 +91,7 @@ class Experience(StatParticle):
 
     def target_reached(self):
         super().target_reached()
+        # Adds health to the player
         self.game.player.health = min(100, self.game.player.health + 0.5)
         AudioPlayer.play_sound("health")
 
@@ -94,6 +105,7 @@ class Gold(StatParticle):
 
     def target_reached(self):
         super().target_reached()
+        # Adds gold to the player
         self.game.gold += random.randint(40, 60)
         AudioPlayer.play_sound("gold")
 
@@ -108,6 +120,7 @@ class PlusOne(StatParticle):
 
     def target_reached(self):
         super().target_reached()
+        # Adds special attacks to the player
         self.game.special_attacks[self.attack_type] = min(5, self.game.special_attacks[self.attack_type] + 1)
         AudioPlayer.play_sound("plus_one")
 
@@ -130,6 +143,9 @@ class Leaf(Particle):
         self.animation.change_animation_library(self.game.animations['leaves'])
 
     def move(self):
+        """
+        Moves the leaf according to the wind intensity and a sine wave
+        """
         self.pos[0] += (math.sin(2 * math.pi * (self.animation.frame / 10)) * self.speed * self.game.multi) + (2 * self.game.wind_intensity * self.game.multi)
         self.pos[1] += self.speed * self.game.multi
 
@@ -138,12 +154,12 @@ class Slime(Particle):
     def __init__(self, game, pos, kwargs):
         super().__init__(game, pos)
         self.parent = kwargs['parent']
-        self.variance = list(kwargs['variance'])
+        self.displacement = list(kwargs['displacement'])
         self.animation.change_animation_library(self.game.animations[kwargs['color'] + '_slime_particle'])
 
     def move(self):
-        self.pos = (self.parent.pos[0] + (self.parent.size[0] // 2) + self.variance[0], self.parent.pos[1] + self.variance[1])
-        self.variance[1] = self.variance[1] - (0.2 * self.game.multi)
+        self.pos = (self.parent.pos[0] + (self.parent.size[0] // 2) + self.displacement[0], self.parent.pos[1] + self.displacement[1])
+        self.displacement[1] = self.displacement[1] - (0.2 * self.game.multi)
 
 
 class Dust(Particle):
@@ -180,12 +196,13 @@ class Bee(Particle):
 
     def draw(self):
         img = self.animation.get_img()
-        if self.timer < 5:
-            img.set_alpha(self.timer / 5 * 255)
+        # Decreases the opacity of the image down to 0 within te last 5 seconds of its life
+        if self.timer < 5: img.set_alpha(self.timer / 5 * 255)
         pos = (self.pos[0] - (img.get_width() // 2) - self.game.camera_displacement[0], self.pos[1] - (img.get_height() // 2) - self.game.camera_displacement[1])
-        intensity = math.sin(self.timer / 20 * math.pi)
-        self.game.glow(self.pos, (round(205 * intensity), round(205 * intensity), round(255 * intensity)), 20)
-        self.game.glow(self.pos, (round(255 * intensity), round(255 * intensity), round(255 * intensity)), 8)
+        # Calculates the luminosity of the light given off by the bee/firefly which increases to a maximum and then to a minimum over 20 seconds according to a sine wave
+        luminosity = math.sin(self.timer / 20 * math.pi)
+        self.game.glow(self.pos, (round(205 * luminosity), round(205 * luminosity), round(255 * luminosity)), 20)
+        self.game.glow(self.pos, (round(255 * luminosity), round(255 * luminosity), round(255 * luminosity)), 8)
         self.game.display.blit(img, pos)
 
 
@@ -195,16 +212,19 @@ class ParticleHandler:
 
     def update():
         """
-        Moves all the particles and removes them if their animation has finished
+        Moves all the particles and removes them if they are finished
         """
         killed = []
         for particle in ParticleHandler.particles:
             particle.move()
             particle.draw()
+            # Checks whether the particle uses a timer and decrements it if it does
             if particle.timer != None:
                 particle.timer -= particle.game.dt
+                # Removes the particle if its timer is complete
                 if particle.timer <= 0:
                     killed.append(particle)
+            # Removes the particle if its animation is complete
             elif particle.animation.done:
                 killed.append(particle)
         
@@ -241,8 +261,12 @@ class Spike:
         return pygame.Rect(*self.pos, self.speed * SPIKE_HEIGHT_MULTI, self.speed * SPIKE_HEIGHT_MULTI)
 
     def update(self):
+        """
+        Moves the spike and hits any enemies if it is colliding with them
+        """
         self.pos[0] += math.cos(self.angle) * self.speed * self.game.multi
         self.pos[1] += math.sin(self.angle) * self.speed * self.game.multi
+        # Decreases the speed of the spike over time
         self.speed -= self.game.dt * 3
 
         rect = self.get_rect()
@@ -254,11 +278,15 @@ class Spike:
         """
         Draws the spike onto the display
         """
+        # Calculates the position of the spike on the screen
         pos = (self.pos[0] - self.game.camera_displacement[0], self.pos[1] - self.game.camera_displacement[1])
+        # Uses the angle and size of the spike to calculate the four corners of the spike which is a quadrilateral
+        # This is then connected with a line through pygame.draw.polygon to draw te spike
         pygame.draw.polygon(self.game.display, self.color, [
             (pos[0] + math.cos(self.angle) * self.speed * SPIKE_HEIGHT_MULTI, pos[1] + math.sin(self.angle) * self.speed * SPIKE_HEIGHT_MULTI),
             (pos[0] + math.cos(self.angle + math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI, pos[1] + math.sin(self.angle + math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI),
             (pos[0] + math.cos(self.angle + math.pi) * self.speed * SPIKE_HEIGHT_MULTI, pos[1] + math.sin(self.angle + math.pi) * self.speed * SPIKE_HEIGHT_MULTI),
             (pos[0] + math.cos(self.angle + math.pi * 1.5) * self.speed * SPIKE_WIDTH_MULTI, pos[1] + math.sin(self.angle - math.pi * 0.5) * self.speed * SPIKE_WIDTH_MULTI),
         ])
+        # Adds a light to the spikes
         self.game.glow(self.pos, (205, 205, 255), 7.5 * self.speed)

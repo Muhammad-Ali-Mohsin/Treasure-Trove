@@ -79,11 +79,12 @@ class Entity:
             x_displacement = self.knockback_velocity[0] * (self.knockback_timer / KNOCKBACK_TIME) * self.game.multi
             y_displacement = self.knockback_velocity[1] * (self.knockback_timer / KNOCKBACK_TIME) * self.game.multi
             self.knockback_timer -= self.game.dt
+        # Checks if the entity has a special attack active and uses the velocity from the attack if it does
         elif self.special_attack['name'] != None:
             x_displacement = self.special_attack['vel'][0] * self.game.multi
             y_displacement = self.special_attack['vel'][1] * self.game.multi
         else:
-            # Changes the displacement if the entity is not being knocked back based on the direction they are moving
+            # Calculates the displacement based on the directions the entity is moving and slows speed to x0.75 if the entity is attacking
             x_displacement = ((self.moving['right'] * self.speed) - (self.moving['left'] * self.speed)) * self.game.multi * (0.75 if "attack" in self.animation.current_animation else 1)
             y_displacement = ((self.moving['down'] * self.speed) - (self.moving['up'] * self.speed)) * self.game.multi * (0.75 if "attack" in self.animation.current_animation else 1)
 
@@ -110,6 +111,7 @@ class Entity:
                     feet_rect.top = rect.bottom
                 self.pos[1] = feet_rect.bottom - self.size[1]
 
+        # Changes the flip of the entity's animation based on whether they are moving left or right
         if self.moving['right'] and self.animation.current_animation != "death": self.animation.flip = False
         if self.moving['left'] and self.animation.current_animation != "death": self.animation.flip = True
 
@@ -139,6 +141,7 @@ class Player(Entity):
         """
         if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[0] != 0:
             center = self.get_center()
+            # Calculates the direction that the attack should be in by calculating a destination which can be used for a vector
             if "forwards" in self.animation.current_animation:
                 destination = (center[0], center[1] + 1)
             elif "backwards" in self.animation.current_animation:
@@ -147,6 +150,7 @@ class Player(Entity):
                 destination = (center[0] - 1, center[1])
             else:
                 destination = (center[0] + 1, center[1])
+            # Sets all th special attack flags
             self.special_attack['name'] = "dash"
             self.special_attack['vel'] = get_vector((destination, center), DASHING_VELOCITY)
             self.special_attack['last_animation'] = self.animation.current_animation
@@ -161,6 +165,7 @@ class Player(Entity):
         Makes the player do the spiral attack
         """
         if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[1] != 0:
+            # Sets all th special attack flags
             self.special_attack['name'] = "spiral"
             self.special_attack['vel'] = [0, 0]
             self.special_attack['timer'] = SPIRAL_TIMER
@@ -174,6 +179,7 @@ class Player(Entity):
         Makes the player do the explosion attack
         """
         if self.special_attack['name'] == None and "attack" not in self.animation.current_animation and self.game.special_attacks[2] != 0:
+            # Sets all th special attack flags
             self.special_attack['name'] = "explode"
             self.special_attack['vel'] = [0, 0]
             self.special_attack['timer'] = EXPLOSION_TIMER
@@ -195,6 +201,8 @@ class Player(Entity):
         elif "forwards" in self.animation.current_animation: 
             rect = pygame.Rect(self.pos[0], self.pos[1] + self.size[1], self.size[0], PLAYER_ATTACK_RANGE)
         else:
+            # Creates a small rect around the player if there is no direction in their animation
+            # This occurs during the dash attack
             center = self.get_center()
             rect = pygame.Rect(0, 0, self.size[0] + 5, self.size[1] + 5)
             rect.center = center
@@ -481,7 +489,7 @@ class Enemy(Entity):
         self.slime_particle_timer += self.game.multi
         if "running" in self.animation.current_animation and self.slime_particle_timer > 5:
             self.slime_particle_timer = 0
-            ParticleHandler.create_particle("slime", self.game, self.get_center(), parent=self, variance=(random.randint(-10, 10), random.randint(-3, 3)), color=self.color)
+            ParticleHandler.create_particle("slime", self.game, self.get_center(), parent=self, displacement=(random.randint(-10, 10), random.randint(-3, 3)), color=self.color)
         
     def kill(self):
         """

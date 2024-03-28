@@ -1,6 +1,7 @@
 import time
 import random
 import math
+import sys
 
 import pygame
 
@@ -297,8 +298,10 @@ class Game:
         Handles all pygame events such as button presses
         """
         for event in pygame.event.get():
+            # Quits pygame and closes the program if the X button is pressed
             if event.type == pygame.QUIT:
-                self.kill_screen = True
+                pygame.quit()
+                sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                     self.player.moving['left'] = True
