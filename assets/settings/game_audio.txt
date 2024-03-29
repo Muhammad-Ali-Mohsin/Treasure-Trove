@@ -1,0 +1,17 @@
+player_attack, 0.8
+dash_attack, 0.5
+spiral_attack, 0.5
+explosion_attack, 0.5
+player_death, 1.0
+hit, 1.0
+enemy_death, 1.0
+health, 0.7
+gold, 0.7
+experience, 0.3
+treasure, 0.1
+plus_one, 1.0
+plus_one_spawn, 1.0
+chest, 0.1
+game_over, 1.0
+correct, 1.0
+wrong, 1.0

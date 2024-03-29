@@ -12,23 +12,29 @@ from scripts.hud import HUD
 from scripts.entities import Player, Enemy
 from scripts.maze import generate_maze
 from scripts.effects import ParticleHandler
-from scripts.utils import AudioPlayer, load_image, load_images, load_data, save_data, get_text_surf, scale_coord_to_new_res, format_num, update_scores
+from scripts.utils import AudioPlayer, load_image, load_images, load_data, save_data, get_text_surf, scale_coord_to_new_res, update_scores
 
 TRANSITION_DURATION = 1
 DAY_DURATION = 180
 
 class Maths:
+    """
+    Generates Maths questions and returns them in the format: instruction, question, answer
+    """
     def generate_algebra():
+        # Generates three random numbers and creates the x variable
         x = symbols('x')
         a = random.randint(1, 10)
         b = random.randint(1, 10)
         c = random.randint(1, 10)
+        # Creates an equation and then solves it using SymPy
         equation = Eq(a * x + b, c)
         solution = solve(equation, x)
         return "Solve for x", f"{a}x + {b} = {c}", solution[0]
     
     def generate_fraction():
-        fraction = f"{random.randint(1, 100)} / {random.randint(1, 100)}"
+        a = random.randint(1, 20)
+        fraction = f"{a * random.randint(1, 20)} / {a}"
         return "Simplify the following", fraction, simplify(fraction)
     
     def generate_arithmetic():
@@ -49,40 +55,57 @@ class Treasure:
         self.reset()
     
     def get_rect(self):
+        """
+        Returns a pygame rect of the treasure
+        """
         return pygame.Rect((self.loc[0] * self.game.maze.tile_size) + 8, (self.loc[1] * self.game.maze.tile_size) + 8, 16, 16)
 
     def reset(self):
-        top_left_loc = self.game.maze.get_loc(self.game.camera_displacement)
-        bottom_right_loc = self.game.maze.get_loc((self.game.camera_displacement[0] + self.game.display.get_width(), self.game.camera_displacement[1] + self.game.display.get_height()))
-        top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
-        bottom_right_loc = (min(self.game.maze.resolution[0], bottom_right_loc[0]), min(self.game.maze.resolution[1], bottom_right_loc[1]))
+        """
+        Resets the treasure by calculating a new location for it
+        """
+        # Calculates the border locations for the tiles which are on the screen
+        top_left_loc, bottom_right_loc = self.get_screen_border()
+        # Gets a random path location outside the screen and sets the treasure's location to that location
         loc = self.game.maze.get_random_loc("path", (top_left_loc, bottom_right_loc), 'outside')
         self.loc = loc
         self.animation.change_animation("closed")
 
     def open(self):
+        """
+        Starts opening the treasure
+        """
+        # Checks whether the tutorial is running and whether the tutorial requires treasure to be opened
         if len(self.game.tutorial) != 0 and "treasure" not in self.game.tutorial[0]['name']:
             return
+        # Starts the opening animation
         self.game.shake_screen(10, 0.3)
         self.animation.change_animation("open")
         AudioPlayer.play_sound("chest")
 
     def update(self):
+        """
+        Updates the treasure's animation and resets it if needed
+        """
+        # Checks whether the treasure is opening and is on the second to last frame before opening the maths popup
         if self.animation.current_animation == "open" and self.animation.frame == len(self.animation.animation_library[self.animation.current_animation]['images']) - 2 and not self.popup:
             self.game.question_flags['popup'] = True
             self.game.generate_maths_question()
             self.popup = True
 
+        # Checks whether the treasure is opening and on its last frame before releasing the gold
         if self.animation.current_animation == "open" and self.animation.frame == len(self.animation.animation_library[self.animation.current_animation]['images']) - 1 and not self.released_gold:
             for i in range(10):
                 ParticleHandler.create_particle("gold", self.game, ((self.loc[0] * self.game.maze.tile_size) + 8 + random.randint(-5, 5), (self.loc[1] * self.game.maze.tile_size) + 8 + random.randint(-5, 5)), velocity=(random.uniform(2, -2), random.uniform(-4, -2)))
             self.released_gold = True
 
+        # Checks whether the opening animation has fully completed
         if self.animation.current_animation == "open" and self.animation.done:
             # Creates dust particles which fly off the treasure to show it's disappearing
             for angle in (math.pi * 1/4, math.pi * 2/4, math.pi * 3/4, math.pi, math.pi * 5/4, math.pi * 6/4, math.pi * 7/4, math.pi * 8/4):
                 ParticleHandler.create_particle("dust", self.game, ((self.loc[0] * self.game.maze.tile_size) + 8, (self.loc[1] * self.game.maze.tile_size) + 8), speed=random.uniform(1, 2), angle=angle)
  
+            # Resets all treasure variables
             self.reset()
             self.released_gold = False
             self.popup = False
@@ -92,6 +115,9 @@ class Treasure:
         self.glow_timer = (self.glow_timer + self.game.dt * 2) % (2 * math.pi)
 
     def draw(self):
+        """
+        Draws the treasure to the screen
+        """
         img = self.animation.get_img()
         pos = [(self.loc[i] * self.game.maze.tile_size) - self.game.camera_displacement[i] for i in range(2)]
         self.game.display.blit(img, pos)
@@ -124,31 +150,12 @@ class Game:
         self.light_map = pygame.Surface(self.display.get_size()).convert_alpha()
 
         # Loads all the images in
-        self.images = {
-            'hedge': load_images("assets/images/hedges"),
-            'path': load_images("assets/images/paths"),
-            'flowers': load_images("assets/images/flowers"),
-            'healthbar': load_image("assets/images/healthbar.png"),
-            'gold_pouch': load_image("assets/images/gold_pouch.png"),
-            'compass_base': load_image("assets/images/compass_base.png"),
-            'compass_spinner': load_image("assets/images/compass_spinner.png"),
-            'box': load_image("assets/images/box.png"),
-            'box_2': load_image("assets/images/box_2.png"),
-            'correct': load_image("assets/images/correct.png"),
-            'wrong': load_image("assets/images/wrong.png"),
-            'unanswered': load_image("assets/images/unanswered.png"),
-            'grey_screen': pygame.Surface(self.display.get_size()).convert_alpha(),
-            'arrow_keys': load_image("assets/images/keys/arrow_keys.png"),
-            'z_key': load_image("assets/images/keys/z_key.png"),
-            'x_key': load_image("assets/images/keys/x_key.png"),
-            'c_key': load_image("assets/images/keys/c_key.png"),
-            'spacebar': load_image("assets/images/keys/spacebar.png"),
-            'textbox': load_image("assets/images/textbox.png"),
-            'light': load_image("assets/images/light.png"),
-            'dash_icon': load_image("assets/images/dash_icon.png"),
-            'explode_icon': load_image("assets/images/explode_icon.png"),
-            'spiral_icon': load_image("assets/images/spiral_icon.png"),
-        }
+        self.images = {'grey_screen': pygame.Surface(self.display.get_size()).convert_alpha()}
+        with open("assets/settings/game_images.txt", "r") as f:
+            images = f.readlines()
+            for image in images:
+                name, path = image.rstrip().split(", ")
+                self.images[name] = load_image(path) if path.endswith('.png') else load_images(path)
 
         # Loads all the animations in
         self.animations = {
@@ -253,45 +260,48 @@ class Game:
 
         # Loads all sfx sounds
         AudioPlayer.load_sounds("running", "assets/sfx/running", 0.2, True)
-        AudioPlayer.load_sound("player_attack", "assets/sfx/player_attack.wav", 0.8)
-        AudioPlayer.load_sound("dash_attack", "assets/sfx/dash_attack.wav", 0.5)
-        AudioPlayer.load_sound("spiral_attack", "assets/sfx/spiral_attack.wav", 0.5)
-        AudioPlayer.load_sound("explosion_attack", "assets/sfx/explosion_attack.wav", 0.5)
-        AudioPlayer.load_sound("player_death", "assets/sfx/player_death.wav", 1)
-        AudioPlayer.load_sound("hit", "assets/sfx/hit.wav", 1)
-
         AudioPlayer.load_sounds("enemy_attack", "assets/sfx/enemy_attack", 0.8, True)
-        AudioPlayer.load_sound("enemy_death", "assets/sfx/enemy_death.wav", 1)
-
-        AudioPlayer.load_sound("health", "assets/sfx/health.wav", 0.7)
-        AudioPlayer.load_sound("gold", "assets/sfx/gold.wav", 0.7)
-        AudioPlayer.load_sound("experience", "assets/sfx/experience.wav", 0.3)
-        AudioPlayer.load_sound("treasure", "assets/sfx/treasure.wav", 0.1)
-        AudioPlayer.load_sound("plus_one", "assets/sfx/plus_one.wav", 1)
-        AudioPlayer.load_sound("plus_one_spawn", "assets/sfx/plus_one_spawn.wav", 1)
-
-        AudioPlayer.load_sound("chest", "assets/sfx/chest.wav", 0.1)
-        AudioPlayer.load_sound("game_over", "assets/sfx/game_over.wav", 1)
         AudioPlayer.load_sounds("key_press", "assets/sfx/keys", 0.1, True, True)
-        AudioPlayer.load_sound("correct", "assets/sfx/correct.wav", 1)
-        AudioPlayer.load_sound("wrong", "assets/sfx/wrong.wav", 1)
+
+        with open("assets/settings/game_audio.txt", "r") as f:
+            sounds = f.readlines()
+            for sound in sounds:
+                name, volume = sound.split(", ")
+                AudioPlayer.load_sound(name, f"assets/sfx/{name}.wav", float(volume))
 
         # Time
         self.dt = 0
         self.last_time = time.time()
-        self.time = 115 # Midday
+        self.time = 90 # Midday
 
     def glow(self, pos, color, radius):
+        """
+        Adds a light to a given position with a given radius and colour
+        """
         radius = round(radius)
+        # Checks whether the light image already exists
         if (color, radius) not in self.light_images:
+            # Creates two copies of the light image scaled to the given size
             img = pygame.transform.scale(self.images['light'].copy(), (radius * 2, radius * 2))
             img.set_colorkey((0, 0, 0))
             img2 = img.copy()
+            # Fills the first image with the target colour and then blends the second containing the light image onto the first
             img.fill(color)
             img.blit(img2, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
             self.light_images[(color, radius)] = img
         
+        # Draws the light to te screen
         self.light_map.blit(self.light_images[(color, radius)], (pos[0] - self.light_images[(color, radius)].get_width() // 2 - self.camera_displacement[0], pos[1] - self.light_images[(color, radius)].get_height() // 2 - self.camera_displacement[1]), special_flags=pygame.BLEND_RGB_ADD)
+
+    def get_screen_border(self):
+        """
+        Returns the corner locations of the tiles visible on the screen
+        """
+        top_left_loc = self.maze.get_loc(self.camera_displacement)
+        bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
+        top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
+        bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
+        return top_left_loc, bottom_right_loc
 
     def handle_events(self):
         """
@@ -343,18 +353,17 @@ class Game:
         """
         Spawns an enemy in a random location
         """
-        top_left_loc = self.maze.get_loc(self.camera_displacement)
-        bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
-        top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
-        bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
+        # Gets a spawn location off of the screen
+        top_left_loc, bottom_right_loc = self.get_screen_border()
         loc = self.maze.get_random_loc("path", (top_left_loc, bottom_right_loc), 'outside')
 
+        # Calculates how many enemies there are of each colour currently alive
         colors = {'red': 0, 'blue': 0, 'purple': 0}
         for enemy in self.enemies:
             colors[enemy.color] += 1
 
+        # Sorts the colours and picks the lowest one before spawning the enemy
         color = sorted(list(colors), key=lambda color: colors[color])[0] if color == None else color
-
         self.enemies.append(Enemy(self, loc, (16, 16), random.uniform(1, 2), 30, color))
 
     def spawn_enemies(self):
@@ -443,10 +452,12 @@ class Game:
         evening_color = pygame.Vector3(0.55, 0.4, 0.3);
         night_color = pygame.Vector3(0.2, 0.15, 0.15);
 
+        # Defines the ranges and color switches
         daytime = self.time / DAY_DURATION
         ranges = ((0, 0.2), (0.2, 0.25), (0.25, 0.5), (0.5, 0.7), (0.7, 0.8), (0.8, 0.85), (0.85, 1))
         colors = ((night_color, night_color), (night_color, morning_color), (morning_color, midday_color), (midday_color, midday_color), (midday_color, evening_color), (evening_color, night_color), (night_color, night_color))
 
+        # Linearly interpolates the color scales to calculate a color scale representing the current daylight
         for i, range in enumerate(ranges):
             if daytime >= range[0] and daytime <= range[1]:
                 daylight = ((daytime - range[0]) / (range[1] - range[0]) * (colors[i][1] - colors[i][0])) + colors[i][0]
@@ -628,10 +639,7 @@ class Game:
 
                 # Spawns leaves from the hedges that are on the screen
                 if random.random() < 0.1:
-                    top_left_loc = self.maze.get_loc(self.camera_displacement)
-                    bottom_right_loc = self.maze.get_loc((self.camera_displacement[0] + self.display.get_width(), self.camera_displacement[1] + self.display.get_height()))
-                    top_left_loc = (max(0, top_left_loc[0]), max(0, top_left_loc[1]))
-                    bottom_right_loc = (min(self.maze.resolution[0], bottom_right_loc[0]), min(self.maze.resolution[1], bottom_right_loc[1]))
+                    top_left_loc, bottom_right_loc = self.get_screen_border()
                     loc = self.maze.get_random_loc("hedge", (top_left_loc, bottom_right_loc))
                     if random.random() < 0.1:
                         ParticleHandler.create_particle("bee", self, ((loc[0] * self.maze.tile_size) + (self.maze.tile_size // 2),  (loc[1] * self.maze.tile_size) + (self.maze.tile_size // 4)), speed=random.uniform(0.1, 0.5))
