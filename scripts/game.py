@@ -65,7 +65,7 @@ class Treasure:
         Resets the treasure by calculating a new location for it
         """
         # Calculates the border locations for the tiles which are on the screen
-        top_left_loc, bottom_right_loc = self.get_screen_border()
+        top_left_loc, bottom_right_loc = self.game.get_screen_border()
         # Gets a random path location outside the screen and sets the treasure's location to that location
         loc = self.game.maze.get_random_loc("path", (top_left_loc, bottom_right_loc), 'outside')
         self.loc = loc
